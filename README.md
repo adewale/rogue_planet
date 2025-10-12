@@ -617,7 +617,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ## Acknowledgments
 
 Inspired by:
-- [Planet Planet](http://www.planetplanet.org/)
+- [Planet Planet](https://web.archive.org/web/20171029175722/http://www.planetplanet.org/)
 - [Planet Venus](https://github.com/rubys/venus)
 - The decades of work by the feed aggregator community
 
