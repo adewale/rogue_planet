@@ -1,0 +1,83 @@
+MIT License
+
+Copyright (c) 2025 Rogue Planet Contributors (Theme Adaptation)
+Copyright (c) 2023 Steph Ango (Original Flexoki Color Scheme)
+
+FLEXOKI COLOR SCHEME
+====================
+
+The Flexoki color scheme and color values used in this theme are designed by
+Steph Ango and licensed under the MIT License.
+
+Original Flexoki:
+- Website: https://stephango.com/flexoki
+- GitHub: https://github.com/kepano/flexoki
+- Designer: Steph Ango (https://stephango.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+ROGUE PLANET THEME ADAPTATION
+==============================
+
+This theme adaptation for Rogue Planet includes:
+- HTML template (template.html)
+- CSS stylesheet with automatic light/dark mode switching (static/style.css)
+- Theme documentation (README.md)
+
+The theme adaptation is licensed under the MIT License and is part of the
+Rogue Planet project.
+
+RSS FEED ICON
+=============
+
+The RSS feed icon (static/feed-icon.svg) is from the Mozilla Foundation and is
+tri-licensed under:
+- Mozilla Public License Version 1.1
+- GNU General Public License (GPL)
+- GNU Lesser General Public License (LGPL)
+
+Source: https://commons.wikimedia.org/wiki/File:Feed-icon.svg
+
+ATTRIBUTION REQUIREMENTS
+========================
+
+When using or distributing this theme:
+
+1. Maintain this LICENSE file
+2. Credit Steph Ango for the Flexoki color scheme
+3. Include link to https://stephango.com/flexoki when possible
+4. Preserve copyright notices
+
+MODIFICATIONS
+=============
+
+You are free to:
+- Modify colors, typography, and layout
+- Use for commercial or non-commercial projects
+- Redistribute with or without modifications
+
+Please credit the original Flexoki color scheme by Steph Ango when sharing
+modified versions.
+
+ACKNOWLEDGMENTS
+===============
+
+- Steph Ango - Flexoki color scheme design
+- Mozilla Foundation - RSS feed icon
+- Rogue Planet contributors - Theme adaptation and implementation

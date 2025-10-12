@@ -1,0 +1,1986 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>Daring Fireball</title>
+<subtitle>By John Gruber</subtitle>
+<link rel="alternate" type="text/html" href="https://daringfireball.net/" />
+<link rel="self" type="application/atom+xml" href="https://daringfireball.net/feeds/main" />
+<id>https://daringfireball.net/feeds/main</id>
+
+
+<updated>2025-10-04T13:34:55Z</updated><rights>Copyright © 2025, John Gruber</rights><entry>
+	<title>Cheap Batteries Are Dangerous</title>
+	<link rel="alternate" type="text/html" href="https://www.theverge.com/news/784966/lumafield-x-ray-ct-scan-lithium-ion-battery-risks-manufacturing-defect" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wle" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/10/04/cheap-batteries-are-dangerous" />
+	<id>tag:daringfireball.net,2025:/linked//6.42242</id>
+	<published>2025-10-04T13:24:20Z</published>
+	<updated>2025-10-04T13:24:20Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Andrew Liszewski, The Verge:</p>
+
+<blockquote>
+  <p>Lumafield has <a href="https://www.lumafield.com/battery-report#battery-quality-report">released the results of a new study</a> of
+lithium-ion batteries that “reveals an enormous gap in quality
+between brand-name batteries and low-cost cells” that are readily
+available through online stores including Amazon and Temu. The
+company used <a href="https://www.theverge.com/2023/3/18/23640484/lumafield-neptune-ct-scanner-3d-x-ray-hands-on-interview">its computed tomography (CT) scanners</a>, capable
+of peering inside objects in 3D using X-rays, to analyze over
+1,000 lithium-ion batteries. It found dangerous manufacturing
+defects in low-cost and counterfeit batteries that could
+potentially lead to fires and explosions.</p>
+</blockquote>
+
+<p>My gut feeling has long been that cheap battery packs and cheap products with integrated batteries (like all the junk Temu sells) are dangerous. This analysis basically proves it. (I’d have linked directly to Lumafield’s report, but it’s only available by submitting your name and email address, so Liszewski’s summary at The Verge is a better quick read.)</p>
+
+<div>
+<a  title="Permanent link to ‘Cheap Batteries Are Dangerous’"  href="https://daringfireball.net/linked/2025/10/04/cheap-batteries-are-dangerous">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+    
+    <link rel="alternate" type="text/html" href="https://daringfireball.net/2025/10/iceblock_removed_from_app_store" />
+	<link rel="shorturl" href="http://df4.us/wld" />
+	<id>tag:daringfireball.net,2025://1.42241</id>
+	<published>2025-10-03T20:56:36Z</published>
+	<updated>2025-10-04T13:02:36Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<summary type="text">It’s rather chilling to consider what Apple would have done if the Trump administration had “demanded” a list of device IDs and user identities for everyone who had installed ICEBlock. Or what Apple *will* do if such a demand pops into one of their dimwitted but cruel minds.</summary>
+	<content type="html" xml:base="https://daringfireball.net/" xml:lang="en"><![CDATA[
+<p><a href="https://www.foxbusiness.com/politics/apple-takes-down-ice-tracking-app-after-pressure-from-ag-bondi">Ashley Oliver, reporting for Fox Business</a>:</p>
+
+<blockquote>
+  <p>DOJ officials, at the direction of Attorney General Pam Bondi,
+asked Apple to take down ICEBlock, a move that comes as Trump
+administration officials have claimed the tool, which allows users
+to anonymously report ICE agents’ presence, puts agents in danger
+and helps shield illegal immigrants.</p>
+
+<p>“We reached out to Apple today demanding they remove the ICEBlock
+app from their App Store — and Apple did so,” Bondi said in a
+statement to Fox News Digital.</p>
+
+<p>“ICEBlock is designed to put ICE agents at risk just for doing
+their jobs, and violence against law enforcement is an intolerable
+red line that cannot be crossed,” Bondi added. “This Department of
+Justice will continue making every effort to protect our brave
+federal law enforcement officers, who risk their lives every day
+to keep Americans safe.”</p>
+</blockquote>
+
+<p>Fox, in its opening paragraph, describes Bondi as having “asked” Apple to remove ICEBlock from the App Store, but Bondi’s own statement uses the verb “demand”. The difference is not nitpicking. No one, not even Bondi, is claiming any aspect of ICEBlock is illegal. Thus it’s not merely inappropriate but outrageous — and yet another among dozens of other causes for alarm regarding Trump 2.0’s decidedly authoritarian turn — for the DOJ to “demand” Apple do anything about it. But demand they did, and comply did Apple. (Check those lips <a href="https://daringfireball.net/2024/11/i_wonder">for Cheetos dust</a> before heading home today.)</p>
+
+<p>Katherine Tangalakis-Lippert, Peter Kafka, and Kwan Wei Kevin Tan, <a href="https://www.businessinsider.com/apple-iceblock-app-store-removed-2025-10">reporting for Business Insider</a>:</p>
+
+<blockquote>
+  <p>Apple has removed ICEBlock, an app that allowed users to monitor
+and report the location of immigration enforcement officers, from
+the App Store.</p>
+
+<p>“We created the App Store to be a safe and trusted place to
+discover apps,” Apple said in a statement to Business Insider.
+“Based on information we’ve received from law enforcement about
+the safety risks associated with ICEBlock, we have removed it and
+similar apps from the App Store.”</p>
+</blockquote>
+
+<p>ICEBlock developer Joshua Aaron, <a href="https://bsky.app/profile/iceblock.app/post/3m2alyaghbk2n">posting on the ICEBlock Bluesky account</a>:</p>
+
+<blockquote>
+  <p>We just received a message from Apple’s App Review that #ICEBlock
+has been removed from the App Store due to “objectionable
+content”. The only thing we can imagine is this is due to pressure
+from the Trump Admin.</p>
+
+<p>We have responded and we’ll fight this! #resist</p>
+</blockquote>
+
+<p>There is clearly nothing illegal about ICEBlock.<sup id="fnr1-2025-10-03"><a href="#fn1-2025-10-03">1</a></sup> It’s just information, obviously protected by the First Amendment. Law enforcement officers in the United States have no right to avoid being recorded nor their actions being reported and shared. Reporting and publishing where police are policing is free speech and fundamental to the civil rights and liberties of a free society.</p>
+
+<p>We can all wish Apple had fought this “demand”. I certainly do. <a href="https://www.youtube.com/watch?v=ohPToBog_-g">John Oliver’s “Fuck you, make me”</a> argument <a href="https://daringfireball.net/linked/2025/10/03/fuck-you-make-me">sprung to mind</a> for me this morning. But that’s wishful thinking. I believe there are many lines Apple would not cross, even if it means taking on the ire of Trump administration lickspittles, if not the barely literate wrath of the mad king himself on <a href="https://daringfireball.net/2025/06/truth_social_is_just_trumps_blog">his sad little blog</a>. Apple may well eventually — if not soon — be forced to define those lines. But keeping ICEBlock in the App Store isn’t one of them. You might believe it should be. There’s a big part of me that believes it should be. But I can also <a href="https://daringfireball.net/2025/08/gold_frankincense_and_silicon">see why it’s not</a>. Pick your battles.</p>
+
+<p>I wrote about ICEBlock twice back in late July. <a href="https://daringfireball.net/2025/07/iceblock">Quoting extensively from my initial post</a>:</p>
+
+<blockquote>
+  <p>The ICEBlock app is interesting in and of itself (and from my
+tire-kicking test drive, appears to be a well-crafted and designed
+app), as will be Apple’s response if (when?) the Trump
+administration takes offense to the app’s existence. Back in 2019,
+kowtowing to tacit demands from China, <a href="https://daringfireball.net/linked/2019/10/10/apple-pulls-hkmaps">Apple removed from the App
+Store an app called HKmap.live</a> which helped pro-democracy
+activists in Hong Kong know the location of police and protest
+activity. The app broke no Hong Kong laws, but <a href="https://www.npr.org/2019/10/10/768841864/after-china-objects-apple-removes-app-used-by-hong-kong-protesters">scared the
+thin-skinned skittish lickspittles in the Chinese Communist
+Party</a>. (Remember too that in 2019, <a href="https://daringfireball.net/linked/2019/10/07/taiwan-flag-emoji">Apple removed the Taiwan
+flag emoji</a> (🇹🇼) from the iOS 13 keyboard for users in Hong
+Kong and Macau.)</p>
+
+<p>One defense from Apple regarding HKmap.live, however, was that the
+iOS app was a thin wrapper around the website, which website
+remained fully functional and could be saved to an iPhone user’s
+home screen. Removing the app from the App Store thus did not
+prevent Hongkongers from accessing it. (<a href="https://hkmap.live/">That website</a> today
+<a href="https://en.wikipedia.org/wiki/HKmap.live">seems to be defunct</a>.)</p>
+
+<p>ICEBlock is different. It is <em>only</em> available as a native iOS app.
+According to the developers, this is for technical reasons. From
+their web page explaining <a href="https://www.iceblock.app/android">why they <em>can’t</em> offer an Android
+version</a>:</p>
+
+<blockquote>
+  <p>At ICEBlock, user privacy and security are paramount. Our
+application is designed to provide as much anonymity as possible
+without storing any user data or creating accounts. While we
+understand the desire for an Android version of ICEBlock,
+achieving this level of anonymity on Android is not feasible due
+to the inherent requirements of push notification services.</p>
+
+<p>To send push notifications on Android, it is necessary to use a
+mechanism that requires storing device IDs. This means that we
+would need to maintain a privately hosted database to store these
+identifiers. Storing such data, even if it’s anonymized,
+introduces significant privacy risks. [...]</p>
+
+<p>In contrast, iOS offers us the flexibility to deliver push
+notifications while adhering strictly to our design philosophy.
+Apple’s ecosystem allows for push notifications to be sent
+without requiring us to store any user-identifiable information.
+This ensures that ICEBlock remains completely anonymous and
+secure.</p>
+</blockquote>
+
+<p>To deliver push notifications on Android, the developers claim
+they would need to maintain a database of device IDs, create a
+user account system to manage those device IDs, and all of that
+server-stored data would be susceptible to law enforcement
+subpoenas and pro-ICE red hat hackers. (What “brown shirts” were
+to the Nazis, we should make “red hats” to MAGA.)</p>
+
+<p>To maintain anonymity and store zero user data, there is and can
+be no web app version of ICEBlock. There is and can be no Android
+version. Only iOS supports the security and privacy features for
+ICEBlock to offer what it does, the way it does. Here’s to hoping
+that Apple will proudly defend it if push comes to shove.</p>
+</blockquote>
+
+<p>Apple’s removal of ICEBlock from the App Store is, in multiple ways, <em>worse</em> than Apple’s removal of HKmap.live from the App Store back in 2019. First, you cannot take a disagreement with the Chinese government to court. Here in the United States, you can. But Apple chose not to. That’s a display of weakness. </p>
+
+<p>Second, from the perspective of users, without the HKmap.live “app”, Hong Kong iPhone users could still access all the functionality via the website, and the website could be saved to their home screens as a web app that was, I believe, functionally identical to the version from the App Store. I put “app” in quotes above because the HKmap.live app was really just a thin wrapper around the service’s mobile website. Hongkongers lost some convenience, and they lost the ability to tell non-technical protestor friends “just get it from the App Store”, but it’s not <em>that</em> much more complex to explain how to add a website to your iPhone home screen as a web app.</p>
+
+<p>With ICEBlock, the entire thing is simply no longer available. If you already have ICEBlock installed, the installed version still functions on your iPhone, but, until and if Apple changes its mind, there will be no further software updates and new users are unable to download it. Nor will current users be able to re-download the app on a new iPhone — and now is “new iPhone” season. And, seemingly, there can be no web app (or Android) version of ICEBlock that offers the same level of anonymity as the native iOS version — with notifications, but without user accounts nor any database of device IDs for notifications that would be subject to subpoena from ICEBlock.</p>
+
+<p>The gist of <a href="https://daringfireball.net/linked/2025/07/26/iceblock-trust-apple">my second post on ICEBlock</a> from back in July is that ICEBlock’s privacy-protecting architecture isn’t magic. It’s based on trust in Apple itself. Joshua Aaron doesn’t have access to ICEBlock users’ device IDs (let alone their personal identities), but ICEBlock can send push notifications to devices because Apple itself does know device IDs and users’ identities.</p>
+
+<p>It’s rather chilling to consider what Apple would have done if the Trump administration had “demanded” a list of device IDs and user identities for everyone who had installed ICEBlock. Or what Apple <em>will</em> do if such a demand pops into one of their dimwitted but cruel minds.<sup id="fnr2-2025-10-03"><a href="#fn2-2025-10-03">2</a></sup> I suspect that’s one of the lines Apple would not cross. That Apple would stand its ground there and say “Fuck you, make us” and take it to court. But there’s only one way to find out.</p>
+
+<div class="footnotes">
+<hr />
+<ol>
+
+<li id="fn1-2025-10-03">
+<p>It’s interesting to consider how Aaron might “fight this”. I don’t think suing the Department of Justice is an option. All Pam Bondi did was issue a “demand” to Apple. That’s inappropriate and an embarrassment, and in any normal administration would be just cause for her immediate dismissal from the job. But it’s not against the law. She didn’t issue an unconstitutional legal demand to Apple. She just issued a verbal request with an implicit threat of turning the nation’s MAGA derps and Fox News junkies against Apple. What Apple was afraid of wasn’t fighting this demand in a court of law, but in the court of public opinion.</p>
+
+<p>So maybe Aaron sues Apple? I’m not sure he has grounds for that either, but it’d be interesting to see Apple’s lawyers argue in court that the App Store is no place for apps that protect users’ civil liberties and personal privacy.&nbsp;<a href="#fnr1-2025-10-03"  class="footnoteBackLink"  title="Jump back to footnote 1 in the text.">&#x21A9;&#xFE0E;︎</a></p>
+</li>
+
+<li id="fn2-2025-10-03">
+<p>A few people have already asked me why it took the Trump administration several months to put ICEBlock in its crosshairs and issue a takedown “demand” to Apple. <a href="https://abc7ny.com/post/iceblock-new-iphone-app-lets-users-know-when-ice-agents-are-area/16902392/">Aaron shipped the first release of ICEBlock back in April</a>, and it achieved a significant amount of well-deserved publicity in July after Trump’s ICE goons began large-scale deportation raids in Los Angeles. My answer is simple: it took them months to issue this demand because they’re so goddamn stupid and incompetent. We should be thankful for that. In a competent regime attempting an authoritarian takeover of a liberal democracy, it would have been taken down in days, not months.&nbsp;<a href="#fnr2-2025-10-03"  class="footnoteBackLink"  title="Jump back to footnote 2 in the text.">&#x21A9;&#xFE0E;</a></p>
+</li>
+
+</ol>
+</div>
+
+
+
+    ]]></content>
+  <title>★ Complying With ‘Demand’ From Trump Administration, Apple Removes ICEBlock From App Store</title></entry><entry>
+	<title>‘Fuck You, Make Me’</title>
+	<link rel="alternate" type="text/html" href="https://www.youtube.com/watch?v=ohPToBog_-g" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wlc" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/10/03/fuck-you-make-me" />
+	<id>tag:daringfireball.net,2025:/linked//6.42240</id>
+	<published>2025-10-03T13:20:43Z</published>
+	<updated>2025-10-03T17:34:46Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>John Oliver on Last Week Tonight, uh, last week, regarding Disney’s initial (but brief) caving to Trump’s demands that they suspend or even fire Jimmy Kimmel for his having the temerity to <a href="https://daringfireball.net/linked/2025/09/23/kimmel-joke">mock the mad king for being a sociopathic ghoul</a> sliding into the depths of dementia:</p>
+
+<blockquote>
+  <p>Look, at some point you’re going to have to draw a line. So I’d
+argue, why not draw it right here? And when they come to you with
+stupid, ridiculous demands, picking fights that you know you could
+win in court, instead of rolling over, why not stand up and use
+four key words they don’t tend to teach you in business school?
+Not, “OK, you’re the boss.” Not, “Whatever you say goes.” But
+instead, the only phrase that can genuinely make a weak bully go
+away. And that is, “Fuck you. Make me.”</p>
+</blockquote>
+
+<p>“Fuck you, make me” is, to me, the founding principle of this nation. That was our message to King George III, a tyrant descending into madness (who even <a href="https://www.hrp.org.uk/blog/the-kings-malady-george-iiis-mental-illness-explored/">suffered from swollen legs and feet</a>, which <a href="https://apnews.com/article/trump-swelling-legs-chronic-venous-insufficiency-health-40beb3c818cfb914645db9d1f143fdd8">rings yet another bell</a> with our current wannabe mad king). And it needs to be our response to Trump.</p>
+
+<div>
+<a  title="Permanent link to ‘‘Fuck You, Make Me’’"  href="https://daringfireball.net/linked/2025/10/03/fuck-you-make-me">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>MLB Average Game Time Under Three Hours for Third Straight Year</title>
+	<link rel="alternate" type="text/html" href="https://www.mlb.com/news/mlb-average-game-time-under-three-hours-third-straight-year" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wlb" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/10/02/mlb-game-times" />
+	<id>tag:daringfireball.net,2025:/linked//6.42239</id>
+	<published>2025-10-02T22:58:28Z</published>
+	<updated>2025-10-03T01:44:43Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Jason Foster, reporting for MLB.com:</p>
+
+<blockquote>
+  <p>Nine-inning games during the 2025 season have, on average, clocked
+in at 2 hours, 38 minutes through Thursday, marking the third
+straight season in which the average game time was 2:40 or
+shorter.</p>
+
+<blockquote>
+  <p>Regular Season nine-inning @MLB games of three hours and thirty
+minutes (3:30) or longer:</p>
+
+<ul>
+<li>2021: 391</li>
+<li>2022: 232</li>
+<li>2023: 9</li>
+<li>2024: 7</li>
+<li>2025: 3 (through 9/25)</li>
+</ul>
+
+<p>— MLB Communications (@MLB_PR) <a href="https://twitter.com/MLB_PR/status/1971593229293568259">September 26, 2025</a></p>
+</blockquote>
+
+<p>The trend marks the first time since 1983-85 that the average
+nine-inning game time was 2:40 or shorter in three consecutive
+seasons. The average nine-inning game time was 2:36 last season
+and 2:40 in 2023.</p>
+</blockquote>
+
+<p>I disagree with many of MLB’s recent rules changes (e.g. the 10th-inning “Manfred Man” ghost runners), but the pitch clock and limit on mound visits have been unambiguous changes for the better. They don’t make the game feel hurried at all, but prior to the pitch clock, the game often felt ponderous.</p>
+
+<div>
+<a  title="Permanent link to ‘MLB Average Game Time Under Three Hours for Third Straight Year’"  href="https://daringfireball.net/linked/2025/10/02/mlb-game-times">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Folder Quick Look</title>
+	<link rel="alternate" type="text/html" href="https://apps.apple.com/app/id6753110395" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wla" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/10/02/folder-quick-look" />
+	<id>tag:daringfireball.net,2025:/linked//6.42238</id>
+	<published>2025-10-02T16:30:28Z</published>
+	<updated>2025-10-02T17:19:53Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>New Mac app from Martin Lexow, the developer behind App Ahead (which offers <a href="https://appahead.studio/">a slew of good and intriguing Mac apps</a>):</p>
+
+<blockquote>
+  <p>Preview folder and archive contents (ZIP, RAR, and more) instantly
+in macOS Quick Look. Just select a folder and press the Space bar.</p>
+</blockquote>
+
+<p>It’s just that simple. Install it from the Mac App Store — free of charge — and you can Quick Look inside archives and folders. Looks, feels, and works like a feature that ought to be built into the Finder itself. Cool.</p>
+
+<div>
+<a  title="Permanent link to ‘Folder Quick Look’"  href="https://daringfireball.net/linked/2025/10/02/folder-quick-look">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Adobe Premiere Ships for iPhone and iPad</title>
+	<link rel="alternate" type="text/html" href="https://news.adobe.com/news/2025/09/adobe-premiere-now-delivers-fast-pro-quality-video-editing-mobile" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wl9" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/10/02/adobe-premiere-iphone-ipad" />
+	<id>tag:daringfireball.net,2025:/linked//6.42237</id>
+	<published>2025-10-02T16:11:34Z</published>
+	<updated>2025-10-02T16:11:34Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Adobe:</p>
+
+<blockquote>
+  <p>Today, Adobe announced that the company is bringing its industry
+leading Adobe Premiere video editor to mobile in a powerful <a href="https://apps.apple.com/us/app/adobe-premiere-video-editor">new
+iPhone app</a> that empowers creators to make pro-quality video
+on the go. The <a href="https://www.adobe.com/products/premiere/app.html">Adobe Premiere mobile app</a> makes it fast,
+free and intuitive for creators to edit their videos with
+precision editing on a lightning-fast multi-track timeline,
+produce studio-quality audio with crystal clear voiceovers and
+perfectly timed AI sound effects, generate unique content and
+access millions of free multimedia assets, and send work directly
+to <a href="https://www.adobe.com/products/premiere.html">Premiere desktop</a> for fine tuning further on a larger
+screen. The new mobile app offers all the video editing essentials
+for free, with upgrades available for additional generative
+credits and storage.</p>
+</blockquote>
+
+<p>It’s a little thing, but from Adobe’s press release, you’d think this new mobile version of Premiere is only available for iOS, but, as you’d hope, it’s in fact a universal app that properly supports iPadOS too. The word “iPad” doesn’t appear in Adobe’s press release.</p>
+
+<p>(<a href="https://mjtsai.com/blog/2025/10/01/adobe-premiere-for-ios-and-ipados/">Via Michael Tsai</a>.)</p>
+
+<div>
+<a  title="Permanent link to ‘Adobe Premiere Ships for iPhone and iPad’"  href="https://daringfireball.net/linked/2025/10/02/adobe-premiere-iphone-ipad">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>U.K. Makes New Attempt to Access Apple Cloud Data — This Time, iCloud Backups of U.K. Citizens</title>
+	<link rel="alternate" type="text/html" href="https://arstechnica.com/tech-policy/2025/10/uk-once-again-demands-backdoor-to-apples-encrypted-cloud-storage/" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wl8" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/10/02/uk-makes-demand-for-access-to-icloud-backups" />
+	<id>tag:daringfireball.net,2025:/linked//6.42236</id>
+	<published>2025-10-02T16:05:51Z</published>
+	<updated>2025-10-02T21:28:09Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Anna Gross and Tim Bradshaw, reporting for the Financial Times (updated link to a syndicated version at Ars Technica, outside the FT’s parsimonious paywall):</p>
+
+<blockquote>
+  <p>The UK government has ordered Apple to allow access to encrypted
+cloud backups of British users, after a previous attempt to issue
+a broader demand that included US customers drew a furious
+backlash from the Trump administration.</p>
+
+<p>The UK Home Office demanded in early September that Apple create a
+backdoor into users’ cloud storage service, but stipulated that
+the order applied only to British citizens’ data, according to
+people briefed on the matter. [...]</p>
+
+<p>In February, Apple withdrew its most secure cloud storage service,
+iCloud Advanced Data Protection, from the UK.</p>
+
+<p>“Apple is still unable to offer Advanced Data Protection in the
+United Kingdom to new users,” Apple said on Wednesday. “We are
+gravely disappointed that the protections provided by ADP are not
+available to our customers in the UK given the continuing rise of
+data breaches and other threats to customer privacy.” It added:
+“As we have said many times before, we have never built a back
+door or master key to any of our products or services and we
+never will.”</p>
+</blockquote>
+
+<p>This is, as I understand it, a demand from the UK government to allow warrantless access to all UK citizens’ iCloud backups. And your iCloud backups, once decrypted, contain just about everything on your device. With Apple unable to offer Advanced Data Protection in the UK, if Apple complies, there’s no way around it. And, to make it even worse, the perversity of the UK Investigatory Powers Act is such that it’s a crime for Apple to even say they’ve been issued such a demand, to warn their UK users about it. Just brutal. The UK government could not be more wrong about this stance.</p>
+
+<div>
+<a  title="Permanent link to ‘U.K. Makes New Attempt to Access Apple Cloud Data — This Time, iCloud Backups of U.K. Citizens’"  href="https://daringfireball.net/linked/2025/10/02/uk-makes-demand-for-access-to-icloud-backups">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>OpenAI Launches Sora, a Social Feed App for AI-Generated Short Videos</title>
+	<link rel="alternate" type="text/html" href="https://www.theverge.com/ai-artificial-intelligence/788786/openais-new-ai-sora-ios-social-video-app-will-let-you-deepfake-your-friends" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wl7" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/10/02/sora-launch" />
+	<id>tag:daringfireball.net,2025:/linked//6.42235</id>
+	<published>2025-10-02T14:09:00Z</published>
+	<updated>2025-10-02T16:12:26Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Hayden Field, The Verge:</p>
+
+<blockquote>
+  <p>OpenAI has a new version of the Sora AI video generator that it
+<a href="https://www.theverge.com/2024/12/9/24317092/openai-sora-text-to-video-ai-launch">launched at the end of last year</a>, and it’s arriving today
+alongside <a href="https://apps.apple.com/us/app/sora-by-openai/id6744034028">a new social video app, also called Sora, for
+iPhones</a>. The currently invite-only app resembles TikTok with
+a feed of videos you can shuffle through. But instead of
+encouraging people to stitch together duets, it asks you to record
+short videos that anyone can spin into new AI-generated deepfakes — with your consent.</p>
+
+<p>In a briefing with reporters on Monday, employees called it the
+potential “ChatGPT moment for video generation.” The Sora app is
+currently only available to US and Canada users, with other
+countries set to follow, and when someone receives access, they
+also get four additional invites to share with friends. There’s no
+word on when an Android version might be released.</p>
+</blockquote>
+
+<p>Sora, though invitation-only at the moment, is currently #3 in the U.S. App Store. Meta’s Meta AI app, which contains, in a tab, their Vibes AI-generated video feed, is #97.</p>
+
+<p>Also, I’m sure Sora will eventually come to Android. But, to play with it now, you need an iPhone. So tell me again how Apple is behind on AI? If you have an Android phone, you’re behind on everything except what Google itself offers (which, admittedly, is some great stuff). If you have an iPhone, you’re ahead on everything except what’s baked into iOS. Including the fact that the #1 app on the App Store today is ... Google Gemini.</p>
+
+<div>
+<a  title="Permanent link to ‘OpenAI Launches Sora, a Social Feed App for AI-Generated Short Videos’"  href="https://daringfireball.net/linked/2025/10/02/sora-launch">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>America’s Pants: A Special Investigation Into the Dallas Cowboys’ Pants</title>
+	<link rel="alternate" type="text/html" href="https://uni-watch.com/2025/09/24/americas-pants-a-special-investigation-into-the-dallas-cowboys-pants/" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wl6" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/10/01/americas-pants" />
+	<id>tag:daringfireball.net,2025:/linked//6.42234</id>
+	<published>2025-10-01T16:39:15Z</published>
+	<updated>2025-10-02T16:14:24Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>This exemplary deep dive from Don Patterson at Uni Watch is a nice capper to the Cowboys’ 40-40 victory over the Green Bay Packers Sunday night.</p>
+
+<div>
+<a  title="Permanent link to ‘America’s Pants: A Special Investigation Into the Dallas Cowboys’ Pants’"  href="https://daringfireball.net/linked/2025/10/01/americas-pants">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>The Talk Show: ‘Iconic Pig Lipstick’</title>
+	<link rel="alternate" type="text/html" href="https://daringfireball.net/thetalkshow/2025/09/30/ep-431" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wl5" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/30/the-talk-show-431" />
+	<id>tag:daringfireball.net,2025:/linked//6.42233</id>
+	<published>2025-10-01T03:00:06Z</published>
+	<updated>2025-10-01T03:00:07Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>John Moltz returns to the show to talk about the iPhone 17 lineup: the iPhone 17 Pro and Pro Max, iPhone 17, and the no-number iPhone Air. Not one word about baseball, but some <em>Star Wars</em> talk may or may not have snuck in.</p>
+
+<p><audio
+    src = "https://traffic.libsyn.com/secure/daringfireball/thetalkshow-431-john-moltz.mp3"
+    controls
+    preload = "none"
+/></p>
+
+<p><strong>Sponsored by:</strong></p>
+
+<ul>
+<li><a href="https://squarespace.com/talkshow">Squarespace</a>: Save 10% off your first purchase of a website or domain using code <strong>talkshow</strong>.</li>
+<li><a href="https://sentry.io/talkshow">Sentry</a>: A real-time error monitoring and tracing platform. Get 3 months and 150,000 errors free.</li>
+<li><a href="https://factormeals.com/talkshow50off">Factor</a>: Get 50% off your first box, plus free breakfast for one year.</li>
+</ul>
+
+<div>
+<a  title="Permanent link to ‘The Talk Show: ‘Iconic Pig Lipstick’’"  href="https://daringfireball.net/linked/2025/09/30/the-talk-show-431">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Apple Started Using iPhone 17 Pros as Cameras for Friday Night Baseball Broadcasts</title>
+	<link rel="alternate" type="text/html" href="https://sixcolors.com/post/2025/09/apple-adds-iphones-to-friday-night-baseball-coverage/" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wl4" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/30/iphone-17-pro-friday-night-baseball" />
+	<id>tag:daringfireball.net,2025:/linked//6.42232</id>
+	<published>2025-09-30T12:20:04Z</published>
+	<updated>2025-09-30T12:20:05Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Jason Snell:</p>
+
+<blockquote>
+  <p>According to Apple, four iPhone 17 Pros will be positioned at
+Fenway Park — in the Green Monster, the home dugout, and roaming
+the stands. In contrast to the secrecy of last week, the
+Tigers-Red Sox game will feature a bug in the corner of the screen
+that shows off the shots that are coming from an iPhone.</p>
+
+<p>Is it a self-promotional gimmick? Sure, but Apple is paying a lot
+of money for MLB rights. Also, it’s not as if the company hasn’t
+pushed its MLB telecasts in a bunch of different ways. The Friday
+Night Baseball broadcasts look great, and have featured loads of
+helmet and body cams, a cinematic depth-of-field camera, and even
+in-stadium drone shots. Apple has probably earned at least one
+night of iPhone Pro product integration.</p>
+</blockquote>
+
+<p>I skipped through the archive of the game and the footage from the iPhones was indistinguishable from the regular cameras. If not for the (subtle!) “Shot on iPhone” bug in the top right corner, I’d never have even suspected they were shot on anything other than the regular cameras Apple has been using for these broadcasts.</p>
+
+<div>
+<a  title="Permanent link to ‘Apple Started Using iPhone 17 Pros as Cameras for Friday Night Baseball Broadcasts’"  href="https://daringfireball.net/linked/2025/09/30/iphone-17-pro-friday-night-baseball">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>The 25th Anniversary of The Onion Classic: ‘William Safire Orders Two Whoppers Junior’</title>
+	<link rel="alternate" type="text/html" href="https://theonion.com/william-safire-orders-two-whoppers-junior-1819565735/" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wl3" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/29/safire-whoppers-junior-25" />
+	<id>tag:daringfireball.net,2025:/linked//6.42231</id>
+	<published>2025-09-29T22:54:28Z</published>
+	<updated>2025-09-29T22:54:29Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>This one will never get old.</p>
+
+<div>
+<a  title="Permanent link to ‘The 25th Anniversary of The Onion Classic: ‘William Safire Orders Two Whoppers Junior’’"  href="https://daringfireball.net/linked/2025/09/29/safire-whoppers-junior-25">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	
+	<link rel="alternate" type="text/html" href="https://www.marketplace.spglobal.com/en/solutions/metadata-marketplace-(d4ef915d-a8f4-4bf5-b8da-5cbce63db415)?utm_source=display&amp;utm_medium=daringfireball&amp;utm_campaign=11921-AD-2509-GL-CT-DR-All-DCD-EDODaringFireball" />
+	<link rel="shorturl" href="http://df4.us/wl2" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/feeds/sponsors/2025/09/sp_global" />
+	<id>tag:daringfireball.net,2025:/feeds/sponsors//11.42230</id>
+	<author><name>Daring Fireball Department of Commerce</name></author>
+	<published>2025-09-29T20:14:44Z</published>
+	<updated>2025-09-29T21:13:37Z</updated>
+	<content type="html" xml:base="https://daringfireball.net/feeds/sponsors/" xml:lang="en"><![CDATA[
+<p>The future of information delivery is AI — and AI thrives on clean, trustworthy metadata. That’s why S&amp;P Global is embracing open web standards to make data more accessible and machine-readable. Explore our open data at <a href="https://dunl.org">dunl.org</a> and discover rich metadata at <a href="https://www.marketplace.spglobal.com/en/solutions/metadata-marketplace-(d4ef915d-a8f4-4bf5-b8da-5cbce63db415)?utm_source=display&amp;utm_medium=daringfireball&amp;utm_campaign=11921-AD-2509-GL-CT-DR-All-DCD-EDODaringFireball">marketplace.spglobal.com</a>.</p>
+
+<div>
+<a  title="Permanent link to ‘S&amp;P Global’"  href="https://daringfireball.net/feeds/sponsors/2025/09/sp_global">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+	<title>[Sponsor] S&amp;P Global</title></entry><entry>
+	<title>Let’s Check in With HP Employee Imran Chaudhri</title>
+	<link rel="alternate" type="text/html" href="https://www.theverge.com/tech/785363/lets-check-in-with-hp-employee-imran-chaudhri" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wl1" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/29/imran-chaudhri" />
+	<id>tag:daringfireball.net,2025:/linked//6.42229</id>
+	<published>2025-09-29T20:11:59Z</published>
+	<updated>2025-09-29T20:12:00Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Allison Johnson, The Verge:</p>
+
+<blockquote>
+  <p>Remember <a href="https://www.theverge.com/24126502/humane-ai-pin-review">the Humane AI pin</a>? And that
+serious-as-a-heart-attack <a href="https://www.theverge.com/2023/5/9/23716996/humane-wearable-ai-tech-demo-ted-video">TED talk about the future of
+computing</a>? Well, <a href="https://www.youtube.com/live/fpHCkdIg9gU?t=3885">Qualcomm featured Chaudhri</a> in its
+Snapdragon Summit keynote today, where he’s talking less about
+lasers you wear on your shirt and more about the amazing battery
+life on the OmniBook 5 series. How it started, how it’s going,
+etc. etc.</p>
+</blockquote>
+
+<p>Johnson’s link above goes directly to Chaudhri’s bit in Qualcomm’s keynote. Looks like a hostage video.</p>
+
+<div>
+<a  title="Permanent link to ‘Let’s Check in With HP Employee Imran Chaudhri’"  href="https://daringfireball.net/linked/2025/09/29/imran-chaudhri">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Drata</title>
+	<link rel="alternate" type="text/html" href="https://drata.com/daring" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wl0" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/28/drata" />
+	<id>tag:daringfireball.net,2025:/linked//6.42228</id>
+	<published>2025-09-28T22:12:42Z</published>
+	<updated>2025-09-28T22:12:43Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>My thanks to Drata for sponsoring this last week at DF. Their message is short and sweet: Automate compliance. Streamline security. Manage risk. Drata delivers the world’s most advanced Trust Management platform.</p>
+
+<div>
+<a  title="Permanent link to ‘Drata’"  href="https://daringfireball.net/linked/2025/09/28/drata">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>James Barnard on the Alignment Mistakes in HBO’s Logo</title>
+	<link rel="alternate" type="text/html" href="https://www.tiktok.com/@barnardco/video/7553888206022774018" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wkz" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/27/barnard-hbo" />
+	<id>tag:daringfireball.net,2025:/linked//6.42227</id>
+	<published>2025-09-27T20:22:11Z</published>
+	<updated>2025-09-27T20:22:11Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>A few weeks ago designer James Barnard <a href="https://www.tiktok.com/@barnardco/video/7543872443081919766">made this TikTok video</a> about what seemed to be a few mistakes in HBO’s logo. He got a bunch of crap from commenters arguing that they weren’t mistakes at all. Then he heard from the designer of the original version of the logo, from the 1970s.</p>
+
+<div>
+<a  title="Permanent link to ‘James Barnard on the Alignment Mistakes in HBO’s Logo’"  href="https://daringfireball.net/linked/2025/09/27/barnard-hbo">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+    
+    <link rel="alternate" type="text/html" href="https://daringfireball.net/2025/09/apple_on_the_digital_markets_act" />
+	<link rel="shorturl" href="http://df4.us/wky" />
+	<id>tag:daringfireball.net,2025://1.42226</id>
+	<published>2025-09-26T15:47:03Z</published>
+	<updated>2025-09-26T23:10:10Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<summary type="text">How in the world would that increase competition? iOS’s unique and exclusive features — which, yes, in many cases, are exclusive to the Apple device ecosystem — *are competition*.</summary>
+	<content type="html" xml:base="https://daringfireball.net/" xml:lang="en"><![CDATA[
+<p>Apple, “<a href="https://www.apple.com/newsroom/2025/09/the-digital-markets-acts-impacts-on-eu-users/">The Digital Markets Act’s Impacts on EU Users</a>”:</p>
+
+<blockquote>
+  <p>The DMA requires Apple to make certain features work on non-Apple
+products and apps before we can share them with our users.
+Unfortunately, that requires a lot of engineering work, and it’s
+caused us to delay some new features in the EU:</p>
+
+<ul>
+<li><p><em>Live Translation</em> with AirPods uses Apple Intelligence to let
+Apple users communicate across languages. Bringing a
+sophisticated feature like this to other devices creates
+challenges that take time to solve. For example, we designed
+Live Translation so that our users’ conversations stay private — they’re processed on device and are never accessible to Apple — and our teams are doing additional engineering work to make
+sure they won’t be exposed to other companies or developers
+either.</p></li>
+<li><p><em>iPhone Mirroring</em> lets our users see and interact with their
+iPhone from their Mac, so they can seamlessly check their
+notifications, or drag and drop photos between devices. Our
+teams still have not found a secure way to bring this feature to
+non-Apple devices without putting all the data on a user’s
+iPhone at risk. And as a result, we have not been able to bring
+the feature to the EU. [...]</p></li>
+</ul>
+
+<p>We’ve suggested changes to these features that would protect our
+users’ data, but so far, the European Commission has rejected our
+proposals. And according to the European Commission, under the
+DMA, it’s illegal for us to share these features with Apple users
+until we bring them to other companies’ products. If we shared
+them any sooner, we’d be fined and potentially forced to stop
+shipping our products in the EU.</p>
+</blockquote>
+
+<p>Live Translation with AirPods and iPhone Mirroring are both <em>amazing</em> features. And EU users are missing out on them. I think Apple structured this piece exactly right, by emphasizing first that the most direct effect of the DMA is that EU users are getting great features late — or never. And that list of features is only going to grow over time.</p>
+
+<p>Under the section “Is the DMA Achieving Its Goals?”:</p>
+
+<blockquote>
+  <p>Regulators claimed the DMA would promote competition and give
+European consumers more choices. But the law is not living up to
+those promises. In fact, it’s having some of the opposite effects:</p>
+
+<ul>
+<li><p><em>Fewer choices</em>: When features are delayed or unavailable, EU
+users don’t get the same options as users in the rest of the
+world. They lose the choice to use Apple’s latest technologies,
+and their devices fall further behind.</p></li>
+<li><p><em>Less differentiation</em>: By forcing Apple to build features and
+technologies for non-Apple products, the DMA is making the
+options available to European consumers more similar. For
+instance, the changes to app marketplaces are making iOS look
+more like Android — and that reduces choice.</p></li>
+<li><p><em>Unfair competition</em>: The DMA’s rules only apply to Apple, even
+though Samsung is the smartphone market leader in Europe, and
+Chinese companies are growing fast. Apple has led the way in
+building a unique, innovative ecosystem that others have copied — to the benefit of users everywhere. But instead of rewarding
+that innovation, the DMA singles Apple out while leaving our
+competitors free to continue as they always have.</p></li>
+</ul>
+</blockquote>
+
+<p>This is all true. But I have a better way to put this. If Apple were to just switch the iPhone’s OS from iOS to Android, these DMA conflicts would all go away. Apple’s not going to do that, of course, but to me it’s a crystallizing way of looking at it. The DMA is supposedly intended to increase “competition”, which in turn should increase consumer choice. But the easiest way for Apple to comply with the DMA would be to switch EU iPhones to Android — which, by a significant margin, already has majority mobile OS market share in the EU. <a href="https://gs.statcounter.com/os-market-share/mobile/europe/">Here’s a link to StatCounter’s mobile OS stats for Europe</a> (<a href="https://daringfireball.net/2024/03/eu_share_of_apples_revenue">which is not the same as the EU</a>, but as good a proxy as I could find). It’s two-thirds Android, one-third iOS — a 2-1 ratio.</p>
+
+<p>If Apple just shipped all EU iPhones with Android instead of iOS, all of their DMA problems would be off the table. EU iPhone users would lose <em>all</em> iOS exclusive features and Apple device <a href="https://www.apple.com/macos/continuity/">Continuity</a> integrations. EU consumers would effectively have no choice at all in mobile OSes. They’d just get to choose which brand of Android phone to buy.</p>
+
+<p>How in the world would that increase competition? iOS’s unique and exclusive features — which, yes, in many cases, are exclusive to the Apple device ecosystem — <em>are competition</em>.</p>
+
+
+
+    ]]></content>
+  <title>★ Apple on the Digital Markets Act</title></entry><entry>
+	<title>Trump Clears Way for Cronies to Buy TikTok for $14 Billion</title>
+	<link rel="alternate" type="text/html" href="https://www.nytimes.com/2025/09/25/technology/trump-tiktok-ban-deal.html" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wkx" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/25/trump-tiktok" />
+	<id>tag:daringfireball.net,2025:/linked//6.42225</id>
+	<published>2025-09-26T02:58:34Z</published>
+	<updated>2025-10-04T13:05:17Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>The New York Times:</p>
+
+<blockquote>
+  <p>President Trump signed an executive order on Thursday that would
+help clear the way for a coalition of investors to run an American
+version of TikTok, one that is separate from its Chinese owner,
+ByteDance, so that it can keep operating in the United States.</p>
+
+<p>The administration has been working for months to find non-Chinese
+investors for a U.S. TikTok company, which Vice President JD Vance
+said would be valued at $14 billion. [...]</p>
+
+<p>The White House hasn’t said exactly who would own the U.S. version
+of TikTok, but the list of potential investors includes several
+powerful allies of Mr. Trump. The software giant Oracle, whose
+co-founder is the billionaire Larry Ellison, will take a stake in
+U.S. TikTok. Mr. Trump has also said that the media mogul Rupert
+Murdoch is involved. A person familiar with the talks said the
+Murdoch investments would come through Fox Corporation.</p>
+</blockquote>
+
+<p>$14 billion is a ridiculous valuation. The whole thing is ridiculous, of course, but a fair valuation on the open market would surely be at least 10× that value. They’re not even pretending this is on the up-and-up. And it doesn’t answer the core problem at the heart of <a href="https://daringfireball.net/search/tiktok">the PAFACA Act</a>:</p>
+
+<blockquote>
+  <p>Michael Sobolik, a senior fellow at the Hudson Institute who is
+focused on U.S.-China relations, said the White House’s executive
+order would stoke those questions only because it says “the
+divestiture includes intense monitoring of software updates,
+algorithms and data flows.”</p>
+
+<p>“If you control it, why would you need intense monitoring to know
+what’s happening with it?” Mr. Sobolik said. “Monitoring the
+algorithm is not the same as controlling it. That’s the head fake the
+administration appears to be trying to pull here.”</p>
+</blockquote>
+
+<div>
+<a  title="Permanent link to ‘Trump Clears Way for Cronies to Buy TikTok for $14 Billion’"  href="https://daringfireball.net/linked/2025/09/25/trump-tiktok">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Bloomberg: ‘Intel Is Seeking an Investment From Apple as Part of Its Comeback Bid’</title>
+	<link rel="alternate" type="text/html" href="https://www.bloomberg.com/news/articles/2025-09-24/intel-is-seeking-an-investment-from-apple-as-part-of-its-comeback-bid?embedded-checkout=true" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wkv" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/25/intel-apple-bloomberg-investment" />
+	<id>tag:daringfireball.net,2025:/linked//6.42223</id>
+	<published>2025-09-25T04:12:16Z</published>
+	<updated>2025-09-25T04:13:33Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Ryan Gould and Liana Baker, reporting for Bloomberg:</p>
+
+<blockquote>
+  <p>Intel Corp. has approached Apple Inc. about securing an investment
+in the ailing chipmaker, according to people familiar with the
+matter, part of efforts to bolster a business that’s now partially
+owned by the US government.</p>
+
+<p>Apple and Intel also have discussed how to work more closely
+together, said the people, who asked not to be identified because
+the deliberations are private. The talks have been early-stage and
+may not lead to an agreement, the people said.</p>
+</blockquote>
+
+<p>Juicy notion, for sure, but I really don’t see what Intel could offer Apple. There’s <em>zero</em> chance Apple is going to go back to x86 CPUs. Apple <a href="https://www.apple.com/newsroom/2019/07/apple-to-acquire-the-majority-of-intels-smartphone-modem-business/">already bought Intel’s cellular modem business six years ago</a> (and has used that purchase to produce the excellent C1 and C1X modems now used in the iPhone 16e and iPhone Air, respectively). Intel can’t come close to TSMC for fabricating Apple’s own chip designs.</p>
+
+<p>So what’s left? <a href="https://daringfireball.net/linked/2007/08/07/stickers">Palm-rest stickers for laptops</a>?</p>
+
+<div>
+<a  title="Permanent link to ‘Bloomberg: ‘Intel Is Seeking an Investment From Apple as Part of Its Comeback Bid’’"  href="https://daringfireball.net/linked/2025/09/25/intel-apple-bloomberg-investment">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Jimmy Kimmel Returns, Ratings Soar</title>
+	<link rel="alternate" type="text/html" href="https://www.nytimes.com/2025/09/24/business/media/jimmy-kimmel-ratings.html?unlocked_article_code=1.ok8.KyCA.T_7UIDw3iCg6&amp;smid=url-share" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wku" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/24/kimmel-returns" />
+	<id>tag:daringfireball.net,2025:/linked//6.42222</id>
+	<published>2025-09-25T03:36:32Z</published>
+	<updated>2025-09-25T04:20:05Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>John Koblin, reporting for The New York Times (gift link):</p>
+
+<blockquote>
+  <p>Jimmy Kimmel’s broadcast return scored big in the ratings.</p>
+
+<p>Tuesday’s episode of “Jimmy Kimmel Live!” averaged 6.2 million
+viewers, according to preliminary figures from Nielsen. That is
+nearly four times bigger than his usual audience, even though more
+than 20 percent of ABC affiliates boycotted the show.</p>
+
+<p>The preliminary Nielsen figures are expected to grow in the coming
+days as more data comes in. It does not include streaming
+viewership.</p>
+</blockquote>
+
+<p><a href="https://www.youtube.com/watch?v=c1tjh_ZO_tY">Kimmel’s monologue last night</a> was a masterpiece. Watch it, I implore you.</p>
+
+<p>Donald Trump, jackass, <a href="https://people.com/trump-says-jimmy-kimmel-fired-for-lack-of-talent-11812506">a week ago</a>:</p>
+
+<blockquote>
+  <p>“Jimmy Kimmel was fired because he had bad ratings more than anything else [...]”</p>
+</blockquote>
+
+<p>Donald Trump, today, <a href="https://truthsocial.com/@realDonaldTrump/posts/115256938634035559">on his blog</a>:</p>
+
+<blockquote>
+  <p>I can’t believe ABC Fake News gave Jimmy Kimmel his job back. The
+White House was told by ABC that his Show was cancelled! Something
+happened between then and now because his audience is GONE, and
+his “talent” was never there. Why would they want someone back who
+does so poorly, who’s not funny, and who puts the Network in
+jeopardy by playing 99% positive Democrat GARBAGE. He is yet
+another arm of the DNC and, to the best of my knowledge, that
+would be a major Illegal Campaign Contribution. I think we’re
+going to test ABC out on this. Let’s see how we do. Last time I
+went after them, they gave me $16 Million Dollars. This one sounds
+even more lucrative. A true bunch of losers! Let Jimmy Kimmel rot
+in his bad Ratings.</p>
+</blockquote>
+
+<p>Doesn’t sound like a mob boss at all. And remember, the Republicans were the party that spent all of last year’s election cycle proclaiming to be the party of “free speech”, and opposed to “cancel culture”. Just sheer projection.</p>
+
+<p>The way to deal with bullies is to stand up to them. Give them your lunch money once, they’ll keep coming back for more.</p>
+
+<div>
+<a  title="Permanent link to ‘Jimmy Kimmel Returns, Ratings Soar’"  href="https://daringfireball.net/linked/2025/09/24/kimmel-returns">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Joe Betz, Owner of House of Prime Rib, Dies at 86</title>
+	<link rel="alternate" type="text/html" href="https://sfstandard.com/2025/09/24/san-francisco-joe-betz-owner-house-prime-rib-dies/" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wkt" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/24/betz-house-of-prime-rib" />
+	<id>tag:daringfireball.net,2025:/linked//6.42221</id>
+	<published>2025-09-25T03:06:46Z</published>
+	<updated>2025-09-25T03:48:01Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>George Kelly, The Standard:</p>
+
+<blockquote>
+  <p>Joe Betz, the owner of San Francisco’s House of Prime Rib, who
+transformed the Van Ness Avenue restaurant into an institution
+beloved by locals and visitors, has died. He was 86. […]</p>
+
+<p>Joe Betz purchased House of Prime Rib in 1985 from Lou Balaski,
+who founded it in 1949, and over four decades preserved its
+old-world charm while building it into one of the city’s most
+enduring dining destinations.</p>
+</blockquote>
+
+<p>My favorite restaurant in San Francisco, and one of my favorite restaurants anywhere in the world. Incredibly consistent excellent food, impeccable service, and a one-of-a-kind atmosphere.</p>
+
+<div>
+<a  title="Permanent link to ‘Joe Betz, Owner of House of Prime Rib, Dies at 86’"  href="https://daringfireball.net/linked/2025/09/24/betz-house-of-prime-rib">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>‘Jimmy Kimmel’s Suspension Is a Wake-Up Call’</title>
+	<link rel="alternate" type="text/html" href="https://politicalwire.com/2025/09/18/jimmy-kimmels-suspension-is-a-wake-up-call/" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wks" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/23/goddard-kimmel" />
+	<id>tag:daringfireball.net,2025:/linked//6.42220</id>
+	<published>2025-09-23T16:14:22Z</published>
+	<updated>2025-09-23T16:16:43Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Taegan Goddard, a few days ago at Political Wire:</p>
+
+<blockquote>
+  <p>The sudden <a href="https://politicalwire.com/2025/09/17/abc-pulls-jimmy-kimmel/">suspension of Jimmy Kimmel’s show</a> after threats
+from FCC chair Brendan Carr was a jolt. It looked like the next
+step in Donald Trump’s campaign to silence dissent.</p>
+
+<p>But there’s another way to see it: an opportunity.</p>
+
+<p>It’s been clear since the last election that conservatives
+dominate the independent media space. Trump rode the reach of
+right-wing podcasts to victory while Kamala Harris stuck to
+traditional television.</p>
+
+<p>But those old outlets are collapsing — and they’re never
+coming back.</p>
+
+<p>That means the stars of late-night TV — Kimmel, Colbert and
+others — could thrive outside corporate networks. They can build
+their own platforms, reach bigger audiences, and escape the grip
+of billionaires and timid executives.</p>
+</blockquote>
+
+<p>While Goddard didn’t say it in this piece, the subtext should be that building the alternative on Substack or social media is not the answer, either. The Internet is decentralized and built exactly to counter these forces our country is facing under Trump 2.0.</p>
+
+<p>The big problem is YouTube. With YouTube, Google has a centralized chokehold on video. We need a way that’s as easy and scalable to host video content, independently, as it is for written content. I don’t know what the answer to that is, technically, but we ought to start working on it with urgency.</p>
+
+<div>
+<a  title="Permanent link to ‘‘Jimmy Kimmel’s Suspension Is a Wake-Up Call’’"  href="https://daringfireball.net/linked/2025/09/23/goddard-kimmel">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>The Kimmel Joke That Got Him Suspended Was Not About Charlie Kirk, It Was About Trump Being a Ghoul</title>
+	<link rel="alternate" type="text/html" href="https://www.cnn.com/2025/09/17/business/video/abc-jimmy-kimmel-fcc-charlie-kirk-digvid" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wkr" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/23/kimmel-joke" />
+	<id>tag:daringfireball.net,2025:/linked//6.42219</id>
+	<published>2025-09-23T14:09:24Z</published>
+	<updated>2025-09-23T14:13:23Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>ABC is putting Kimmel’s show back on tonight, which is great. But I think it’s essential to watch the joke that triggered his suspension. I’m linking here to a CNN post with the full clip. CNN headlined their post “What Kimmel Said About Charlie Kirk That Yanked His Show Off Air”, and that’s basically how most news outlets have phrased it.</p>
+
+<p>But the joke wasn’t about Charlie Kirk. It wasn’t about Charlie Kirk’s assassin. It was about Donald Trump being a sociopathic ghoul. Trump was asked how he’s holding up after the death of “his friend Charlie Kirk”. You really have to watch it — a transcript of Trump’s answer does no justice to how sociopathic it was. And Kimmel called him out on it with mockery.</p>
+
+<div>
+<a  title="Permanent link to ‘The Kimmel Joke That Got Him Suspended Was Not About Charlie Kirk, It Was About Trump Being a Ghoul’"  href="https://daringfireball.net/linked/2025/09/23/kimmel-joke">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	
+	<link rel="alternate" type="text/html" href="http://drata.com/daring/?utm_source=Daring_Fireball&amp;utm_medium=display&amp;utm_campaign=18991230_fy26_comm_DG_COMM_&amp;utm_content=demo_request" />
+	<link rel="shorturl" href="http://df4.us/wkq" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/feeds/sponsors/2025/09/drata_3" />
+	<id>tag:daringfireball.net,2025:/feeds/sponsors//11.42218</id>
+	<author><name>Daring Fireball Department of Commerce</name></author>
+	<published>2025-09-23T13:58:43Z</published>
+	<updated>2025-09-23T13:58:43Z</updated>
+	<content type="html" xml:base="https://daringfireball.net/feeds/sponsors/" xml:lang="en"><![CDATA[
+<p>Automate compliance. Streamline security. Manage risk. Drata delivers the world’s most advanced Trust Management platform.</p>
+
+<div>
+<a  title="Permanent link to ‘Drata’"  href="https://daringfireball.net/feeds/sponsors/2025/09/drata_3">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+	<title>[Sponsor] Drata</title></entry><entry>
+	<title>David Letterman Slams Jimmy Kimmel Suspension</title>
+	<link rel="alternate" type="text/html" href="https://variety.com/2025/tv/news/david-letterman-slams-jimmy-kimmel-suspension-1236523616/" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wko" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/21/letterman-on-kimmel" />
+	<id>tag:daringfireball.net,2025:/linked//6.42216</id>
+	<published>2025-09-22T02:28:16Z</published>
+	<updated>2025-09-22T02:36:45Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Variety:</p>
+
+<blockquote>
+  <p>“This is misery,” Letterman said when asked about Kimmel’s
+suspension, speaking at <a href="https://www.theatlantic.com/theatlanticfestival/">The Atlantic Festival
+2025</a> Thursday
+in New York. “I feel bad about this,” he continued. “We see where
+this is all going, correct? It’s managed media. And it’s no good.
+It’s silly. It’s ridiculous. And you can’t go around firing
+somebody because you’re fearful or trying to suck up to an
+authoritarian criminal administration in the Oval Office. That’s
+just not how this works.”</p>
+
+<p>“In the world of somebody who is an authoritarian, maybe a
+dictatorship, sooner or later, everyone is going to be touched,”
+said Letterman.</p>
+
+<p>Letterman also said, “The institution of the president of the
+United States ought to be bigger than a guy doing a talk show.”
+Kimmel’s removal from late-night TV, he said, “was predicted by
+our president right after Stephen Colbert got walked off, so
+you’re telling me this isn’t premeditated at some level?” [...]</p>
+
+<p>On Wednesday, ABC suspended Kimmel’s late-night show
+“indefinitely.” That came after FCC chairman Brendan Carr just
+hours earlier threatened ABC and its affiliates if they didn’t
+“take action” on Kimmel over what he perceived as objectionable
+comments about Charlie Kirk’s killer. “We can do this the easy way
+or the hard way,” Carr said on a conservative podcast. [...]</p>
+
+<p>Regarding Carr’s comment that “we can do this the easy way or the
+hard way,” Letterman said, “Who is hiring these goons — Mario
+Puzo?”, referring to the author of <em>The Godfather</em>. Letterman said
+when he was on TV, he never got pressure from a presidential
+administration, the FCC or any other government agency about his
+on-air commentary.</p>
+</blockquote>
+
+<p>“Goons” is exactly the right word. Letterman’s commentary on this is, by far, the best I’ve seen, because it’s been the most clear-eyed. I quoted a lot above, but there’s more, so please read the whole piece. But this one extra snippet from the piece puts it on the right scale:</p>
+
+<blockquote>
+  <p>Goldberg posited that today, despite Trump’s attacks on the
+press, “we still have a free media,” to which Letterman
+responded, “Do we?”</p>
+</blockquote>
+
+<div>
+<a  title="Permanent link to ‘David Letterman Slams Jimmy Kimmel Suspension’"  href="https://daringfireball.net/linked/2025/09/21/letterman-on-kimmel">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Dan Moren’s iOS 26 Review</title>
+	<link rel="alternate" type="text/html" href="https://sixcolors.com/post/2025/09/ios-26-review-through-a-glass-liquidly/" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wkn" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/21/moren-ios-26" />
+	<id>tag:daringfireball.net,2025:/linked//6.42215</id>
+	<published>2025-09-22T02:06:49Z</published>
+	<updated>2025-09-22T02:06:50Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Dan Moren, Six Colors:</p>
+
+<blockquote>
+  <p>The redesign is more than skin deep, however. Apple has rethought
+the way some of its most fundamental interactions work. For
+example, the increasingly long horizontal popover menus that hid
+options behind an interminable scroll have morphed into a
+dual-stage design. Tapping and holding on the screen brings up a
+popover with a few common options, but it now doesn’t make you
+scroll; instead, there’s an arrow indicating more options. Tap
+that, and you’ll get a big pop-up panel of all the available
+commands in a much easier-to-read and use format. As someone who
+frequently finds himself swiping through a very long list to find
+the one command I want (and somehow, it’s always the last one),
+this is a tangible improvement.</p>
+</blockquote>
+
+<p>The big improvement here is that in the old popover (from iOS 3 — when copy and paste were finally added to iOS, and the popover typically only contained three or four items — until last year’s iOS 18), the scrolling you had to do was horizontal. And a lot of items were added to that menu over the years. And it wasn’t really <em>scrolling</em>, it was <em>panning</em>. And panning sideways through a long list of options is just a bad interaction experience. For me, a <em>lot</em> of the times I used this popover, I wanted the “Share...” command, and that was the last one, all the way on the right.</p>
+
+<p>In iOS 26’s new tap-and-hold popover, it’s a vertical menu, just like a Mac contextual menu. And you don’t really have to scroll at all most of the time, because all the contextual menu options fit on screen. And even if you do have to scroll (which happens when the keyboard is open, reducing vertical screen real estate), you don’t have to scroll much to get to the bottom.</p>
+
+<p>It’s one of the very best, most thoughtful, most useful changes in iOS 26. But also one of the most overdue: we know how contextual menus should be oriented. Vertically. We naturally make lists vertically, not horizontally. I sort of suspect Apple resisted making iOS contextual popovers vertical for so long because they didn’t want to make iOS more like a desktop computer OS.</p>
+
+<div>
+<a  title="Permanent link to ‘Dan Moren’s iOS 26 Review’"  href="https://daringfireball.net/linked/2025/09/21/moren-ios-26">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Dekáf Coffee Roasters</title>
+	<link rel="alternate" type="text/html" href="https://dekaf.com/df" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wkp" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/21/dekaf-coffee-roasters" />
+	<id>tag:daringfireball.net,2025:/linked//6.42217</id>
+	<published>2025-09-22T02:00:00Z</published>
+	<updated>2025-09-22T02:33:08Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>My thanks to Dekáf Coffee Roasters for sponsoring last week at DF. Dekáf believes that people who drink coffee for its flavor are the true connoisseurs. While other roasters treat decaf as a side project, they’ve made it their entire mission. They’re dedicated to creating exceptional decaffeinated coffee that stands toe-to-toe with the world’s finest caffeinated beans.</p>
+
+<p>I drink coffee every single day. I literally can’t remember the last day I didn’t have coffee in the morning. A few years ago, though, age started catching up to me and I stopped drinking coffee after lunch or so, lest it screw with my sleep. I really missed my afternoon coffee though. Why I didn’t think to try decaf I don’t know, but Dekáf sent me a few samples when they first sponsored DF back in April, and it’s been a revelation. In addition to fully decaffeinated roasts, they also have some half-decaffeinated roasts, and they’re absolutely delicious — my style of roast, for sure — <em>and</em> they don’t leave me jolted into the evening. Maybe you like tea, but I don’t. I like coffee, and I love being able to have a cup or two late in the afternoon again. It’s so good.</p>
+
+<p>Also, I’m a big believer that you <em>can</em> judge a book by its cover. Just look at the Dekáf brand. It’s perfect. Color, typography, artwork — so cool, so spot-on for what they do.</p>
+
+<p>Dekáf offers 9 single origins, 6 signature blends, and 4 Mizudashi cold brews (perfect for summer). All shipped to you within 24 hours of roasting. No shortcuts. You won’t believe it’s decaf. That’s the point. Even better, get 20% off with code: <strong>DF</strong>.</p>
+
+<div>
+<a  title="Permanent link to ‘Dekáf Coffee Roasters’"  href="https://daringfireball.net/linked/2025/09/21/dekaf-coffee-roasters">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+    
+    <link rel="alternate" type="text/html" href="https://daringfireball.net/2025/09/personal_note" />
+	<link rel="shorturl" href="http://df4.us/wkl" />
+	<id>tag:daringfireball.net,2025://1.42213</id>
+	<published>2025-09-19T16:44:44Z</published>
+	<updated>2025-09-19T16:46:31Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<summary type="text">Hello dear readers. Daring Fireball has been silent for the last week. I realize how unusual it is for the site to go un-updated any week of the year, let alone this particular week of the year. I’m so sorry...</summary>
+	<content type="html" xml:base="https://daringfireball.net/" xml:lang="en"><![CDATA[
+<p>Hello dear readers. Daring Fireball has been silent for the last week. I realize how unusual it is for the site to go un-updated any week of the year, let alone this particular week of the year. I’m so sorry about that, and also sorry about not being able to write this note to you sooner.</p>
+
+<p>I have been dealing with — and working through — a very personal situation for the past week. It’s OK. I’m going to be OK. But it has kept me offline for some time. Given the one-man nature of this site, that has meant that nothing has been published.</p>
+
+<p>I look forward to getting back to writing very soon. I can feel it: I will be back soon. I’m itching to go. I mean, jiminy, it’s new iPhones week. But it’ll be a few more days before I get those reviews out. In the meantime, I so profoundly appreciate your patience and understanding.</p>
+
+<p>Your faithful correspondent, <br />
+John Gruber</p>
+
+
+
+    ]]></content>
+  <title>★ Personal Note</title></entry><entry>
+	<title>iPhones 17 and the Sugar Water Trap</title>
+	<link rel="alternate" type="text/html" href="https://stratechery.com/2025/iphones-17-and-the-sugar-water-trap/" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wkk" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/10/sugar-water" />
+	<id>tag:daringfireball.net,2025:/linked//6.42212</id>
+	<published>2025-09-10T17:48:00Z</published>
+	<updated>2025-09-10T17:49:33Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Ben Thompson has a wonderful take on yesterday’s event and what it says about Apple overall:</p>
+
+<blockquote>
+  <p>Apple, to be fair, isn’t selling the same sugar water year-after-year in a zero sum war with other sugar water companies. Their sugar water is getting better, and I think this year’s seasonal concoction is particularly tasty. What is inescapable, however, is that while the company does still make new products — I definitely plan on getting new AirPod Pro 3s! — the company has, in the pursuit of easy profits, constrained the space in which it innovates.</p>
+</blockquote>
+
+<div>
+<a  title="Permanent link to ‘iPhones 17 and the Sugar Water Trap’"  href="https://daringfireball.net/linked/2025/09/10/sugar-water">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Apple’s Slate of Announcements Yesterday</title>
+	<link rel="alternate" type="text/html" href="https://www.apple.com/newsroom/" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wkj" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/10/apple-slate" />
+	<id>tag:daringfireball.net,2025:/linked//6.42211</id>
+	<published>2025-09-10T17:09:52Z</published>
+	<updated>2025-09-10T17:09:53Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Apple Newsroom posts:</p>
+
+<ul>
+<li><p><a href="https://www.apple.com/newsroom/2025/09/apple-unveils-iphone-17-pro-and-iphone-17-pro-max/">Apple unveils iPhone 17 Pro and iPhone 17 Pro Max</a></p></li>
+<li><p><a href="https://www.apple.com/newsroom/2025/09/introducing-iphone-air-a-powerful-new-iphone-with-a-breakthrough-design/">Introducing iPhone Air, a powerful new iPhone with a breakthrough design</a></p></li>
+<li><p><a href="https://www.apple.com/newsroom/2025/09/apple-debuts-iphone-17/">Apple debuts iPhone 17</a></p></li>
+<li><p><a href="https://www.apple.com/newsroom/2025/09/apple-debuts-apple-watch-series-11-featuring-groundbreaking-health-insights/">Apple debuts Apple Watch Series 11, featuring groundbreaking health insights</a></p></li>
+<li><p><a href="https://www.apple.com/newsroom/2025/09/introducing-apple-watch-ultra-3/">Introducing Apple Watch Ultra 3</a></p></li>
+<li><p><a href="https://www.apple.com/newsroom/2025/09/apple-introduces-apple-watch-se-3/">Apple introduces Apple Watch SE 3</a></p></li>
+<li><p><a href="https://www.apple.com/newsroom/2025/09/introducing-airpods-pro-3-the-ultimate-audio-experience/">Introducing AirPods Pro 3, the ultimate audio experience</a></p></li>
+<li><p><a href="https://www.apple.com/newsroom/2025/09/apple-announces-final-cut-camera-2-0/">Apple announces Final Cut Camera 2.0</a></p></li>
+</ul>
+
+<div>
+<a  title="Permanent link to ‘Apple’s Slate of Announcements Yesterday’"  href="https://daringfireball.net/linked/2025/09/10/apple-slate">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Trump Hosts Dinner Humiliating Tech CEOs</title>
+	<link rel="alternate" type="text/html" href="https://www.wsj.com/politics/trump-tech-ceo-rose-garden-dinner-1fee2de3?st=dsv89K&amp;reflink=desktopwebshare_permalink" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wki" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/10/trump-hosts-dinner-humiliating-tech-ceos" />
+	<id>tag:daringfireball.net,2025:/linked//6.42210</id>
+	<published>2025-09-10T17:04:36Z</published>
+	<updated>2025-09-10T17:04:37Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>The Wall Street Journal (gift link):</p>
+
+<blockquote>
+  <p>President Trump on Thursday led leaders of the world’s biggest
+technology companies in a version of his cabinet meetings, in
+which each participant takes a turn thanking and praising him,
+this time for his efforts to promote investments in chip
+manufacturing and artificial intelligence.</p>
+
+<p>Tech titans including Apple Chief Executive Tim Cook and OpenAI
+CEO Sam Altman said “thank you” to the president, with some laying
+out how much their companies plan to invest in the U.S.</p>
+
+<p>“Thank you for being such a pro-business, pro-innovation
+president. It’s a very refreshing change,” Altman said. “I think
+it’s going to set us up for a long period of leading the world,
+and that wouldn’t be happening without your leadership.”</p>
+
+<p>Cook said Apple is expected to invest $600 billion in the U.S. “I
+want to thank you for setting the tone such that we can make a
+major investment in the United States and have some key
+manufacturing here. I think it says a lot about your leadership
+and focus on innovation,” Cook said.</p>
+</blockquote>
+
+<p>This whole thing was so weird. I know this sounds crazy, but I genuinely think these CEOs were unaware that this dinner was going to be open to the press and filmed. They’re all unprepared and awkward. Mark Zuckerberg didn’t know what number to declare for Meta’s upcoming US infrastructure spend. <a href="https://www.youtube.com/watch?v=pRKLRtoQWyU">Tim Cook said this</a>:</p>
+
+<blockquote>
+  <p>I want to thank you for including me this evening. It’s incredible
+to be among everyone here, particularly you and the first lady.
+I’ve always enjoyed having dinner and interacting.</p>
+</blockquote>
+
+<p>Those are <em>not</em> prepared remarks. I mean, <em>what</em>? He enjoys “having dinner and interacting”?</p>
+
+<p>I’m not going to argue that any of these CEOs, Cook included, are playing this situation right. But it really shows the profound power imbalance. The president of the United States is so astonishingly powerful. And Trump is wielding that power in unprecedented ways. This entire fiasco is embarrassing, but the criticism really ought to be directed at Trump.</p>
+
+<div>
+<a  title="Permanent link to ‘Trump Hosts Dinner Humiliating Tech CEOs’"  href="https://daringfireball.net/linked/2025/09/10/trump-hosts-dinner-humiliating-tech-ceos">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Apple Announces ‘Memory Integrity Enforcement’</title>
+	<link rel="alternate" type="text/html" href="https://security.apple.com/blog/memory-integrity-enforcement/" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wkh" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/10/memory-integrity-enforcement" />
+	<id>tag:daringfireball.net,2025:/linked//6.42209</id>
+	<published>2025-09-10T16:49:37Z</published>
+	<updated>2025-09-10T16:49:38Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Apple Security Engineering and Architecture (SEAR):</p>
+
+<blockquote>
+  <p>Memory Integrity Enforcement (MIE) is the culmination of an
+unprecedented design and engineering effort, spanning half a
+decade, that combines the unique strengths of Apple silicon
+hardware with our advanced operating system security to provide
+industry-first, always-on memory safety protection across our
+devices — without compromising our best-in-class device
+performance. We believe Memory Integrity Enforcement represents
+the most significant upgrade to memory safety in the history of
+consumer operating systems.</p>
+</blockquote>
+
+<p>That is, to say the least, an incredibly bold statement. But I think it’s true. This is a fascinating post, cogently written.</p>
+
+<div>
+<a  title="Permanent link to ‘Apple Announces ‘Memory Integrity Enforcement’’"  href="https://daringfireball.net/linked/2025/09/10/memory-integrity-enforcement">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Base Storage is 256 GB Across Entire iPhone 17 Lineup</title>
+	<link rel="alternate" type="text/html" href="https://www.macrumors.com/2025/09/09/iphone-17-lineup-starts-256gb-storage/" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wkg" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/10/base-storage-256" />
+	<id>tag:daringfireball.net,2025:/linked//6.42208</id>
+	<published>2025-09-10T16:31:21Z</published>
+	<updated>2025-09-10T16:31:21Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Tim Hardwick, MacRumors:</p>
+
+<blockquote>
+  <p>For the first time, every model in Apple’s latest flagship iPhone
+17 lineup features a base 256GB storage capacity, up from the
+lowest 128GB option in the iPhone 16 series. The regular iPhone 17
+now comes in 256GB and 512GB storage options, while the all-new
+ultra-thin iPhone Air and the iPhone 17 Pro come in 256GB, 512GB,
+and 1TB capacities.</p>
+
+<p>Meanwhile, the iPhone 17 Pro Max is offered in the same three
+capacities as the iPhone Air and iPhone 17 Pro, but with the
+addition of a maximum 2TB option.</p>
+</blockquote>
+
+<p>I know it’s been 18 years, but it’s kind of wild to compare today’s storage tiers to the original iPhone’s 4, 8, and 16 GB options.</p>
+
+<div>
+<a  title="Permanent link to ‘Base Storage is 256 GB Across Entire iPhone 17 Lineup’"  href="https://daringfireball.net/linked/2025/09/10/base-storage-256">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>A Few Details Apple Didn’t Mention During Its “Awe-Dropping” Event</title>
+	<link rel="alternate" type="text/html" href="https://sixcolors.com/post/2025/09/a-few-details-apple-didnt-mention-during-its-awe-dropping-event/" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wkf" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/09/moren-awe-dropping-details" />
+	<id>tag:daringfireball.net,2025:/linked//6.42207</id>
+	<published>2025-09-10T02:34:34Z</published>
+	<updated>2025-09-10T02:46:36Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Dan Moren:</p>
+
+<blockquote>
+  <p>There were no doubt some shouts of joy when Apple mentioned it had a new version of its MagSafe Battery, but if you want one of those to boost your phone’s longevity, be aware: it’s an iPhone Air exclusive. The key’s in the name <a href="https://www.apple.com/shop/product/MGPG4AM/A/iphone-air-magsafe-battery?">“iPhone Air MagSafe Battery”</a>—Apple says it “was created exclusively for iPhone Air” and only the iPhone Air is listed in the Compatibility section. Sorry iPhone 17/17 Pro users, you’re out of luck. (Alas, the same is true of the <a href="https://www.apple.com/shop/product/MH024ZM/A/iphone-air-bumper-light-blue">new iPhone bumper case too</a>.)</p>
+</blockquote>
+
+<p>This is a bit of a bummer. I really love Apple’s old MagSafe Battery Pack. (I’m using one right now, after a long day with lots of phone usage.) I love that they’re making a new one, but it literally only fits on the iPhone Air. It’s so tall that it doesn’t fit under the camera plateau on any other iPhone, new or old.</p>
+
+<p>Another tidbit I didn’t notice during the keynote: it’s not the “iPhone 17 Air”. It’s just “iPhone Air”, no number. I’m not sure what to make of that. If they release a new one next year, will that be the iPhone Air 2?</p>
+
+<div>
+<a  title="Permanent link to ‘A Few Details Apple Didn’t Mention During Its “Awe-Dropping” Event’"  href="https://daringfireball.net/linked/2025/09/09/moren-awe-dropping-details">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Another Dyson Presentation</title>
+	<link rel="alternate" type="text/html" href="https://m.youtube.com/watch?v=w9xTE2EuAt8" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wke" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/08/dyson" />
+	<id>tag:daringfireball.net,2025:/linked//6.42206</id>
+	<published>2025-09-08T16:47:00Z</published>
+	<updated>2025-09-08T16:52:23Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>I loved watching this. My takeaway: don’t just say what it does, explain how it does what it does.</p>
+
+<div>
+<a  title="Permanent link to ‘Another Dyson Presentation’"  href="https://daringfireball.net/linked/2025/09/08/dyson">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>TextJam</title>
+	<link rel="alternate" type="text/html" href="https://textjam.com/show/demo?df" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wkd" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/07/textjam" />
+	<id>tag:daringfireball.net,2025:/linked//6.42205</id>
+	<published>2025-09-07T23:05:55Z</published>
+	<updated>2025-09-08T18:18:07Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>My thanks to TextJam for sponsoring this past week at DF. TextJam just launched last week, it’s a remarkable “1.0” release — a multi-player text editor / word processor with a novel twist on how humans interact with AI. TextJam introduces the metaphors of “pen” mode for writing in ink, when you know exactly what words you want to write, with “pencil” mode for text you want to use a prompt or just a simple dashed-off starting point for AI assistance. It sounds like it makes intuitive sense, and when you actually try it, it <em>feels</em> even more natural. I really love this metaphor of ink vs. pencil. It leaves you, the writer, in control, but also gives all the assistance you want.</p>
+
+<p>TextJam also has other very clever ideas, like using “pinch” multitouch gestures for resizing text — pinch in to get AI suggestions for making the selected text shorter, pinch out to expand it. TextJam has integrations with all of the most popular LLM systems: ChatGPT, Claude, Gemini, Grok, Llama, and more.</p>
+
+<p>And that’s just talking about the cutting-edge AI-type features. TextJam is also a great collaborative editor, where you and your teammates can work together on the same document with really clever interface elements who made — or is currently in the processing of making — which changes.</p>
+
+<p>You can say, “<em>Well, why don’t I just use Google Docs for this?</em>” Right? My answer is just look at the two of them. Google Docs is like 98 percent stuff no one uses and therefore everyone ignores. TextJam is focused on the features people actually use and understand. It just looks and feels so much more more comfortable and stylish.</p>
+
+<p><a href="https://textjam.com/show/demo?df">Try it today for free</a>.</p>
+
+<div>
+<a  title="Permanent link to ‘TextJam’"  href="https://daringfireball.net/linked/2025/09/07/textjam">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>A Cynical Read on Anthropic’s Book Settlement</title>
+	<link rel="alternate" type="text/html" href="https://spyglass.org/cynical-read-on-anthropics-book-settlement/" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wkc" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/06/siegler-cynical-read" />
+	<id>tag:daringfireball.net,2025:/linked//6.42204</id>
+	<published>2025-09-06T18:34:55Z</published>
+	<updated>2025-09-06T18:38:25Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>MG Siegler, writing at Spyglass:</p>
+
+<blockquote>
+  <p>And so you can’t help but wonder if part of the equation in this settlement wasn’t decidedly more cynical. Fresh off <a href="https://spyglass.org/signal-the-google-antitrust-nuance/#:~:text=%F0%9F%A7%A0%20Anthropic%27s%20%2413B,%5BBloomberg%20%F0%9F%94%92%5D">a new massive fundraise</a> — one in which they raised <a href="https://www.bloomberg.com/news/articles/2025-09-02/anthropic-completes-new-funding-round-at-183-billion-valuation?embedded-checkout=true&amp;ref=spyglass.org">far more</a> than they were initially targeting, I might add — Anthropic has a lot of money. More than perhaps <a href="https://spyglass.org/openai-ipo-ish/">all but one of their competitors</a> on the startup side. By settling for $1.5B, is Anthropic sort of pulling up a drawbridge, making it so that other startups can’t possibly come into their castle? I mean, am I crazy?</p>
+
+<p>I’m not so sure I am. At $1.5B, there are only a handful of companies that could afford to pay such fines. Certainly OpenAI is one. Maybe xAI. And of course all the tech giants like Apple, Amazon, Microsoft, Google, <a href="https://spyglass.org/meta-operation-kick-puppies/">and Meta</a>. But could any other startup that has done any level of model training with such data? Probably not.</p>
+</blockquote>
+
+<p>Kind of dastardly when you think about it this way.</p>
+
+<div>
+<a  title="Permanent link to ‘A Cynical Read on Anthropic’s Book Settlement’"  href="https://daringfireball.net/linked/2025/09/06/siegler-cynical-read">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Anthropic to Pay $1.5 Billion to Authors in Landmark AI Settlement</title>
+	<link rel="alternate" type="text/html" href="https://www.theverge.com/anthropic/773087/anthropic-to-pay-1-5-billion-to-authors-in-landmark-ai-settlement" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wkb" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/05/anthropic-copyright-settlement" />
+	<id>tag:daringfireball.net,2025:/linked//6.42203</id>
+	<published>2025-09-05T21:22:46Z</published>
+	<updated>2025-09-06T00:14:05Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Hayden Field, reporting for The Verge:</p>
+
+<blockquote>
+  <p>In what’s potentially the first major payout to creatives whose work was used to train AI systems, Anthropic has reached an agreement to pay “at least” a staggering $1.5 billion, plus interest, to authors to settle its class-action lawsuit. The amount breaks down to smaller payouts expected to be approximately $3,000 per book or work. Lawyers for the plaintiffs said it’s “believed to be the largest publicly reported recovery in the history of US copyright litigation.”</p>
+</blockquote>
+
+<div>
+<a  title="Permanent link to ‘Anthropic to Pay $1.5 Billion to Authors in Landmark AI Settlement’"  href="https://daringfireball.net/linked/2025/09/05/anthropic-copyright-settlement">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Atlassian Acquires The Browser Company for $610 Million</title>
+	<link rel="alternate" type="text/html" href="https://www.theverge.com/web/770947/browser-company-arc-dia-acquired-atlassian" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wka" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/04/atlassian-the-browser-company" />
+	<id>tag:daringfireball.net,2025:/linked//6.42202</id>
+	<published>2025-09-04T21:35:42Z</published>
+	<updated>2025-09-04T22:15:34Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>David Pierce, writing for The Verge:</p>
+
+<blockquote>
+  <p>Mike Cannon-Brookes, the CEO of enterprise software giant
+<a href="https://www.atlassian.com/">Atlassian</a>, was one of the first users of <a href="https://www.theverge.com/23462235/arc-web-browser-review">the Arc
+browser</a>. Over the last several years, he has been a prolific
+bug reporter and feature requester. Now he’ll own the thing:
+Atlassian is acquiring The Browser Company, the New York-based
+startup that makes both Arc and the <a href="https://www.theverge.com/web/685232/dia-browser-ai-arc">new AI-focused Dia
+browser</a>. Atlassian is paying $610 million in cash for The
+Browser Company, and plans to run it as an independent entity.</p>
+
+<p>The conversations that led to the deal started about a year ago,
+says Josh Miller, The Browser Company’s CEO. Lots of Atlassian
+employees were using Arc, and “they reached out wondering, how
+could we get more enterprise-ready?” Miller says. Big companies
+require data privacy, security, and management features in the
+software they use, and The Browser Company didn’t offer enough
+of them.</p>
+</blockquote>
+
+<p>I get it. Later in the same article, there’s this:</p>
+
+<blockquote>
+  <p>As for what this all means for The Browser Company’s browsers,
+it’s still too early to say for sure. Miller promises no
+favored-nation features for Atlassian products, nor any Microsoft
+Edge-style popups begging you to sign up for Jira. Miller says the
+team is even more committed to being a truly cross-platform
+product, and that Windows in particular is about to get a lot more
+attention.</p>
+</blockquote>
+
+<p>But “<em>How could we get more enterprise-ready?</em>” has never been a north-star principle for great user-focused software. I personally have never seen the appeal of Arc or Dia, but Safari truly speaks to me and my taste. Alternative browsers, by definition, are meant for people who are dissatisfied with existing browsers. So while I don’t use Arc or Dia, I’ve always been rooting for The Browser Company. I even dig the company name.</p>
+
+<p>But this seems like bad news. I just don’t see how Atlassian/Jira DNA can possibly be a good thing to inject into an innovative user-focused web browser.</p>
+
+<div>
+<a  title="Permanent link to ‘Atlassian Acquires The Browser Company for $610 Million’"  href="https://daringfireball.net/linked/2025/09/04/atlassian-the-browser-company">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Investors Score the US-v.-Google Remedies Ruling a Win for Google and Apple</title>
+	<link rel="alternate" type="text/html" href="https://www.wsj.com/tech/judge-bars-google-from-exclusive-search-deals-orders-data-sharing-e65a2191?st=VJ33DJ&amp;reflink=desktopwebshare_permalink" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wk9" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/04/investors-google-apple-mehta-decision" />
+	<id>tag:daringfireball.net,2025:/linked//6.42201</id>
+	<published>2025-09-04T21:00:46Z</published>
+	<updated>2025-09-04T21:02:41Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Dave Michaels and Katherine Blunt, reporting for The Wall Street Journal (gift link):</p>
+
+<blockquote>
+  <p>“There are strong reasons not to jolt the system and to allow
+market forces to do the work,” Mehta wrote.</p>
+
+<p>Wall Street analysts scored the ruling a huge win for Google and
+Apple since it allowed an existing arrangement to continue in
+which Google pays Apple more than $20 billion a year to be the
+default search provider on the Safari browser.</p>
+</blockquote>
+
+<p>I’m picking nits here, but I think part of the ruling is that Google can no longer pay to be the default search engine. And, in my opinion, they never needed to, and never should have put that into their contracts for these deals. They’re just paying Apple (and Mozilla, and Samsung, and others) for the actual search traffic that goes to Google from those companies’ browsers. It’s up to Apple whether Google is the <em>default</em> Safari search engine (which it is, and will continue to be). It just won’t be in the terms of the deal that Google search has to be the default.</p>
+
+<blockquote>
+  <p>The ruling paves the way for the two companies to partner further
+on AI-related services on Apple devices, analysts said. Apple
+currently has a deal with OpenAI to integrate ChatGPT into various
+iPhone services. Apple and Google have had talks about striking a
+similar deal for Google’s AI system called Gemini.</p>
+</blockquote>
+
+<p>I wonder if this antitrust ruling was the holdup on Apple announcing Gemini as an Apple Intelligence partner? Apple, famously, almost never talks about future plans, but at last year’s WWDC, <a href="https://techcrunch.com/2024/06/10/apple-confirms-plans-to-work-with-googles-gemini-in-the-future/">Craig Federighi made conspicuous mention</a> of Google Gemini as a potential Apple Intelligence partner — and now here we are 14 months later and it hasn’t yet happened.</p>
+
+<p>Also, re: this decision being largely a win for Google — <a href="https://daringfireball.net/2025/04/is_chrome_even_a_sellable_asset">it just never made sense to me that Chrome even is a sellable asset</a>.</p>
+
+<div>
+<a  title="Permanent link to ‘Investors Score the US-v.-Google Remedies Ruling a Win for Google and Apple’"  href="https://daringfireball.net/linked/2025/09/04/investors-google-apple-mehta-decision">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Instagram Finally Launches an iPad App</title>
+	<link rel="alternate" type="text/html" href="https://about.instagram.com/blog/announcements/instagram-for-ipad/" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wk8" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/04/instagram-ipad" />
+	<id>tag:daringfireball.net,2025:/linked//6.42200</id>
+	<published>2025-09-04T20:22:25Z</published>
+	<updated>2025-09-04T20:22:26Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>There are finallys, and there are <em>finallys</em>. Apple shipped the original iPad in April 2010. Instagram shipped in October 2010 — <a href="https://www.idownloadblog.com/2012/04/19/phil-schiller-quits-instagram/">and was iPhone-exclusive until 2012</a>. That Instagram didn’t ship a native iPad version of its app until now is really one of the strangest things in tech. But here it is.</p>
+
+<p>One significant difference from Instagram on phones is that on iPad, it defaults to the Reels view, and you have to tap below Reels in the sidebar to get to your following timeline. Adam Mosseri explains their thinking behind this <a href="https://www.instagram.com/reel/DOJWGJyETYq/?igsh=MWFwMXNsdWFwNHp1ZQ==">in this Reel</a> (natch).</p>
+
+<div>
+<a  title="Permanent link to ‘Instagram Finally Launches an iPad App’"  href="https://daringfireball.net/linked/2025/09/04/instagram-ipad">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Google Avoids Harshest Penalties in Search Monopoly Ruling</title>
+	<link rel="alternate" type="text/html" href="https://www.nytimes.com/2025/09/02/technology/google-search-antitrust-decision.html" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wk7" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/04/google-avoids-harshest-penalties-in-search-monopoly-ruling" />
+	<id>tag:daringfireball.net,2025:/linked//6.42199</id>
+	<published>2025-09-04T19:48:38Z</published>
+	<updated>2025-09-04T19:48:38Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>David McCabe, reporting for The New York Times:</p>
+
+<blockquote>
+  <p>Google must hand over its search results and some data to rival
+companies but does not need to break itself up by selling its
+Chrome web browser, a federal judge ruled on Tuesday. The
+decision, by Judge Amit P. Mehta of the U.S. District Court for
+the District of Columbia, falls short of the sweeping changes
+proposed by the government to rein in the power of Silicon Valley.</p>
+
+<p>Judge Mehta said in the 223-page ruling that Google must share
+some of its search data with “qualified competitors” to resolve
+its monopoly. The Justice Department had asked the judge to force
+the company to share even more of its data, arguing it was key to
+Google’s dominance.</p>
+
+<p>Judge Mehta also put restrictions on payments that Google uses to
+ensure its search engine gets prime placement in web browsers and
+on smartphones. But he stopped short of banning those payments
+entirely and did not grant the government’s request that Google be
+forced to sell Chrome, which the government said was necessary to
+remedy the company’s power as a search monopoly.</p>
+
+<p>“Notwithstanding this power, courts must approach the task of
+crafting remedies with a healthy dose of humility,” Judge Mehta
+said in Tuesday’s decision. “This court has done so.”</p>
+</blockquote>
+
+<p>No forced divestiture of Chrome or Android, and Google is allowed to continue making traffic acquisition cost payments to companies like Apple (for search in Safari) and Mozilla (for search in Firefox). The decision seems very reasonable to me. And while <a href="https://storage.courtlistener.com/recap/gov.uscourts.dcd.223205/gov.uscourts.dcd.223205.1436.0_4.pdf">the entire ruling</a> is 223 pages, Judge Mehta included a good summary at the front. You can get a feel for it just by reading the first few pages.</p>
+
+<div>
+<a  title="Permanent link to ‘Google Avoids Harshest Penalties in Search Monopoly Ruling’"  href="https://daringfireball.net/linked/2025/09/04/google-avoids-harshest-penalties-in-search-monopoly-ruling">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Bernie Sanders: Kennedy Must Resign</title>
+	<link rel="alternate" type="text/html" href="https://www.nytimes.com/2025/08/30/opinion/bernie-sanders-robert-f-kennedy-jr-resign-hhs.html" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wk5" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/01/sanders-rfk-jr-resign" />
+	<id>tag:daringfireball.net,2025:/linked//6.42197</id>
+	<published>2025-09-01T22:16:02Z</published>
+	<updated>2025-09-01T22:16:02Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>Bernie Sanders, in a NYT op-ed:</p>
+
+<blockquote>
+  <p>Robert F. Kennedy Jr., the secretary of health and human services,
+is endangering the health of the American people now and into the
+future. He must resign.</p>
+
+<p>Mr. Kennedy and the rest of the Trump administration tell us, over
+and over, that they want to Make America Healthy Again. That’s a
+great slogan. I agree with it. The problem is that since coming
+into office President Trump and Mr. Kennedy have done exactly the
+opposite.</p>
+</blockquote>
+
+<p>Powerful and to the point. Sanders, unlike the nine former CDC directors whose joint op-ed ran the next day, doesn’t pull punches. But there’s no point demanding Kennedy resign, because he won’t. Sanders, and the rest of us, should call on Trump to fire him. The buck stops with Trump. Trump fires his appointees all the time. <a href="https://en.wikipedia.org/wiki/List_of_short-tenure_Donald_Trump_political_appointments">Almost no one lasted long</a> in the Trump 1.0 administration, and it’s unlikely anyone will last long in the Trump 2.0 administration. (Including, perhaps, Trump himself, <a href="https://www.doomsdayscenario.co/p/it-s-time-to-have-a-serious-conversation-about-trump-s-health">who is clearly unwell</a>.) Kennedy ought to be the first to go.</p>
+
+<p>Trump smells it too, hence <a href="https://truthsocial.com/@realDonaldTrump/posts/115128985245605660">this “both sides” post on his blog this morning</a>. Public opinion is strongly against this abject vaccine quackery.</p>
+
+<div>
+<a  title="Permanent link to ‘Bernie Sanders: Kennedy Must Resign’"  href="https://daringfireball.net/linked/2025/09/01/sanders-rfk-jr-resign">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>Nine Former Directors of the CDC: ‘RFK Jr. Is Endangering Every American’s Health’</title>
+	<link rel="alternate" type="text/html" href="https://www.nytimes.com/2025/09/01/opinion/cdc-leaders-kennedy.html" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wk4" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/01/former-cdc-directors" />
+	<id>tag:daringfireball.net,2025:/linked//6.42196</id>
+	<published>2025-09-01T22:05:14Z</published>
+	<updated>2025-09-01T22:05:14Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>William Foege, William Roper, David Satcher, Jeffrey Koplan, Richard Besser, Tom Frieden, Anne Schuchat, Rochelle P. Walensky, and Mandy K. Cohen — all of them former directors of the CDC, under every president from Jimmy Carter to Trump — in a co-bylined op-ed for the NYT:</p>
+
+<blockquote>
+  <p>What the health and human services secretary, Robert F. Kennedy
+Jr., has done to the C.D.C. and to our nation’s public health
+system over the past several months — culminating in his decision
+to fire Dr. Susan Monarez as C.D.C. director days ago — is unlike
+anything we had ever seen at the agency and unlike anything our
+country had ever experienced.</p>
+
+<p>Mr. Kennedy has fired thousands of federal health workers and
+<a href="https://www.nytimes.com/2025/04/02/health/cdc-layoffs-kennedy.html">severely weakened</a> programs designed to protect Americans
+from cancer, heart attacks, strokes, lead poisoning, injury,
+violence and more. Amid the largest measles outbreak in the United
+States in a generation, he’s <a href="https://www.nytimes.com/2025/05/02/health/measles-treatments-vaccines-kennedy.html">focused on</a> unproven
+treatments while downplaying vaccines. He <a href="https://www.nytimes.com/2025/08/05/health/rfk-jr-vaccine-funding.html">canceled</a>
+investments in promising medical research that will leave us ill
+prepared for future health emergencies. He <a href="https://www.nytimes.com/2025/06/11/well/vaccines-cdc-rfk-jr.html">replaced</a>
+experts on federal health advisory committees with unqualified
+individuals who share his dangerous and unscientific views. He
+announced the end of U.S. support for global vaccination programs
+that protect millions of children and keep Americans safe,
+<a href="https://www.statnews.com/2025/07/02/rfk-jr-vaccines-former-cdc-director-tom-frieden-says-kennedy-mangled-science-in-gavi-decision/">citing</a> flawed research and making inaccurate statements.
+And he <a href="https://x.com/SecKennedy/status/1940089073391018352">championed</a> federal legislation that will cause
+millions of people with health insurance through Medicaid to
+<a href="https://www.cbo.gov/system/files/2025-06/Wyden-Pallone-Neal_Letter_6-4-25.pdf">lose</a> their coverage. Firing Dr. Monarez — which led to
+the resignations of top C.D.C. officials — adds considerable fuel
+to this raging fire. [...]</p>
+
+<p>This is unacceptable, and it should alarm every American,
+regardless of political leanings.</p>
+</blockquote>
+
+<p>It’s good that they’re speaking up, but it’s too mealy-mouthed. What’s going on at HHS under Kennedy isn’t merely “unacceptable” and “alarming”. It’s outrageous and shocking.</p>
+
+<div>
+<a  title="Permanent link to ‘Nine Former Directors of the CDC: ‘RFK Jr. Is Endangering Every American’s Health’’"  href="https://daringfireball.net/linked/2025/09/01/former-cdc-directors">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+	<title>The Talk Show: ‘Ersatz PopSocket’</title>
+	<link rel="alternate" type="text/html" href="https://daringfireball.net/thetalkshow/2025/08/31/ep-430" />
+	<link rel="shorturl" type="text/html" href="http://df4.us/wk3" />
+	<link rel="related" type="text/html" href="https://daringfireball.net/linked/2025/09/01/the-talk-show-430" />
+	<id>tag:daringfireball.net,2025:/linked//6.42195</id>
+	<published>2025-09-01T19:30:03Z</published>
+	<updated>2025-09-01T19:30:03Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<content type="html" xml:base="https://daringfireball.net/linked/" xml:lang="en"><![CDATA[
+<p>For your holiday listening enjoyment: Special guest Andru Edwards joins the show. Topics include Google’s Pixel 10 event and the Pixel 10 family of devices, AI’s effect on computational photography, foldable phones, and some speculation on Apple’s September 9 “Awe Dropping” event.</p>
+
+<p><audio
+    src = "https://traffic.libsyn.com/secure/daringfireball/thetalkshow-430-andru-edwards.mp3"
+    controls
+    preload = "none"
+/></p>
+
+<p><strong>Sponsored by:</strong></p>
+
+<ul>
+<li><a href="https://squarespace.com/talkshow">Squarespace</a>: Save 10% off your first purchase of a website or domain using code <strong>talkshow</strong>.</li>
+<li><a href="https://sentry.io/talkshow">Sentry</a>: A real-time error monitoring and tracing platform. Get 3 months and 150,000 errors free.</li>
+<li><a href="https://notion.com/talkshow">Notion</a>: The best AI tool for work, with your notes, docs, and projects in one space.</li>
+</ul>
+
+<div>
+<a  title="Permanent link to ‘The Talk Show: ‘Ersatz PopSocket’’"  href="https://daringfireball.net/linked/2025/09/01/the-talk-show-430">&nbsp;★&nbsp;</a>
+</div>
+
+	]]></content>
+  </entry><entry>
+    
+    <link rel="alternate" type="text/html" href="https://daringfireball.net/2025/08/macos_26_tahoes_dead_canary_utility_app_icons" />
+	<link rel="shorturl" href="http://df4.us/wjm" />
+	<id>tag:daringfireball.net,2025://1.42178</id>
+	<published>2025-08-26T00:02:43Z</published>
+	<updated>2025-10-04T13:34:55Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<summary type="text">These are the not the work of carpenters who care about the backs of the cabinets they’re building. These icons are so bad, they look like the work of untrained “How hard can it be?” dilettante carpenters who only last a few days on the job before sawing off one of their own fingers.</summary>
+	<content type="html" xml:base="https://daringfireball.net/" xml:lang="en"><![CDATA[
+<p>MacOS has shipped with a collection of “utility” apps since the prehistoric era of classic Mac OS. A good rule of thumb for what makes an app a “utility” is that it’s a tool for doing something <em>to</em> or <em>about</em> your computer. Ever since Mac OS X 10.0, most of these apps have been neatly filed away in <em>/Applications/Utilities/</em>. Others — some because they’re obscure (e.g. Ticket Viewer), some because they’re effectively deprecated (e.g. DVD Player, whose copyright date in MacOS 15 Sequoia is 2019), and some because they present themselves, when launched, not as apps but as system-level features (e.g. About This Mac) — are tucked away in <em>/System/Library/CoreServices/</em> or <em>/System/Library/CoreServices/Applications/</em>.</p>
+
+<p><a href="https://mastodon.social/@BasicAppleGuy/115089810537348465">Basic Apple Guy posted a screenshot to Mastodon</a> comparing the current MacOS 15 icons for four of these utilities (Disk Utility, Expansion Slot Utility, Wireless Diagnostics, and AppleScript Utility) to their new icons in MacOS 26 Tahoe, beta 7 (click to enlarge for detail):</p>
+
+<p><a href="https://daringfireball.net/misc/2025/08/tahoe-utility-icons-via-basic-apple-guy.jpeg" class="noborder">
+  <img
+    src = "https://daringfireball.net/misc/2025/08/tahoe-utility-icons-via-basic-apple-guy.jpeg"
+    alt = "Screenshots of the MacOS 15 and MacOS 26 (beta 7) icons for Disk Utility, Expansion Slot Utility, Wireless Diagnostics, and AppleScript Utility."
+    width = 500
+  /></a></p>
+
+<p>I don’t think the old icons for these apps from MacOS 15 were particularly good — Apple has mostly lost its “<a href="https://mastodon.social/@BasicAppleGuy/115050148901528749">icons</a> <a href="https://mastodon.social/@BasicAppleGuy/115072885331562510">look</a> <a href="https://mastodon.social/@BasicAppleGuy/114948306713250918">cool</a>” game. But the new ones in MacOS 26 Tahoe are objectively terrible. The only one of this bunch that’s maybe sort of OK is Wireless Diagnostics. They all look like placeholder icons made by a developer who would be the first to admit that they’re not an artist. Disk Utility, which is an important app, doesn’t even look like it involves a disk.</p>
+
+<p>These new icons all use the same “wrench” motif, which is a lazy, limiting concept to start with. Tahoe, at the system level, enforces a squircle shape on all application icons. Apps that haven’t been updated with Tahoe-compliant everything-fits-in-a-squircle icons are put in “<a href="https://9to5mac.com/2025/08/08/macos-tahoe-fix-gray-box-icons/">squircle jail</a>” — their non-Tahoe-compliant icons are shrunk and placed atop a drab gray Tahoe squircle background, to force them into squircle compliance. But these Apple utility apps have an entire sub-motif — inside their base squircle shape is a large wrench fitted against a bolt. Only inside the bolt — which is inside the wrench’s jaws, which wrench is inside the squircle — goes the part of the icon that identifies the app itself. So maybe like 10 percent of the area of the icon is the area where the app can show something that identifies its purpose.</p>
+
+<p>So the entire concept for these icons sucks. But the conceptual execution sucks too. The wrench is incredibly stupid-looking. Whoever drew it has obviously never used an open-end wrench because the jaws on the wrench head are <em>way</em> too thin. They’d break off under any significant torque. Just look at a real-life wrench, or just <a href="https://mastodon.social/@BasicAppleGuy/115092733884236020">look at the wrench heads in the older MacOS icons</a> (or Apple’s 🔧 emoji, for that matter).</p>
+
+<p>Individually the icons mostly suck too:</p>
+
+<ul>
+<li><p>Disk Utility — a very important app — has an icon that’s just an Apple logo (inside the bolt that’s inside the wrench that’s inside the squircle). Not a hard disk, not an external drive, not an SD card. Just an Apple logo. If I just showed you this icon without telling you which app it represented, how in the world could you guess what it is? Even if you know the “Apple utility app icon” motif of the big dumb wrench and bolt, the best you could guess is “a utility app for something Apple-related” which, for an Apple computer, could be anything.</p></li>
+<li><p>Expansion Slot Utility — This app only runs on Mac Pros because Mac Pros are the only Macs with expansion slots. So the old icon naturally shows a Mac Pro. The new icon shows ... three rectangular empty sockets?</p></li>
+<li><p>AppleScript Utility — A fine concept for this icon (within the confines of the terrible wrench-and-bolt utility icon concept). Everyone who knows AppleScript knows the scroll that represents AppleScript scripts. So just put the iconic AppleScript scroll in the bolt in the wrench in the squircle. But here, the placement of the scroll is botched — it’s rotated a few degrees counterclockwise. It makes the scroll look like it’s falling over. Here’s how the scroll is canonically oriented, via the glyphs in SF Symbols:</p>
+
+<p><img
+  src = "https://daringfireball.net/misc/2025/08/applescript-icons-sf-symbols.png"
+  alt = "The “applescript” and “applescript.fill” icon glyphs from the SF Symbols font."
+/></p>
+
+<p>and via the default icon for a script application (with a line added showing the center):</p>
+
+<p><img
+  src = "https://daringfireball.net/misc/2025/08/macos-15-script-application-icon.png"
+  alt = "The default application for an AppleScript “script application”, with a vertical orange line showing the center."
+  width = 440
+/></p>
+
+<p>But here’s a close-up of the Tahoe AppleScript Utility icon, with a center line added:</p>
+
+<p><img
+  src = "https://daringfireball.net/misc/2025/08/tahoe-applescript-utility-icon-drunk.png"
+  alt = "Close-up of the MacOS 26 Tahoe icon for AppleScript Utility, with a center line added to show that the script “scroll” is tilted incorrectly."
+/></p>
+
+<p>It’s wrong.</p></li>
+</ul>
+
+<p>These are not the work of carpenters <a href="https://www.goodreads.com/quotes/445621-when-you-re-a-carpenter-making-a-beautiful-chest-of-drawers">who care about the backs of the cabinets</a> they’re building. These icons are so bad, they look like the work of untrained “How hard can it be?” dilettante carpenters who only last a few days on the job before sawing off one of their own fingers. The whole collection looks like the work from someone with no artistic ability <em>nor</em> an eye for detail. From <em>Apple</em>, of all companies.</p>
+
+<p>Is it a big deal in the grand scheme of things that the icons for these seldom-used utility apps have gone to shit? No. But consider the proverbial canary in a coal mine. The problem isn’t that one little bird has died. The problem is that the bird might be dead because the whole mine is filling with deadly carbon monoxide or highly flammable methane gas. The icons in <em>/Applications/Utilities/</em> in MacOS 26 Tahoe represent a folder full of dead canaries. </p>
+
+
+
+    ]]></content>
+  <title>★ MacOS 26 Tahoe’s Dead-Canary Utility App Icons</title></entry><entry>
+    
+    <link rel="alternate" type="text/html" href="https://daringfireball.net/2025/08/msnbc_ms_now_rebranding" />
+	<link rel="shorturl" href="http://df4.us/wjd" />
+	<id>tag:daringfireball.net,2025://1.42169</id>
+	<published>2025-08-21T01:20:10Z</published>
+	<updated>2025-08-27T22:16:28Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<summary type="text">The oddest part about the whole situation is that CNBC is being spun out into Versant, too, but while they’re losing the NBC peacock logo, they’re just keeping their name, unchanged.</summary>
+	<content type="html" xml:base="https://daringfireball.net/" xml:lang="en"><![CDATA[
+<p><a href="https://www.axios.com/2025/08/18/msnbc-rebrand-ms-now-versant">Sara Fischer, Axios</a>:</p>
+
+<blockquote>
+  <p>MSNBC, the progressive cable network owned by NBCUniversal, is
+rebranding to MS NOW, an acronym that stands for My Source for
+News, Opinion and the World.</p>
+
+<p>The rebrand is part of a wider effort by NBCU to create a
+distinction between the cable networks it plans to spin out and
+the remaining NBCU parent company. As part of the rebrand, select
+cable networks that will be spun out into <a href="https://www.axios.com/2025/06/10/all-eyes-on-versant-media-trends">Versant</a>, including
+CNBC, Golf Channel, GolfNow, MSNBC and SportsEngine, will all
+drop the iconic peacock logo that has for decades served as
+NBCU’s logo.</p>
+</blockquote>
+
+<p>There’s a lot to unpack here. First, “Versant” itself is a pretty bad name (feels so vague — seems like the name of a fake company in a movie or TV show) so it’s no surprise that the same nitwits are botching Versant’s rebranded properties. But given that NBCUniversal is apparently forcing MSNBC to take the “NBC” out of its name, “MSNOW” isn’t a bad new name. But it’s not a <em>good</em> new name either. And they’re apparently using a space: “MS NOW”, yet <a href="https://variety.com/2025/tv/news/msnbc-new-name-ms-now-1236491621/">also seem confused</a> (or haven’t even decided yet) whether it’s supposed to be pronounced letter-by-letter (<em>em ess en oh dubya</em>) or as two letters and a word (<em>em ess now</em>). Saying the “NOW” as the word <em>now</em> makes sense for a 24/7 channel, but if it’s a word, the whole name should be styled “MS Now”. (Fox News styles their name as “FOX News” in some places, but never pretends the f-o-x is an acronym.)</p>
+
+<p>The “My Source News Opinion World” backronym is so dumb it boggles the mind. I genuinely wonder if someone had ChatGPT do that. You can have a series of letters as a name — especially as a TV channel — without those letters really standing for anything. CNN is technically an acronym for “Cable News Network” but they’ve effectively just been “CNN” for decades now. The name “MSNBC” came from the fact that, at launch in the 1990s, <a href="https://www.threads.com/@mossbergwalt/post/DNipvTJt4HW">it debuted as a collaboration</a> <a href="https://en.wikipedia.org/wiki/History_of_MSNBC:_1996–2007">between Microsoft’s MSN and NBC News</a>. But Microsoft hasn’t been involved with the cable channel <a href="https://www.latimes.com/archives/la-xpm-2005-dec-24-fi-msnbc24-story.html">for 20 years</a> — the “MS” in “MSNBC” hasn’t stood for anything since 2005. (In fact, MSN itself is another good example. It originally stood for “Microsoft Network”, even though Microsoft has never styled their name with a camel-cased <em>S</em>.<sup id="fnr1-2025-08-20"><a href="#fn1-2025-08-20">1</a></sup> But it’s really just “MSN” now.)<sup id="fnr2-2025-08-20"><a href="#fn2-2025-08-20">2</a></sup></p>
+
+<p><a href="https://www.threads.com/@tomgara/post/DNgNQeQOlIB">Tom Gara, writing on Threads</a>:</p>
+
+<blockquote>
+  <p>The only real fuck up with the MSNBC rebrand is that they made up
+a dumb sounding fake acronym. It’s completely unnecessary! Just
+say “we’re changing our name to MS NOW to reflect the urgency of
+the moment.” Nobody has ever thought about what the old acronym
+stood for and nobody needed a new fake one.</p>
+</blockquote>
+
+<p>There <em>is</em> another fuck up, though: the <a href="https://daringfireball.net/misc/2025/08/msnow.png">logo</a> is atrocious. What is that flag? It looks like the Austrian flag (🇦🇹), not America’s. But are we sure it even <em>is</em> a flag? Maybe it’s a paper receipt and the red stripes are those marks <a href="https://www.reddit.com/r/DollarGeneral/comments/p7sl4t/why_does_the_printer_do_the_pink_streak_near_the/">when it’s time to replace the roll</a>? <a href="https://www.threads.com/@jonathanhoefler/post/DNk64Vxgah-">Jonathan Hoefler, on Threads</a>:</p>
+
+<blockquote>
+  <p>My personal benchmark for a logo is that it shouldn’t look like a
+pension fund.</p>
+</blockquote>
+
+<p>The oddest part about the whole situation is that CNBC is being spun out into Versant, too, but while they’re losing the NBC peacock logo, they’re just keeping their name, unchanged. <a href="https://www.cnbc.com/2025/08/18/comcast-versant-rename-msnbc-peacock-logos.html">From CNBC’s own coverage of MSNBC’s rebranding</a>:</p>
+
+<blockquote>
+  <p>While MSNBC and NBC News will have duplications in coverage,
+CNBC’s news organization is already separate enough from NBC News
+that executives decided it didn’t need a name change. Also,
+technically, the “NBC” in “CNBC” never stemmed from National
+Broadcasting Co. Rather, CNBC stands for “Consumer News and
+Business Channel.”</p>
+</blockquote>
+
+<p>Lastly, shoutout to M.G. Siegler for <a href="https://spyglass.org/ms-now-msnbc/">coining the term <em>peacockblocked</em></a> to describe MSNBC’s branding plight.</p>
+
+<div class="footnotes">
+<hr />
+<ol>
+
+<li id="fn1-2025-08-20">
+<p>Historical pedantry: from 1975–1979, <a href="https://logos.fandom.com/wiki/Microsoft">Microsoft spelled its name “Micro-Soft”</a>, with, yes, an uppercase <em>S</em>. But that’s not camel-case, and that hyphenated spelling is as much a footnote to Microsoft’s brand history as the <a href="https://appleinsider.com/articles/22/03/29/how-apples-logo-started-out-as-the-most-expensive-and-became-the-most-iconic">woodcut Isaac-Newton-under-a-tree logo</a> is to Apple. <a href="https://daringfireball.net/misc/2025/08/Microsoft_(1975).svg">Microsoft’s logo from that era</a> was very disco-’70s and kind of cool — but while “Micro” and “Soft” were broken across two lines, there’s no hyphen in the logotype.&nbsp;<a href="#fnr1-2025-08-20"  class="footnoteBackLink"  title="Jump back to footnote 1 in the text.">&#x21A9;&#xFE0E;︎</a></p>
+</li>
+
+<li id="fn2-2025-08-20">
+<p>If I’d been in the room, my spitball idea for a new name would have been MNC. Take out every other letter to break both the NBC <em>and</em> Microsoft connotations, but leave behind an acronym that looks and sounds like a tighter, more efficient version of MSNBC. If they really insisted that the acronym stand for something, it could be Modern (or Major?) News Channel.&nbsp;<a href="#fnr2-2025-08-20"  class="footnoteBackLink"  title="Jump back to footnote 2 in the text.">&#x21A9;&#xFE0E;</a></p>
+</li>
+
+</ol>
+</div>
+
+
+
+    ]]></content>
+  <title>★ MSNBC, Spinning Out of NBCUniversal, Rebrands as ‘MS NOW’ With a Godawful Backronym and Even Worse Logo</title></entry><entry>
+    
+    <link rel="alternate" type="text/html" href="https://daringfireball.net/2025/08/iphone_mirroring_more_than_one_iphone" />
+	<link rel="shorturl" href="http://df4.us/wj9" />
+	<id>tag:daringfireball.net,2025://1.42165</id>
+	<published>2025-08-20T01:17:47Z</published>
+	<updated>2025-08-20T01:17:47Z</updated>
+	<author>
+		<name>John Gruber</name>
+		<uri>http://daringfireball.net/</uri>
+	</author>
+	<summary type="text">Long story short: there’s an “iPhone” menu under “Widgets” in System Settings → Desktop &amp; Dock.</summary>
+	<content type="html" xml:base="https://daringfireball.net/" xml:lang="en"><![CDATA[
+<p>I’ve been using two iPhones throughout the summer — one running iOS 18, the other running iOS 26 betas. I found myself wanting to switch between them with iPhone Mirroring on my Mac, but couldn’t figure out how. The answer, from Apple Support, “<a href="https://support.apple.com/en-us/120421">iPhone Mirroring: Use your iPhone from your Mac</a>”:</p>
+
+<blockquote>
+  <p>If you have more than one iPhone that is both signed in to your
+Apple Account and nearby, you can choose the one that your Mac
+uses for mirroring and iPhone notifications:</p>
+
+<ol>
+<li><p>Choose Apple menu  > System Settings, then click Desktop &amp;
+Dock in the sidebar.</p></li>
+<li><p>Choose your iPhone from the iPhone pop-up menu on the right.
+This menu appears just below the “Use iPhone widgets” setting.
+It appears only when your Mac detects more than one nearby
+iPhone that can be used for mirroring.</p></li>
+</ol>
+</blockquote>
+
+<p>That pop-up menu is about halfway down the screen in Desktop &amp; Dock, in the “Widgets” section.<sup id="fnr1-2025-08-19"><a href="#fn1-2025-08-19">1</a></sup> I suspected this was possible, but I had to search the web (<a href="https://daringfireball.net/2025/04/try_switching_to_kagi">via Kagi</a>, the best search engine in the world, of course) to find the answer. I never would have thought to look in System Settings → Desktop &amp; Dock, let alone, even if I happened to look in that panel, all the way down under “Widgets”.</p>
+
+<p>Places where I <em>did</em> look:</p>
+
+<ul>
+<li>On the Mac, in the iPhone Mirroring app’s own Settings window. Nope.</li>
+<li>On the iPhone, in Settings → General → Airplay &amp; Continuity. This is where you can control which Mac or Macs your iPhone is available from with iPhone Mirroring (e.g. you can go here to revoke access from a certain Mac), but it doesn’t help you change which iPhone, among multiple, that any particular Mac connects to.</li>
+</ul>
+
+<p>To Apple’s credit, searching for “mirroring” in MacOS System Settings <a href="https://daringfireball.net/misc/2025/08/macos-18.6-settings-desktop-dock.png">does lead you to the correct setting</a>, but because it’s under “Widget settings”, I suspect some people who search for “mirroring” here will see that in the results list and not even bother clicking it, because “Widget settings” at first doesn’t sound like where you should go to choose between multiple phones for iPhone Mirroring. (It kind of makes sense, when you realize that the same iPhone that provides widgets to your Mac is the one available for iPhone Mirroring to connect to.)</p>
+
+<p>To Apple’s discredit, Siri is no help, despite Apple Intelligence’s supposed <a href="https://9to5mac.com/2025/02/26/this-is-every-apple-intelligence-feature-thats-available-now/">ability to harness “product knowledge”</a> from LLM training on Apple’s own support documents. After asking Siri, “How do I use multiple iPhones with iPhone mirroring?” on either a Mac or iPhone, I get a brief answer that says “You can set up more than one iPhone to use iPhone Mirroring with your Mac, but you can only connect to one iPhone at a time”, with a link to the iPhone User Guide that opens in the Tips app. That page in the iPhone User Guide, however — also available on the web as “<a href="https://support.apple.com/guide/mac-help/control-your-iphone-from-your-mac-mchl444d53a6/mac">Control Your iPhone From Your Mac</a>” — doesn’t contain any mention of using more than one iPhone with iPhone Mirroring. So <a href="https://support.apple.com/en-us/120421">this Apple Support document</a> on iPhone Mirroring does explain it (that’s the one I linked to at the top of this post), but <a href="https://support.apple.com/guide/mac-help/control-your-iphone-from-your-mac-mchl444d53a6/mac">this one does not</a>. No wonder Apple Intelligence’s “product knowledge”, trained on these documents, is somewhat confused.</p>
+
+<p>But it gets worse. I gave Siri a second chance on my Mac, asking the same question, something along the lines of “How do I use multiple iPhones with iPhone mirroring?” (I can’t be sure exactly which words I used because Siri doesn’t show a chat transcript<sup id="fnr2-2025-08-19"><a href="#fn2-2025-08-19">2</a></sup>), and the second time, <a href="https://daringfireball.net/misc/2025/08/siri-mirroring-nonsense.png">it responded thus</a>:</p>
+
+<blockquote>
+  <p>To use multiple iPhones with iPhone Mirroring:</p>
+
+<ol>
+<li>Open the iPhone Mirroring app on your Mac.</li>
+<li>Click the “Connect” button.</li>
+<li>Enter your iPhone passcode and choose how to authenticate.</li>
+<li>Select the iPhone you want to use from the list of available
+iPhones.</li>
+</ol>
+</blockquote>
+
+<p>This answer certainly describes one possible way that using multiple iPhones with iPhone Mirroring <em>should</em> work, but as an answer for how it actually <em>does</em> work, it’s abject nonsense. There is no “list of available iPhones” in the iPhone Mirroring app. If there were such a list to choose from, I’d never have had a question about this whole fucking thing in the first place.</p>
+
+<div class="footnotes">
+<hr />
+<ol>
+
+<li id="fn1-2025-08-19">
+<p>The first time I looked in the Desktop & Dock panel in System Settings, there was no “iPhone” pop-up menu visible, despite the fact that both of my active iPhones were on my desk, right next to my MacBook Pro. But I remembered that in the last few days, I’d been having problems with <a href="https://support.apple.com/en-us/102430">Continuity’s Universal Clipboard</a> feature too. In the past, when Universal Clipboard has gone on the fritz, I’ve solved the problem by toggling Bluetooth off and back on. I toggled Bluetooth on my Mac and boom, the “iPhone” menu appeared in the Desktop & Dock panel in System Settings, with the pop-up menu correctly listing both of my active iPhones. Universal Clipboard started working correctly again too. I bet the <em>next</em> version of Bluetooth is actually going to be reliable.&nbsp;<a href="#fnr1-2025-08-19"  class="footnoteBackLink"  title="Jump back to footnote 1 in the text.">&#x21A9;&#xFE0E;︎</a></p>
+</li>
+
+
+<li id="fn2-2025-08-19">
+<p>From Wayne Ma’s blockbuster report back in April at The Information, “<a href="https://daringfireball.net/linked/2025/04/10/wayne-ma-the-information-apple-siri-fumble">How Apple Fumbled Siri’s AI Makeover</a>”:</p>
+
+<blockquote>
+  <p>Giannandrea often has described to employees his belief that
+machine learning can lead to incremental improvements in products,
+eventually adding up to major gains, a concept he refers to as
+hill climbing. He also has expressed a dim view of chatbots in the
+past, telling Apple employees before and immediately after the
+release of ChatGPT that he didn’t believe they added much value
+for users.</p>
+</blockquote>
+
+<p><a href="https://x.com/nickaturley/status/1952385556664520875">ChatGPT reported 700 million weekly active users this month</a>, up from 500 million in March, and up 4× from last year.&nbsp;<a href="#fnr2-2025-08-19"  class="footnoteBackLink"  title="Jump back to footnote 2 in the text.">&#x21A9;&#xFE0E;</a></p>
+</li>
+
+</ol>
+</div>
+
+
+
+    ]]></content>
+  <title>★ How to Use iPhone Mirroring With More Than One iPhone</title></entry></feed><!-- THE END -->

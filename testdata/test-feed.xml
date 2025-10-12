@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Test Blog</title>
+    <link>https://example.com</link>
+    <description>A test blog for integration testing</description>
+    <lastBuildDate>Sat, 04 Oct 2025 12:00:00 +0000</lastBuildDate>
+    <item>
+      <title>Test Entry 1</title>
+      <link>https://example.com/entry1</link>
+      <description>This is the first test entry content.</description>
+      <author>Test Author</author>
+      <pubDate>Sat, 04 Oct 2025 10:00:00 +0000</pubDate>
+      <guid>https://example.com/entry1</guid>
+    </item>
+    <item>
+      <title>Test Entry 2</title>
+      <link>https://example.com/entry2</link>
+      <description>This is the second test entry content.</description>
+      <author>Test Author</author>
+      <pubDate>Fri, 03 Oct 2025 15:00:00 +0000</pubDate>
+      <guid>https://example.com/entry2</guid>
+    </item>
+  </channel>
+</rss>

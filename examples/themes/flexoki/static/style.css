@@ -1,0 +1,528 @@
+/**
+ * Flexoki Theme for Rogue Planet
+ *
+ * An inky color scheme inspired by analog inks and warm paper tones.
+ * Designed by Steph Ango (https://stephango.com/flexoki)
+ * Adapted for Rogue Planet feed aggregator
+ *
+ * Features:
+ * - Automatic light/dark mode switching via prefers-color-scheme
+ * - Oklab-based color palette for perceptual consistency
+ * - Warm, paper-like aesthetic optimized for reading
+ * - High contrast for legibility
+ */
+
+/* ============================================
+   FLEXOKI COLOR SYSTEM
+   ============================================ */
+
+:root {
+  /* Enable automatic color scheme switching */
+  color-scheme: light dark;
+
+  /* ===== LIGHT MODE (Default) ===== */
+
+  /* Base Colors */
+  --paper: #FFFCF0;      /* Lightest background */
+  --black: #100F0F;      /* Darkest text */
+
+  /* Text Colors (light mode) */
+  --tx: #100F0F;         /* Primary text (black) */
+  --tx-2: #1C1B1A;       /* Secondary text (base-950) */
+  --tx-3: #282726;       /* Tertiary text (base-900) */
+
+  /* Background Colors */
+  --bg: #FFFCF0;         /* Primary background (paper) */
+  --bg-2: #F2F0E5;       /* Secondary background (base-50) */
+
+  /* UI Colors */
+  --ui: #E6E4D9;         /* UI elements (base-100) */
+  --ui-2: #DAD8CE;       /* UI hover (base-150) */
+  --ui-3: #CECDC3;       /* UI active (base-200) */
+
+  /* Accent Colors (600 level for light mode) */
+  --red: #AF3029;
+  --orange: #BC5215;
+  --yellow: #AD8301;
+  --green: #66800B;
+  --cyan: #24837B;
+  --blue: #205EA6;
+  --purple: #5E409D;
+  --magenta: #A02F6F;
+
+  /* Semantic Colors */
+  --link: var(--blue);
+  --link-hover: var(--cyan);
+  --success: var(--green);
+  --warning: var(--yellow);
+  --error: var(--red);
+  --highlight: var(--magenta);
+
+  /* Typography */
+  --font-serif: 'Iowan Old Style', 'Palatino Linotype', 'URW Palladio L', P052, serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+}
+
+/* ===== DARK MODE ===== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Flip text and background values */
+    --tx: #CECDC3;       /* Primary text (base-200) */
+    --tx-2: #B7B5AC;     /* Secondary text (base-300) */
+    --tx-3: #9C9A92;     /* Tertiary text (base-400) */
+    --bg: #100F0F;       /* Primary background (black) */
+    --bg-2: #1C1B1A;     /* Secondary background (base-950) */
+    --ui: #282726;       /* UI elements (base-900) */
+    --ui-2: #343331;     /* UI hover (base-850) */
+    --ui-3: #403E3C;     /* UI active (base-800) */
+
+    /* Accent Colors (400 level for dark mode - lighter/warmer) */
+    --red: #D14D41;
+    --orange: #DA702C;
+    --yellow: #D0A215;
+    --green: #879A39;
+    --cyan: #3AA99F;
+    --blue: #4385BE;
+    --purple: #8B7EC8;
+    --magenta: #CE5D97;
+  }
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--tx);
+  background-color: var(--bg);
+  padding: 20px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  background-color: var(--bg);
+}
+
+.layout {
+  display: flex;
+  gap: 60px;
+  margin-top: 40px;
+}
+
+main {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+
+header {
+  border-bottom: 2px solid var(--ui);
+  padding-bottom: 30px;
+  margin-bottom: 40px;
+}
+
+h1 {
+  font-family: var(--font-sans);
+  font-size: 2.5em;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 8px;
+  color: var(--tx);
+}
+
+h1 a {
+  color: var(--tx);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+h1 a:hover {
+  color: var(--blue);
+}
+
+.subtitle {
+  font-size: 1.1em;
+  color: var(--tx-2);
+  font-style: italic;
+}
+
+h2 {
+  font-family: var(--font-sans);
+  font-size: 1.5em;
+  font-weight: 600;
+  color: var(--purple);
+  margin-bottom: 20px;
+  line-height: 1.3;
+}
+
+h3 {
+  font-family: var(--font-sans);
+  font-size: 1.4em;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+h3 a {
+  color: var(--link);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+h3 a:hover {
+  color: var(--link-hover);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+/* ============================================
+   ENTRIES
+   ============================================ */
+
+.date-group {
+  margin-bottom: 50px;
+}
+
+.entry {
+  margin-bottom: 40px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid var(--ui);
+}
+
+.entry:last-child {
+  border-bottom: none;
+}
+
+.meta {
+  font-family: var(--font-sans);
+  font-size: 0.9em;
+  color: var(--tx-2);
+  margin-bottom: 16px;
+}
+
+.author {
+  font-weight: 500;
+  color: var(--tx);
+}
+
+.feed-link {
+  color: var(--tx-2);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.feed-link:hover {
+  color: var(--link);
+}
+
+time {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================
+   CONTENT STYLES
+   ============================================ */
+
+.content {
+  margin-top: 16px;
+  font-size: 1em;
+  line-height: 1.8;
+}
+
+.content p {
+  margin-bottom: 16px;
+}
+
+.content a {
+  color: var(--link);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  transition: color 0.2s ease;
+}
+
+.content a:hover {
+  color: var(--link-hover);
+  text-decoration-thickness: 2px;
+}
+
+.content img {
+  max-width: 100%;
+  height: auto;
+  margin: 20px 0;
+  border-radius: 4px;
+}
+
+.content blockquote {
+  border-left: 3px solid var(--ui-2);
+  padding-left: 20px;
+  margin: 20px 0;
+  color: var(--tx-2);
+  font-style: italic;
+}
+
+.content pre {
+  background-color: var(--bg-2);
+  border: 1px solid var(--ui);
+  border-radius: 4px;
+  padding: 16px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  line-height: 1.5;
+  margin: 20px 0;
+}
+
+.content code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background-color: var(--bg-2);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--orange);
+}
+
+.content pre code {
+  background-color: transparent;
+  padding: 0;
+  color: var(--tx);
+}
+
+.content ul,
+.content ol {
+  margin: 16px 0;
+  padding-left: 24px;
+}
+
+.content li {
+  margin-bottom: 8px;
+}
+
+.content h1,
+.content h2,
+.content h3,
+.content h4,
+.content h5,
+.content h6 {
+  margin-top: 28px;
+  margin-bottom: 12px;
+  font-family: var(--font-sans);
+}
+
+.content hr {
+  border: none;
+  border-top: 1px solid var(--ui);
+  margin: 32px 0;
+}
+
+/* ============================================
+   SIDEBAR
+   ============================================ */
+
+.sidebar h2 {
+  font-size: 1.2em;
+  color: var(--tx);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--ui);
+}
+
+.sidebar ul {
+  list-style: none;
+}
+
+.sidebar li {
+  margin-bottom: 16px;
+  font-size: 0.95em;
+}
+
+.sidebar a {
+  color: var(--link);
+  text-decoration: none;
+  transition: color 0.2s ease;
+  display: inline-block;
+  line-height: 1.4;
+}
+
+.sidebar a:hover {
+  color: var(--link-hover);
+  text-decoration: underline;
+}
+
+.feed-meta {
+  font-family: var(--font-sans);
+  font-size: 0.85em;
+  color: var(--tx-3);
+  margin-top: 4px;
+}
+
+.feed-error {
+  color: var(--error);
+  font-weight: 500;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+footer {
+  margin-top: 60px;
+  padding-top: 30px;
+  border-top: 1px solid var(--ui);
+  font-family: var(--font-sans);
+  text-align: center;
+  color: var(--tx-2);
+  font-size: 0.9em;
+}
+
+footer a {
+  color: var(--tx-2);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+footer a:hover {
+  color: var(--link);
+}
+
+footer p {
+  margin: 8px 0;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 900px) {
+  .layout {
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    font-size: 17px;
+    padding: 15px;
+  }
+
+  h1 {
+    font-size: 2em;
+  }
+
+  h2 {
+    font-size: 1.3em;
+  }
+
+  h3 {
+    font-size: 1.2em;
+  }
+
+  .layout {
+    gap: 30px;
+    margin-top: 30px;
+  }
+
+  header {
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 16px;
+    padding: 10px;
+  }
+
+  .entry {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+  }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  body {
+    background-color: white;
+    color: black;
+    font-size: 12pt;
+    padding: 0;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .layout {
+    display: block;
+  }
+
+  a {
+    color: black;
+    text-decoration: underline;
+  }
+
+  .entry {
+    page-break-inside: avoid;
+  }
+
+  footer {
+    page-break-before: always;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+/* Focus styles for keyboard navigation */
+a:focus,
+button:focus {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

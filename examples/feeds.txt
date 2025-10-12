@@ -1,0 +1,21 @@
+# Example Feed List for Rogue Planet
+#
+# Format: One feed URL per line
+# Comments start with # and are ignored
+# Empty lines are ignored
+
+# Tech Blogs
+https://blog.golang.org/feed.atom
+https://github.blog/feed/
+
+# News
+https://daringfireball.net/feeds/main
+https://asymco.com/feed/
+
+# Comics
+https://xkcd.com/rss.xml
+
+# Podcasts (RSS feeds with enclosures work too!)
+# https://example.com/podcast/feed.xml
+
+# Add your own feeds below:

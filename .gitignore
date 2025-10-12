@@ -1,0 +1,42 @@
+# Binaries
+rp
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Generated output
+public/
+output/
+
+# Config files with secrets (keep example configs)
+config.ini
+!config.example.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+cache/

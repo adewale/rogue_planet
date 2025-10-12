@@ -1,0 +1,282 @@
+/* Classic Planet Theme - Inspired by Planet Venus classic_fancy */
+
+body {
+    font-family: "Bitstream Vera Sans", "DejaVu Sans", "Liberation Sans", sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #000;
+    background: #fff;
+    margin: 0;
+    padding: 0;
+
+    /* Main content area with right border */
+    border-right: 1px solid #000;
+    margin-right: 220px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+/* Main heading */
+h1 {
+    margin-top: 0;
+    padding-top: 20px;
+    padding-bottom: 10px;
+
+    font-family: "Bitstream Vera Sans", "DejaVu Sans", sans-serif;
+    font-size: 2.5em;
+    font-weight: normal;
+    letter-spacing: -2px;
+    text-transform: lowercase;
+    text-align: right;
+
+    color: #808080;
+    border-bottom: 2px solid #000;
+}
+
+h1 a {
+    text-decoration: none;
+    color: inherit;
+}
+
+h1 a:hover {
+    color: #606060;
+}
+
+.subtitle {
+    text-align: right;
+    color: #666;
+    font-style: italic;
+    margin-top: -5px;
+    margin-bottom: 20px;
+}
+
+/* Date group headers */
+h2 {
+    font-family: "Bitstream Vera Sans", "DejaVu Sans", sans-serif;
+    font-size: 1.5em;
+    font-weight: normal;
+    color: #200080;
+
+    margin-left: -20px;
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+/* Entry titles */
+h3 {
+    font-family: "Bitstream Vera Sans", "DejaVu Sans", sans-serif;
+    font-size: 1.2em;
+    font-weight: normal;
+
+    background-color: #a0c0ff;
+    border: 1px solid #5080b0;
+
+    padding: 6px 8px;
+    margin-top: 20px;
+    margin-bottom: 5px;
+}
+
+h3 a {
+    text-decoration: none;
+    color: #000;
+}
+
+h3 a:hover {
+    text-decoration: underline;
+}
+
+/* Feed name */
+h4 {
+    font-family: "Bitstream Vera Sans", "DejaVu Sans", sans-serif;
+    font-size: 1em;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+h4 a {
+    text-decoration: none;
+    color: #000;
+}
+
+h4 a:hover {
+    color: #200080;
+}
+
+/* Entry container */
+.entry {
+    margin-bottom: 2.5em;
+}
+
+/* Entry date */
+.entry .date {
+    font-family: "Bitstream Vera Sans", "DejaVu Sans", sans-serif;
+    font-size: 0.9em;
+    color: #808080;
+    margin-bottom: 10px;
+}
+
+.entry .date a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.entry .date a:hover {
+    text-decoration: underline;
+}
+
+/* Entry content */
+.entry .content {
+    margin-top: 10px;
+    line-height: 1.6;
+}
+
+.entry .content img {
+    max-width: 100%;
+    height: auto;
+}
+
+.entry .content pre {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    padding: 10px;
+    overflow-x: auto;
+}
+
+.entry .content code {
+    font-family: "Courier New", Courier, monospace;
+    background: #f5f5f5;
+    padding: 2px 4px;
+}
+
+.entry .content pre code {
+    background: none;
+    padding: 0;
+}
+
+.entry .content blockquote {
+    border-left: 3px solid #a0c0ff;
+    padding-left: 15px;
+    margin: 15px 0;
+    color: #333;
+}
+
+/* Footer */
+.footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    padding-bottom: 40px;
+    border-top: 1px solid #ddd;
+    text-align: center;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.footer a {
+    color: #666;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+/* Sidebar - positioned absolutely on right */
+.sidebar {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 200px;
+
+    margin-left: 0px;
+    margin-right: 0px;
+    padding-right: 0px;
+
+    padding-top: 20px;
+    padding-left: 0px;
+
+    font-family: "Bitstream Vera Sans", sans-serif;
+    font-size: 85%;
+}
+
+.sidebar h2 {
+    font-size: 110%;
+    font-weight: bold;
+    color: black;
+
+    padding-left: 5px;
+    margin-left: 0px;
+}
+
+.sidebar ul {
+    padding-left: 2em;
+    margin-left: 0px;
+
+    list-style-type: square;
+}
+
+.sidebar ul li:hover {
+    color: grey;
+}
+
+.sidebar a {
+    color: #0000cc;
+    text-decoration: none;
+}
+
+.sidebar a:hover {
+    text-decoration: underline;
+    color: #200080;
+}
+
+/* RSS feed icon */
+.feed-icon {
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+.sidebar-footer {
+    border-top: 1px solid grey;
+    margin-top: 30px;
+    padding-top: 10px;
+
+    padding-left: 5px;
+}
+
+.sidebar-footer p {
+    margin-bottom: 15px;
+}
+
+.sidebar-footer strong {
+    font-weight: bold;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    body {
+        border-right: none;
+        margin-right: 0;
+        padding: 10px;
+    }
+
+    .sidebar {
+        position: static;
+        width: 100%;
+        border-top: 2px solid #000;
+        margin-top: 20px;
+    }
+
+    h1 {
+        font-size: 2em;
+        text-align: left;
+    }
+
+    .subtitle {
+        text-align: left;
+    }
+
+    h2 {
+        margin-left: 0;
+    }
+}
