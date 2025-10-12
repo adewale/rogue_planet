@@ -620,5 +620,6 @@ Inspired by:
 - [Planet Planet](https://web.archive.org/web/20171029175722/http://www.planetplanet.org/)
 - [Planet Venus](https://github.com/rubys/venus)
 - The decades of work by the feed aggregator community
+- The Spin Doctors for the name: https://www.youtube.com/watch?v=GrQCro68sRU
 
 Special thanks to the lessons learned from 20+ years of feed aggregator development, documented in `specs/rogue-planet-spec.md`.
