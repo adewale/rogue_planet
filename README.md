@@ -1,6 +1,6 @@
 # Rogue Planet
 
-A modern feed aggregator written in Go, inspired by Venus/Planet. Rogue Planet downloads RSS and Atom feeds from multiple sources and aggregates them into a single chronological stream published as a static HTML page.
+A modern feed aggregator written in Go, inspired by Planet Planet, Planet Venus and friends. Rogue Planet downloads RSS and Atom feeds from multiple sources and aggregates them into a single reverse-chronological stream published as a static HTML page.
 
 ## Features
 
