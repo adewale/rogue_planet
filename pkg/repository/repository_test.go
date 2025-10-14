@@ -517,3 +517,130 @@ func TestGetRecentEntriesWithinWindow(t *testing.T) {
 		}
 	}
 }
+
+func TestUpdateFeedError(t *testing.T) {
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	id, _ := repo.AddFeed("https://example.com/feed", "Test Feed")
+
+	err := repo.UpdateFeedError(id, "Connection timeout")
+	if err != nil {
+		t.Fatalf("UpdateFeedError() error = %v", err)
+	}
+
+	feed, _ := repo.GetFeedByURL("https://example.com/feed")
+
+	if feed.FetchError != "Connection timeout" {
+		t.Errorf("FetchError = %q, want %q", feed.FetchError, "Connection timeout")
+	}
+
+	if feed.FetchErrorCount != 1 {
+		t.Errorf("FetchErrorCount = %d, want 1", feed.FetchErrorCount)
+	}
+
+	// Call again to increment error count
+	repo.UpdateFeedError(id, "Another error")
+	feed, _ = repo.GetFeedByURL("https://example.com/feed")
+
+	if feed.FetchErrorCount != 2 {
+		t.Errorf("FetchErrorCount = %d, want 2", feed.FetchErrorCount)
+	}
+}
+
+func TestCountEntries(t *testing.T) {
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	// Initially should be 0
+	count, err := repo.CountEntries()
+	if err != nil {
+		t.Fatalf("CountEntries() error = %v", err)
+	}
+	if count != 0 {
+		t.Errorf("count = %d, want 0", count)
+	}
+
+	// Add some entries
+	feedID, _ := repo.AddFeed("https://example.com/feed", "Test Feed")
+	for i := 0; i < 5; i++ {
+		entry := &Entry{
+			FeedID:    feedID,
+			EntryID:   fmt.Sprintf("entry-%d", i),
+			Title:     fmt.Sprintf("Entry %d", i),
+			Published: time.Now(),
+			Updated:   time.Now(),
+			FirstSeen: time.Now(),
+		}
+		repo.UpsertEntry(entry)
+	}
+
+	count, err = repo.CountEntries()
+	if err != nil {
+		t.Fatalf("CountEntries() error = %v", err)
+	}
+	if count != 5 {
+		t.Errorf("count = %d, want 5", count)
+	}
+}
+
+func TestCountRecentEntries(t *testing.T) {
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	feedID, _ := repo.AddFeed("https://example.com/feed", "Test Feed")
+
+	// Add recent entries (last 3 days)
+	now := time.Now()
+	for i := 0; i < 3; i++ {
+		entry := &Entry{
+			FeedID:    feedID,
+			EntryID:   fmt.Sprintf("recent-%d", i),
+			Title:     fmt.Sprintf("Recent %d", i),
+			Published: now.Add(time.Duration(-i) * 24 * time.Hour),
+			Updated:   now,
+			FirstSeen: now,
+		}
+		repo.UpsertEntry(entry)
+	}
+
+	// Add old entries (100 days ago)
+	oldDate := now.AddDate(0, 0, -100)
+	for i := 0; i < 2; i++ {
+		entry := &Entry{
+			FeedID:    feedID,
+			EntryID:   fmt.Sprintf("old-%d", i),
+			Title:     fmt.Sprintf("Old %d", i),
+			Published: oldDate,
+			Updated:   oldDate,
+			FirstSeen: now,
+		}
+		repo.UpsertEntry(entry)
+	}
+
+	// Count recent entries (last 7 days)
+	count, err := repo.CountRecentEntries(7)
+	if err != nil {
+		t.Fatalf("CountRecentEntries() error = %v", err)
+	}
+	if count != 3 {
+		t.Errorf("count = %d, want 3", count)
+	}
+
+	// Count last 200 days (should include all)
+	count, err = repo.CountRecentEntries(200)
+	if err != nil {
+		t.Fatalf("CountRecentEntries() error = %v", err)
+	}
+	if count != 5 {
+		t.Errorf("count = %d, want 5", count)
+	}
+}
+
+func TestNewErrors(t *testing.T) {
+	// Test with invalid path
+	_, err := New("/invalid/path/to/nonexistent/dir/test.db")
+	if err == nil {
+		t.Error("New() should fail with invalid path")
+	}
+}

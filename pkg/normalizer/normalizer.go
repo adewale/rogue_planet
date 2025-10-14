@@ -1,3 +1,9 @@
+// Package normalizer provides feed parsing and HTML sanitization for RSS/Atom feeds.
+//
+// The normalizer parses multiple feed formats (RSS 1.0, RSS 2.0, Atom, JSON Feed)
+// and converts them to a canonical internal format. It implements HTML sanitization
+// to prevent XSS attacks (CVE-2009-2937), handles missing dates and IDs gracefully,
+// and resolves relative URLs to absolute.
 package normalizer
 
 import (

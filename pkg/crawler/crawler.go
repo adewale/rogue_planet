@@ -1,3 +1,8 @@
+// Package crawler provides HTTP fetching for RSS/Atom feeds with conditional request support.
+//
+// The crawler implements proper HTTP caching using ETag and Last-Modified headers,
+// SSRF prevention, and response size limiting. It is designed to be a well-behaved
+// feed fetcher that minimizes bandwidth and server load.
 package crawler
 
 import (

@@ -1,3 +1,8 @@
+// Package config provides configuration file parsing for the feed aggregator.
+//
+// The config package reads INI-format configuration files and provides
+// validated configuration values with sensible defaults. It supports
+// forward compatibility by ignoring unknown sections and keys.
 package config
 
 import (

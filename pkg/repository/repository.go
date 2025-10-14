@@ -1,3 +1,8 @@
+// Package repository provides SQLite database operations for feed storage.
+//
+// The repository handles all database interactions including feed management,
+// entry storage with deduplication, and intelligent querying with fallback logic.
+// It uses WAL mode for better concurrency and prepared statements for security.
 package repository
 
 import (

@@ -13,6 +13,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Binary distribution packages
 - Community contribution guidelines finalized
 
+## [0.2.0] - 2025-10-13
+
+### Added - OPML Support
+- **OPML Package**: Full OPML 1.0 and 2.0 support with 91.8% test coverage
+  - Parse and generate OPML files
+  - Support for both `xmlUrl`/`url` and `text`/`title` attributes
+  - RFC 822 date handling
+  - Nested outline support (categories/folders)
+- `rp import-opml <file> [--dry-run]` - Import feeds from OPML file
+- `rp export-opml [--output FILE]` - Export feeds to OPML format
+- Dry-run mode for previewing imports before committing
+- Duplicate feed detection during import
+- Compatibility with Feedly, Inoreader, NewsBlur, The Old Reader exports
+
+### Added - Configuration Validation
+- `rp verify` - Validate configuration and environment
+  - Config file syntax validation
+  - Database accessibility check
+  - Output directory writability check
+  - Custom template existence verification
+  - Feed and entry count reporting
+
+### Added - Package Documentation
+- Godoc-compliant package comments for all 6 packages
+- Package-level documentation for crawler, normalizer, generator, config, repository, opml
+
+### Improved - Test Coverage
+- Generator package: 54.3% → 86.0% coverage
+  - Tests for feed sidebar rendering
+  - Owner info display tests
+  - Template function tests (formatDate, relativeTime, truncate, stripHTML)
+  - Static asset copying tests
+  - Subtitle support tests
+- Repository package: 75.3% → 85.6% coverage
+  - UpdateFeedError function tests
+  - CountEntries function tests
+  - CountRecentEntries function tests
+  - Database initialization error tests
+- Overall project: Maintained >85% average coverage across core packages
+
+### Improved - Integration Tests
+- 6 new OPML integration tests with proper test isolation
+- Added `setupTestDir()` helper to prevent database conflicts
+- Fixed nil pointer panics in existing command tests
+- All tests use `t.TempDir()` for automatic cleanup
+
+### Fixed
+- Test isolation: Tests now change working directory to temp dirs
+- Command tests: Added proper nil checks before accessing `err.Error()`
+- Error handling: All error messages follow Go conventions (lowercase, no trailing punctuation)
+
+### Documentation
+- Updated README.md with OPML commands in organized command sections
+- Updated WORKFLOWS.md with comprehensive OPML import/export workflows
+  - Backing up feed lists
+  - Migrating from other feed readers
+  - Sharing feed lists
+  - Merging multiple OPML files
+- Updated QUICKSTART.md with OPML and verify commands
+- Updated command help text with new commands
+
 ## [0.1.0] - 2025-10-10
 
 ### Added - Core Functionality
@@ -86,6 +147,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | Version | Date | Description |
 |---------|------|-------------|
 | 0.1.0 | 2025-10-10 | Initial development release - all core features complete |
+| 0.2.0 | 2025-10-13 | OPML support, verify command, improved test coverage |
 | 1.0.0 | TBD | Planned public release |
 
 ## Links

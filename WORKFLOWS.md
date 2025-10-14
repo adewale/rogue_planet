@@ -7,6 +7,10 @@ This document provides detailed workflows for common Rogue Planet operations.
 - [Getting Started](#getting-started)
 - [Daily Operations](#daily-operations)
 - [Feed Management](#feed-management)
+  - [Adding Feeds](#adding-feeds)
+  - [Removing Feeds](#removing-feeds)
+  - [Managing Inactive Feeds](#managing-inactive-feeds)
+  - [OPML Import and Export](#opml-import-and-export)
 - [Troubleshooting](#troubleshooting)
 - [Advanced Usage](#advanced-usage)
 - [Production Deployment](#production-deployment)
@@ -256,6 +260,133 @@ sqlite3 data/planet.db "UPDATE feeds SET active = 1, fetch_error_count = 0 WHERE
 # Regenerate HTML
 rp generate
 ```
+
+### OPML Import and Export
+
+OPML (Outline Processor Markup Language) is a standard XML format for exchanging feed lists between different feed readers and aggregators. Rogue Planet supports both importing and exporting OPML files, making it easy to migrate from other services or back up your feed list.
+
+**Export your feed list to OPML:**
+
+```bash
+# Export to stdout (useful for piping)
+rp export-opml
+
+# Export to a file
+rp export-opml --output my-feeds.opml
+
+# The exported file includes:
+# - Feed URL (xmlUrl)
+# - Feed title
+# - Feed website URL (htmlUrl)
+# - Last updated timestamp
+```
+
+**Import feeds from OPML file:**
+
+```bash
+# Preview what will be imported (dry-run)
+rp import-opml feeds.opml --dry-run
+
+# Import feeds from OPML file
+rp import-opml feeds.opml
+
+# After importing, fetch the new feeds
+rp update
+```
+
+**Common OPML workflows:**
+
+**Backing up your feed list:**
+```bash
+# Export current feeds for backup
+rp export-opml --output backup-$(date +%Y%m%d).opml
+
+# Later, restore from backup
+rp import-opml backup-20250113.opml
+```
+
+**Migrating from another feed reader:**
+```bash
+# Most feed readers can export to OPML format:
+# - Feedly: Settings → OPML → Export
+# - Inoreader: Settings → Import/Export → Export to OPML file
+# - NewsBlur: Account → Import/Export → Export feeds
+# - The Old Reader: Settings → Import/Export → Export
+
+# Download the OPML file from your reader, then:
+rp import-opml feedly-export.opml
+
+# The import command will:
+# - Parse the OPML file
+# - Skip duplicate feeds (already in database)
+# - Add new feeds with their titles
+# - Report how many feeds were imported
+
+# Fetch content from newly imported feeds
+rp update
+```
+
+**Migrating from Planet Venus or Planet:**
+```bash
+# If your old aggregator has an OPML export, use that
+rp import-opml old-planet-feeds.opml
+
+# If it only has a feeds.txt file, use the original init/add-all approach
+rp add-all -f old-feeds.txt
+```
+
+**Sharing your feed list with others:**
+```bash
+# Export your curated feed list
+rp export-opml --output my-tech-feeds.opml
+
+# Others can import it into Rogue Planet
+rp import-opml my-tech-feeds.opml
+
+# Or import into any OPML-compatible reader (Feedly, Inoreader, etc.)
+```
+
+**Merging feed lists from multiple sources:**
+```bash
+# Import multiple OPML files
+rp import-opml source1.opml
+rp import-opml source2.opml
+rp import-opml source3.opml
+
+# Duplicates are automatically detected and skipped
+# Check what was imported
+rp list-feeds
+
+# Fetch all feeds
+rp update
+```
+
+**Using dry-run to preview imports:**
+```bash
+# See what would be imported without making changes
+rp import-opml large-feed-list.opml --dry-run
+
+# Output shows:
+# - Total feeds in OPML file
+# - How many are new (will be imported)
+# - How many are duplicates (will be skipped)
+# - List of feeds with URLs and titles
+
+# If satisfied, import for real
+rp import-opml large-feed-list.opml
+```
+
+**OPML format compatibility:**
+
+Rogue Planet supports both OPML 1.0 and 2.0 formats and handles various attribute naming conventions:
+
+- `xmlUrl` or `url` for feed URLs (both work)
+- `text` or `title` for feed names (both work)
+- `htmlUrl` for feed website URLs (optional)
+- Nested `<outline>` elements (categories/folders)
+- RFC 822 date format in `<dateCreated>` fields
+
+This ensures compatibility with exports from Feedly, Inoreader, NewsBlur, The Old Reader, and other popular feed readers.
 
 ## Troubleshooting
 

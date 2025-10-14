@@ -87,16 +87,26 @@ For step-by-step workflows covering setup, daily operations, troubleshooting, an
 
 ## Commands
 
+### Core Commands
 - `rp init [-f FILE]` - Initialise a new planet in the current directory
 - `rp add-feed <url>` - Add a feed to the planet
 - `rp add-all -f FILE` - Add multiple feeds from a file
 - `rp remove-feed <url>` - Remove a feed from the planet
 - `rp list-feeds` - List all configured feeds
 - `rp status` - Show planet status (feed and entry counts)
+
+### Operation Commands
 - `rp update [--config FILE]` - Fetch all feeds and regenerate site
 - `rp fetch [--config FILE]` - Fetch feeds without generating HTML
 - `rp generate [--config FILE] [--days N]` - Generate HTML without fetching feeds
 - `rp prune --days N [--config FILE] [--dry-run]` - Remove old entries from database
+
+### Import/Export Commands
+- `rp import-opml <file> [--dry-run]` - Import feeds from OPML file
+- `rp export-opml [--output FILE]` - Export feeds to OPML format (stdout by default)
+
+### Utility Commands
+- `rp verify` - Validate configuration and environment
 - `rp version` - Show version information
 
 **Global Flags**:

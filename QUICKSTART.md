@@ -40,6 +40,9 @@ open public/index.html
 | `rp list-feeds` | Show all configured feeds |
 | `rp add-feed <url>` | Add a new feed |
 | `rp remove-feed <url>` | Remove a feed |
+| `rp import-opml <file>` | Import feeds from OPML file |
+| `rp export-opml` | Export feeds to OPML format |
+| `rp verify` | Validate configuration and environment |
 | `rp fetch` | Fetch feeds without generating HTML |
 | `rp generate` | Regenerate HTML without fetching |
 | `rp prune --days 90` | Remove old entries from database |
@@ -122,6 +125,27 @@ https://example.com/feed1.xml
 https://example.com/feed2.xml
 EOF
 rp add-all -f new-feeds.txt
+```
+
+**Import feeds from another reader:**
+```bash
+# Most feed readers export to OPML (Feedly, Inoreader, NewsBlur, etc.)
+rp import-opml feedly-export.opml  # Preview first with --dry-run
+rp update  # Fetch the new feeds
+```
+
+**Backup and restore your feed list:**
+```bash
+# Export to OPML
+rp export-opml --output backup.opml
+
+# Later, restore from backup
+rp import-opml backup.opml
+```
+
+**Validate your configuration:**
+```bash
+rp verify  # Checks config, database, output directory, template
 ```
 
 **Check for broken feeds:**

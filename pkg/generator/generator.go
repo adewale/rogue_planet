@@ -1,3 +1,8 @@
+// Package generator provides static HTML generation for feed aggregation.
+//
+// The generator renders feed entries using Go's html/template with automatic
+// HTML escaping. It supports custom templates, date grouping, feed sidebars,
+// and responsive layouts. The default template follows classic Planet Planet design.
 package generator
 
 import (

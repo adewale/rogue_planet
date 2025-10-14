@@ -129,6 +129,7 @@ cmd/rp/              - CLI entry point and command handlers
   commands.go        - Command implementation (cmdInit, cmdAddFeed, cmdUpdate, etc.)
   logger_test.go     - Logging utilities for tests
   *_test.go          - Integration tests
+  opml_integration_test.go - OPML integration tests
 pkg/crawler/         - HTTP fetching with conditional request support
   crawler.go         - Core HTTP fetching with ETag/Last-Modified
   crawler_test.go    - Unit tests
@@ -147,6 +148,9 @@ pkg/generator/       - Static HTML generation
 pkg/config/          - Configuration parsing (INI format)
   config.go          - Config loading and validation
   config_test.go     - Config parsing tests
+pkg/opml/            - OPML parsing and generation (feed list import/export)
+  opml.go            - OPML 1.0/2.0 parsing and generation
+  opml_test.go       - OPML parsing tests (91.8% coverage)
 testdata/            - Test fixtures (saved feed snapshots)
 specs/               - Specifications and design documents
 examples/            - Example configurations and themes
@@ -184,17 +188,27 @@ func TestSomething(t *testing.T) {
 Implemented commands:
 
 ```bash
-rp init [-f FILE]      # Initialize new planet configuration
-rp add-feed <url>      # Add a new feed
-rp add-all -f FILE     # Add multiple feeds from a file
-rp remove-feed <url>   # Remove a feed
-rp list-feeds          # List all configured feeds
-rp status              # Show planet status (feed and entry counts)
-rp update              # Fetch all feeds and regenerate site
-rp fetch               # Fetch feeds without generating
-rp generate            # Regenerate site without fetching
-rp prune --days N      # Prune entries older than N days
-rp version             # Show version information
+# Core Commands
+rp init [-f FILE]             # Initialize new planet configuration
+rp add-feed <url>             # Add a new feed
+rp add-all -f FILE            # Add multiple feeds from a file
+rp remove-feed <url>          # Remove a feed
+rp list-feeds                 # List all configured feeds
+rp status                     # Show planet status (feed and entry counts)
+
+# Operation Commands
+rp update                     # Fetch all feeds and regenerate site
+rp fetch                      # Fetch feeds without generating
+rp generate                   # Regenerate site without fetching
+rp prune --days N             # Prune entries older than N days
+
+# Import/Export Commands
+rp import-opml <file> [--dry-run]  # Import feeds from OPML file
+rp export-opml [--output FILE]     # Export feeds to OPML format
+
+# Utility Commands
+rp verify                     # Validate configuration and environment
+rp version                    # Show version information
 ```
 
 ## Important Design Principles
@@ -397,3 +411,21 @@ See specs/rogue-planet-spec.md lines 763-1000 for complete lessons learned.
 - Template uses Go's `html/template` for automatic escaping
 - Content is marked as `template.HTML` only AFTER sanitization
 - Includes CSP header in HTML output (line 361)
+
+**OPML (pkg/opml/opml.go)**:
+- Full OPML 1.0 and 2.0 support with 91.8% test coverage
+- Supports both `xmlUrl`/`url` and `text`/`title` attribute naming conventions
+- RFC 822 date parsing and generation (`time.RFC1123Z` format)
+- Handles nested `<outline>` elements (categories/folders)
+- `Parse()` reads OPML from io.Reader, `Generate()` creates OPML from feed list
+- `Marshal()` converts to XML bytes, `Write()` writes to file
+- Compatible with exports from Feedly, Inoreader, NewsBlur, The Old Reader
+- Used by `cmdImportOPML()` and `cmdExportOPML()` commands
+
+**Verify Command (cmd/rp/commands.go: cmdVerify)**:
+- Validates config.ini syntax and accessibility
+- Checks database file exists and can be opened
+- Verifies output directory is writable
+- Validates custom template file exists (if specified)
+- Reports feed and entry counts
+- Returns brief, error-focused output
