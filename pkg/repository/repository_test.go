@@ -644,3 +644,164 @@ func TestNewErrors(t *testing.T) {
 		t.Error("New() should fail with invalid path")
 	}
 }
+
+func TestGetRecentEntriesFilterByFirstSeen(t *testing.T) {
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	// Add a feed
+	feedID, _ := repo.AddFeed("https://example.com/feed", "Test Feed")
+
+	// Create entries with different published and first_seen dates
+	// Use current time as base for testing
+	baseTime := time.Now()
+
+	entries := []struct {
+		published time.Time // Original published date
+		firstSeen time.Time // When aggregator saw it
+	}{
+		{baseTime.AddDate(0, 0, -30), baseTime.AddDate(0, 0, -1)}, // Old entry, recently seen
+		{baseTime.AddDate(0, 0, -2), baseTime.AddDate(0, 0, -2)},  // Recent entry, recently seen
+		{baseTime.AddDate(0, 0, -3), baseTime.AddDate(0, 0, -10)}, // Recent entry, seen long ago
+	}
+
+	for i, e := range entries {
+		err := repo.UpsertEntry(&Entry{
+			FeedID:    feedID,
+			EntryID:   fmt.Sprintf("entry-%d", i),
+			Title:     fmt.Sprintf("Entry %d", i),
+			Published: e.published,
+			FirstSeen: e.firstSeen,
+		})
+		if err != nil {
+			t.Fatalf("UpsertEntry() error = %v", err)
+		}
+	}
+
+	// Test 1: Filter by published (default behavior)
+	// Should return entries 1 and 2 (published within 7 days)
+	publishedFiltered, err := repo.GetRecentEntriesWithOptions(7, false, "published")
+	if err != nil {
+		t.Fatalf("GetRecentEntriesWithOptions() error = %v", err)
+	}
+	if len(publishedFiltered) != 2 {
+		t.Errorf("Filter by published: got %d entries, want 2", len(publishedFiltered))
+	}
+
+	// Test 2: Filter by first_seen
+	// Should return entries 0 and 1 (first_seen within 7 days)
+	firstSeenFiltered, err := repo.GetRecentEntriesWithOptions(7, true, "published")
+	if err != nil {
+		t.Fatalf("GetRecentEntriesWithOptions() error = %v", err)
+	}
+	if len(firstSeenFiltered) != 2 {
+		t.Errorf("Filter by first_seen: got %d entries, want 2", len(firstSeenFiltered))
+	}
+
+	// Verify which entries were returned
+	titles := make(map[string]bool)
+	for _, e := range firstSeenFiltered {
+		titles[e.Title] = true
+	}
+
+	if !titles["Entry 0"] || !titles["Entry 1"] {
+		t.Errorf("Filter by first_seen returned wrong entries: %v", titles)
+	}
+	if titles["Entry 2"] {
+		t.Errorf("Filter by first_seen should not include Entry 2 (first_seen too old)")
+	}
+}
+
+func TestGetRecentEntriesSortByFirstSeen(t *testing.T) {
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	feedID, _ := repo.AddFeed("https://example.com/feed", "Test Feed")
+	baseTime := time.Now()
+
+	// Create entries where first_seen order differs from published order
+	entries := []struct {
+		title     string
+		published time.Time
+		firstSeen time.Time
+	}{
+		{"Entry A", baseTime.AddDate(0, 0, -1), baseTime.AddDate(0, 0, -3)}, // Published recently, seen first
+		{"Entry B", baseTime.AddDate(0, 0, -2), baseTime.AddDate(0, 0, -2)}, // Published middle, seen second
+		{"Entry C", baseTime.AddDate(0, 0, -3), baseTime.AddDate(0, 0, -1)}, // Published oldest, seen last
+	}
+
+	for i, e := range entries {
+		err := repo.UpsertEntry(&Entry{
+			FeedID:    feedID,
+			EntryID:   fmt.Sprintf("entry-%d", i),
+			Title:     e.title,
+			Published: e.published,
+			FirstSeen: e.firstSeen,
+		})
+		if err != nil {
+			t.Fatalf("UpsertEntry() error = %v", err)
+		}
+	}
+
+	// Sort by published (default)
+	byPublished, _ := repo.GetRecentEntriesWithOptions(7, false, "published")
+	if byPublished[0].Title != "Entry A" {
+		t.Errorf("Sort by published: first entry = %s, want Entry A", byPublished[0].Title)
+	}
+
+	// Sort by first_seen
+	byFirstSeen, _ := repo.GetRecentEntriesWithOptions(7, false, "first_seen")
+	if byFirstSeen[0].Title != "Entry C" {
+		t.Errorf("Sort by first_seen: first entry = %s, want Entry C", byFirstSeen[0].Title)
+	}
+	if byFirstSeen[1].Title != "Entry B" {
+		t.Errorf("Sort by first_seen: second entry = %s, want Entry B", byFirstSeen[1].Title)
+	}
+	if byFirstSeen[2].Title != "Entry A" {
+		t.Errorf("Sort by first_seen: third entry = %s, want Entry A", byFirstSeen[2].Title)
+	}
+}
+
+func TestGetRecentEntriesFilterAndSortByFirstSeen(t *testing.T) {
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	feedID, _ := repo.AddFeed("https://example.com/feed", "Test Feed")
+	baseTime := time.Now()
+
+	entries := []struct {
+		title     string
+		published time.Time
+		firstSeen time.Time
+	}{
+		{"Recent discovery", baseTime.AddDate(0, 0, -30), baseTime.AddDate(0, 0, -1)}, // Old content, just discovered
+		{"Recent post", baseTime.AddDate(0, 0, -1), baseTime.AddDate(0, 0, -1)},       // Recent content, recently discovered
+		{"Old discovery", baseTime.AddDate(0, 0, -2), baseTime.AddDate(0, 0, -10)},    // Should be filtered out
+	}
+
+	for i, e := range entries {
+		repo.UpsertEntry(&Entry{
+			FeedID:    feedID,
+			EntryID:   fmt.Sprintf("entry-%d", i),
+			Title:     e.title,
+			Published: e.published,
+			FirstSeen: e.firstSeen,
+		})
+	}
+
+	// Filter by first_seen AND sort by first_seen
+	results, _ := repo.GetRecentEntriesWithOptions(7, true, "first_seen")
+
+	// Should have 2 entries (first_seen within 7 days)
+	if len(results) != 2 {
+		t.Fatalf("got %d entries, want 2", len(results))
+	}
+
+	// Should be sorted by first_seen DESC (both on day -1, order may vary by insert time)
+	// Just verify the old discovery is not included
+	for _, e := range results {
+		if e.Title == "Old discovery" {
+			t.Errorf("Old discovery should be filtered out (first_seen too old)")
+		}
+	}
+}

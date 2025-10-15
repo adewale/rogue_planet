@@ -22,17 +22,19 @@ type Config struct {
 
 // PlanetConfig contains planet-level settings
 type PlanetConfig struct {
-	Name            string
-	Link            string
-	OwnerName       string
-	OwnerEmail      string
-	OutputDir       string
-	Days            int
-	LogLevel        string
-	ConcurrentFetch int
-	UserAgent       string
-	GroupByDate     bool
-	Template        string
+	Name              string
+	Link              string
+	OwnerName         string
+	OwnerEmail        string
+	OutputDir         string
+	Days              int
+	LogLevel          string
+	ConcurrentFetch   int
+	UserAgent         string
+	GroupByDate       bool
+	Template          string
+	FilterByFirstSeen bool
+	SortBy            string
 }
 
 // DatabaseConfig contains database settings
@@ -44,16 +46,18 @@ type DatabaseConfig struct {
 func Default() *Config {
 	return &Config{
 		Planet: PlanetConfig{
-			Name:            "My Planet",
-			Link:            "",
-			OwnerName:       "",
-			OwnerEmail:      "",
-			OutputDir:       "./public",
-			Days:            7,
-			LogLevel:        "info",
-			ConcurrentFetch: 5,
-			UserAgent:       "RoguePlanet/0.1",
-			GroupByDate:     true,
+			Name:              "My Planet",
+			Link:              "",
+			OwnerName:         "",
+			OwnerEmail:        "",
+			OutputDir:         "./public",
+			Days:              7,
+			LogLevel:          "info",
+			ConcurrentFetch:   5,
+			UserAgent:         "RoguePlanet/0.1",
+			GroupByDate:       true,
+			FilterByFirstSeen: false,
+			SortBy:            "published",
 		},
 		Database: DatabaseConfig{
 			Path: "./data/planet.db",
@@ -174,6 +178,17 @@ func (c *Config) setPlanet(key, value string) error {
 		c.Planet.GroupByDate = b
 	case "template":
 		c.Planet.Template = value
+	case "filter_by_first_seen":
+		b, err := strconv.ParseBool(value)
+		if err != nil {
+			return fmt.Errorf("invalid filter_by_first_seen value: %s", value)
+		}
+		c.Planet.FilterByFirstSeen = b
+	case "sort_by":
+		if value != "" && value != "published" && value != "first_seen" {
+			return fmt.Errorf("sort_by must be 'published' or 'first_seen', got: %s", value)
+		}
+		c.Planet.SortBy = value
 	default:
 		// Unknown keys are ignored for forward compatibility
 		return nil
@@ -209,6 +224,14 @@ func (c *Config) Validate() error {
 
 	if c.Database.Path == "" {
 		return fmt.Errorf("database path is required")
+	}
+
+	// Set default and validate sort_by
+	if c.Planet.SortBy == "" {
+		c.Planet.SortBy = "published"
+	}
+	if c.Planet.SortBy != "published" && c.Planet.SortBy != "first_seen" {
+		return fmt.Errorf("sort_by must be 'published' or 'first_seen', got: %s", c.Planet.SortBy)
 	}
 
 	return nil

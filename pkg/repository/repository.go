@@ -137,7 +137,28 @@ func (r *Repository) initSchema() error {
 	`
 
 	_, err := r.db.Exec(schema)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Backfill first_seen for entries that don't have it
+	// This ensures backwards compatibility with databases created before this feature
+	// Uses COALESCE to handle NULL values and falls back to current time if both are NULL
+	_, err = r.db.Exec(`
+		UPDATE entries
+		SET first_seen = COALESCE(
+			NULLIF(first_seen, ''),
+			published,
+			updated,
+			datetime('now')
+		)
+		WHERE first_seen IS NULL OR first_seen = ''
+	`)
+	if err != nil {
+		return fmt.Errorf("backfill first_seen: %w", err)
+	}
+
+	return nil
 }
 
 // AddFeed adds a new feed to the database
@@ -246,7 +267,9 @@ func (r *Repository) RemoveFeed(id int64) error {
 	return nil
 }
 
-// UpsertEntry inserts or updates an entry
+// UpsertEntry inserts or updates an entry.
+// On conflict (duplicate feed_id + entry_id), updates content fields but preserves
+// first_seen to maintain the original discovery timestamp for spam prevention.
 func (r *Repository) UpsertEntry(entry *Entry) error {
 	_, err := r.db.Exec(`
 		INSERT INTO entries (feed_id, entry_id, title, link, author, published, updated, content, content_type, summary, first_seen)
@@ -258,6 +281,7 @@ func (r *Repository) UpsertEntry(entry *Entry) error {
 			updated = excluded.updated,
 			content = excluded.content,
 			summary = excluded.summary
+			-- first_seen deliberately NOT updated to preserve original discovery time
 	`, entry.FeedID, entry.EntryID, entry.Title, entry.Link, entry.Author,
 		entry.Published.Format(time.RFC3339), entry.Updated.Format(time.RFC3339),
 		entry.Content, entry.ContentType, entry.Summary, entry.FirstSeen.Format(time.RFC3339))
@@ -310,6 +334,75 @@ func (r *Repository) GetRecentEntries(days int) ([]Entry, error) {
 		LIMIT 50
 	`)
 
+	if err != nil {
+		return nil, fmt.Errorf("query fallback entries: %w", err)
+	}
+	defer rows.Close()
+
+	return scanEntries(rows)
+}
+
+// GetRecentEntriesWithOptions returns entries based on filtering and sorting preferences.
+// If filterByFirstSeen is true, only entries first seen within the time window are returned.
+// sortBy determines the ordering: "published" or "first_seen".
+// Falls back to the most recent 50 entries if none found in the time window.
+func (r *Repository) GetRecentEntriesWithOptions(days int, filterByFirstSeen bool, sortBy string) ([]Entry, error) {
+	// Validate sortBy parameter to prevent SQL injection
+	if sortBy != "published" && sortBy != "first_seen" {
+		return nil, fmt.Errorf("invalid sortBy value: %s (must be 'published' or 'first_seen')", sortBy)
+	}
+
+	cutoff := time.Now().AddDate(0, 0, -days)
+
+	// Choose filter field (validated by boolean type)
+	filterField := "e.published"
+	if filterByFirstSeen {
+		filterField = "e.first_seen"
+	}
+
+	// Choose sort field (validated above)
+	sortField := "e.published"
+	if sortBy == "first_seen" {
+		sortField = "e.first_seen"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT e.id, e.feed_id, e.entry_id, e.title, e.link, e.author,
+		       e.published, e.updated, e.content, e.content_type, e.summary, e.first_seen
+		FROM entries e
+		JOIN feeds f ON e.feed_id = f.id
+		WHERE f.active = 1 AND %s >= ?
+		ORDER BY %s DESC
+	`, filterField, sortField)
+
+	rows, err := r.db.Query(query, cutoff.Format(time.RFC3339))
+	if err != nil {
+		return nil, fmt.Errorf("query entries: %w", err)
+	}
+	defer rows.Close()
+
+	entries, err := scanEntries(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	// If we found entries, return them
+	if len(entries) > 0 {
+		return entries, nil
+	}
+
+	// Fallback to most recent 50 entries (use same sort field)
+	query = fmt.Sprintf(`
+		SELECT e.id, e.feed_id, e.entry_id, e.title, e.link, e.author,
+		       e.published, e.updated, e.content, e.content_type, e.summary, e.first_seen
+		FROM entries e
+		JOIN feeds f ON e.feed_id = f.id
+		WHERE f.active = 1
+		ORDER BY %s DESC
+		LIMIT 50
+	`, sortField)
+
+	rows, err = r.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("query fallback entries: %w", err)
 	}

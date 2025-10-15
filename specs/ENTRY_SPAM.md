@@ -9,7 +9,11 @@ When adding a new feed to a planet aggregator, all historical entries from that 
 3. **User Confusion**: Mix of genuinely new content with old content
 4. **Social Media Spam**: If planet RSS is auto-posted to Twitter/Mastodon, causes spam
 
-This was the **#1 complaint** about Planet Venus from users (source: Reddit r/rust discussion).
+This was the **#1 complaint** about Planet Venus from users.
+
+**Original complaint**: [Reddit comment by /u/fgilcher](https://www.reddit.com/r/rust/comments/mvm4r2/comment/gvcwxq0/):
+
+> "One of the most annoying things about Venus/PlanetPlanet is how any change to a blog or addition of a new blog adds a ton of entries all at once, spamming people's RSS reader, as well as the twitter account that reposts the feed"
 
 ## Current Behavior
 
@@ -800,7 +804,7 @@ Implementation is successful when:
 
 ## References
 
-- **Original complaint**: Reddit r/rust discussion about Venus/Planet spam
+- **Original complaint**: [Reddit comment by /u/fgilcher](https://www.reddit.com/r/rust/comments/mvm4r2/comment/gvcwxq0/) about Venus/Planet spam
 - **Database schema**: `pkg/repository/repository.go` lines 114-134
 - **Current query**: `pkg/repository/repository.go` lines 272-311
 - **Config validation**: `pkg/config/config.go`

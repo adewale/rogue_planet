@@ -476,6 +476,51 @@ func TestSetPlanet(t *testing.T) {
 			value:   "maybe",
 			wantErr: true,
 		},
+		// Entry spam prevention fields
+		{
+			name:  "set filter_by_first_seen true",
+			key:   "filter_by_first_seen",
+			value: "true",
+			checkFunc: func(c *Config) bool {
+				return c.Planet.FilterByFirstSeen == true
+			},
+		},
+		{
+			name:  "set filter_by_first_seen false",
+			key:   "filter_by_first_seen",
+			value: "false",
+			checkFunc: func(c *Config) bool {
+				return c.Planet.FilterByFirstSeen == false
+			},
+		},
+		{
+			name:    "set filter_by_first_seen invalid",
+			key:     "filter_by_first_seen",
+			value:   "maybe",
+			wantErr: true,
+		},
+		{
+			name:  "set sort_by published",
+			key:   "sort_by",
+			value: "published",
+			checkFunc: func(c *Config) bool {
+				return c.Planet.SortBy == "published"
+			},
+		},
+		{
+			name:  "set sort_by first_seen",
+			key:   "sort_by",
+			value: "first_seen",
+			checkFunc: func(c *Config) bool {
+				return c.Planet.SortBy == "first_seen"
+			},
+		},
+		{
+			name:    "set sort_by invalid",
+			key:     "sort_by",
+			value:   "foobar",
+			wantErr: true,
+		},
 		// Unknown key
 		{
 			name:  "unknown key ignored",
@@ -521,6 +566,8 @@ concurrent_fetches = 5
 group_by_date = true
 user_agent = MyPlanet/1.0
 template = ./themes/classic/template.html
+filter_by_first_seen = false
+sort_by = published
 
 [database]
 path = ./data/planet.db
@@ -553,6 +600,8 @@ path = ./data/planet.db
 		{"group_by_date", config.Planet.GroupByDate, true},
 		{"user_agent", config.Planet.UserAgent, "MyPlanet/1.0"},
 		{"template", config.Planet.Template, "./themes/classic/template.html"},
+		{"filter_by_first_seen", config.Planet.FilterByFirstSeen, false},
+		{"sort_by", config.Planet.SortBy, "published"},
 		{"database.path", config.Database.Path, "./data/planet.db"},
 	}
 
