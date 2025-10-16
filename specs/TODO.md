@@ -10,7 +10,7 @@ All planned features for the initial release have been implemented, tested, and 
 
 ### Phase 1: Core Packages ✅
 
-#### Crawler Package (84.3% coverage) ✅
+#### Crawler Package (96.6% coverage) ✅
 - ✅ HTTP conditional requests (ETag/Last-Modified)
 - ✅ SSRF prevention (localhost, private IPs blocked)
 - ✅ Retry logic with exponential backoff
@@ -30,7 +30,7 @@ All planned features for the initial release have been implemented, tested, and 
 - ✅ Content vs summary extraction
 - ✅ Comprehensive test suite (28 test cases)
 
-#### Repository Package (75.3% coverage) ✅
+#### Repository Package (81.8% coverage) ✅
 - ✅ SQLite database with WAL mode
 - ✅ Foreign key constraints with CASCADE DELETE
 - ✅ Feed CRUD operations
@@ -56,7 +56,7 @@ All planned features for the initial release have been implemented, tested, and 
 - ✅ Default template embedded in binary
 - ✅ Comprehensive test suite (11 test cases)
 
-#### Config Package (78.4% coverage) ✅
+#### Config Package (94.7% coverage) ✅
 - ✅ INI format parser
 - ✅ Simple feeds.txt parser (one URL per line)
 - ✅ Comment support (# and ;)
@@ -113,7 +113,42 @@ All planned features for the initial release have been implemented, tested, and 
 - ✅ Binary built successfully (v0.1.0)
 - ✅ All commands functional
 
-### Phase 4: Build Automation ✅ (BONUS)
+### Phase 4: OPML Support ✅ (v0.2.0)
+
+#### OPML Package (91.8% coverage) ✅
+- ✅ OPML 1.0 and 2.0 parsing and generation
+- ✅ Support for xmlUrl/url and text/title attributes
+- ✅ RFC 822 date handling
+- ✅ Nested outline support (categories/folders)
+- ✅ Comprehensive test suite (6 integration tests)
+
+#### OPML Commands ✅
+- ✅ `rp import-opml <file> [--dry-run]` - Import feeds from OPML
+- ✅ `rp export-opml [--output FILE]` - Export feeds to OPML
+- ✅ Dry-run mode for preview before import
+- ✅ Duplicate feed detection during import
+- ✅ Compatible with Feedly, Inoreader, NewsBlur, The Old Reader
+
+#### Configuration Validation ✅
+- ✅ `rp verify` - Validate config and environment
+- ✅ Config file syntax validation
+- ✅ Database accessibility check
+- ✅ Output directory writability check
+- ✅ Custom template verification
+- ✅ Feed and entry count reporting
+
+### Phase 5: Entry Spam Prevention ✅ (v0.3.0)
+
+#### Entry Spam Prevention Feature ✅
+- ✅ `filter_by_first_seen` config option - Filter by discovery date
+- ✅ `sort_by` config option - Sort by "published" or "first_seen"
+- ✅ Automatic backfill migration for existing databases
+- ✅ SQL parameter validation to prevent injection
+- ✅ Improved NULL handling with COALESCE
+- ✅ 5 unit tests + 2 integration tests
+- ✅ 6 new config tests for validation
+
+### Phase 6: Build Automation ✅
 
 #### Makefile ✅
 - ✅ `make build` - Build for current platform
@@ -145,12 +180,13 @@ All planned features for the initial release have been implemented, tested, and 
 
 ### Coverage by Package
 ```
-config       78.4%  ███████████████    Good
-crawler      84.3%  ████████████████   Very Good
-generator    85.2%  █████████████████  Excellent
-normalizer   79.8%  ███████████████    Good
-repository   75.3%  ███████████████    Good
-Average      80.6%  ████████████████   Very Good
+config       94.7%  ██████████████████  Excellent
+crawler      96.6%  ███████████████████ Excellent
+generator    86.0%  █████████████████   Excellent
+normalizer   79.8%  ███████████████     Good
+opml         91.8%  ██████████████████  Excellent
+repository   81.8%  ████████████████    Very Good
+Average      88.4%  █████████████████   Excellent
 ```
 
 ### Security
@@ -220,21 +256,24 @@ All items completed:
 - ✅ Makefile for automation
 - ✅ Distribution packages ready
 - ✅ README with installation guide
-- ✅ Version set (0.1.0)
+- ✅ Version set (0.3.0)
 
 ---
 
-## Status: 🎉 READY FOR 0.1.0 RELEASE
+## Status: 🚀 v0.3.0 - ENTRY SPAM PREVENTION COMPLETE
 
-The project is feature-complete and ready for initial public release:
+The project has evolved significantly beyond the initial release:
 - ✅ All core features implemented and tested
-- ✅ Documentation complete
-- ✅ 80%+ test coverage across all packages
-- ✅ Security audited and hardened
+- ✅ OPML import/export support (v0.2.0)
+- ✅ Entry spam prevention feature (v0.3.0)
+- ✅ Documentation complete and up-to-date
+- ✅ 88.4% average test coverage (up from 80.6%)
+- ✅ Security hardened with SQL injection prevention
 - ✅ Build automation in place
 
-**Current Version**: 0.1.0 (Initial Development Release)
-**Next Step**: Push to GitHub and tag as v0.1.0
+**Current Version**: 0.3.0 (Development Release)
+**Completed Features**: Core aggregation, OPML support, Entry spam prevention
+**Next Priority**: Feed autodiscovery, 301 redirect handling, intelligent scheduling (P0 features for v1.0)
 
 ---
 
@@ -245,13 +284,13 @@ The project is feature-complete and ready for initial public release:
 - [ ] **Review all documentation** - Ensure all docs are up-to-date and accurate
 - [ ] **Final test run** - Execute `make check` to verify all tests pass
 - [ ] **Build verification** - Test binary on clean system
-- [ ] **Version verification** - Confirm version is 0.1.0 in code (main.go, Makefile, CHANGELOG)
+- [ ] **Version verification** - Confirm version is 0.3.0 in code (main.go, pkg/crawler/crawler.go, CHANGELOG)
 
 ### GitHub Repository Setup
 - [ ] **Create GitHub repository** - Initialize on GitHub
-- [ ] **Add repository description** - "Modern feed aggregator inspired by Planet Venus, written in Go - v0.1.0 development release"
+- [ ] **Add repository description** - "Modern feed aggregator inspired by Planet Venus, written in Go - v0.3.0 development release"
 - [ ] **Add topics/tags** - `rss`, `atom`, `feed-aggregator`, `planet`, `go`, `golang`, `static-site-generator`
-- [ ] **Add development notice** - Clearly mark as 0.1.x development release in README
+- [ ] **Add development notice** - Clearly mark as 0.3.x development release in README
 - [ ] **Configure repository settings**
   - [ ] Enable Issues
   - [ ] Enable Discussions (optional)
@@ -261,22 +300,22 @@ The project is feature-complete and ready for initial public release:
 ### Initial Git Push
 - [ ] **Stage all files** - `git add` all project files (see GITHUB_PUSH_LIST.md)
 - [ ] **Verify staging** - Review `git status` to ensure correct files staged
-- [ ] **Create initial commit** - Commit with message: "Initial development release: Rogue Planet v0.1.0"
+- [ ] **Create initial commit** - Commit with message: "Initial development release: Rogue Planet v0.3.0"
 - [ ] **Add remote** - `git remote add origin <repo-url>`
 - [ ] **Push to GitHub** - `git push -u origin main`
 
-### Release Creation (v0.1.0)
-- [ ] **Create v0.1.0 release tag** - `git tag -a v0.1.0 -m "Release v0.1.0 - Initial Development Release"`
-- [ ] **Push tag to GitHub** - `git push origin v0.1.0`
+### Release Creation (v0.3.0)
+- [ ] **Create v0.3.0 release tag** - `git tag -a v0.3.0 -m "Release v0.3.0 - Entry Spam Prevention"`
+- [ ] **Push tag to GitHub** - `git push origin v0.3.0`
 - [ ] **Create GitHub Release** - Draft release on GitHub
-  - [ ] Title: "Rogue Planet v0.1.0 - Initial Development Release"
+  - [ ] Title: "Rogue Planet v0.3.0 - Entry Spam Prevention"
   - [ ] Copy release notes from CHANGELOG.md
   - [ ] **Mark as pre-release** (not production-ready yet)
-  - [ ] Upload pre-built binaries (optional for 0.1.0)
+  - [ ] Upload pre-built binaries (optional for 0.3.0)
   - [ ] Include development disclaimer
 
 ### Post-Launch Documentation
-- [ ] **Add GitHub URL to code** - Update User-Agent in crawler.go with repo URL
+- [x] **Add GitHub URL to code** - Update User-Agent in crawler.go with repo URL (DONE: already has github.com/adewale/rogue_planet)
 - [ ] **Update README badges** (optional)
   - [ ] Build status badge
   - [ ] Coverage badge (codecov.io or coveralls.io)
@@ -321,29 +360,42 @@ For future contributors:
 
 ## License
 
-[Add your license here]
+MIT License - See [LICENSE](LICENSE) file for details.
 
 ---
 
-*Last Updated: 2025-10-10*
-*Status: v0.1.0 - All features complete, ready for initial public release*
+*Last Updated: 2025-10-16*
+*Status: v0.3.0 - Entry spam prevention complete, P0 features planned for v1.0*
 
 ---
 
 ## Roadmap to v1.0.0
 
-### Planned Enhancements
-- [ ] Community feedback incorporation
-- [ ] Additional real-world testing
-- [ ] Performance benchmarking and optimization
-- [ ] Additional feed format edge cases
-- [ ] Extended documentation based on user questions
-- [ ] Production deployment case studies
+### Critical Features (P0) - Next Priority
 
-### Post-1.0 Features (Future)
-- [ ] OPML import/export
-- [ ] WebSub/PubSubHubbub support
-- [ ] Multi-format output (JSON Feed, RSS, Atom)
-- [ ] Archive pages by month/year
-- [ ] Full-text search
-- [ ] Plugin system
+- [ ] **Feed Autodiscovery** (2 days)
+  - Parse HTML `<link rel="alternate">` tags to find RSS/Atom feeds
+  - Support RSS, Atom, and JSON Feed autodiscovery
+  handle it
+
+- [ ] **301 Redirect Handling** (1 day)
+  - Detect permanent redirects (301 Moved Permanently)
+  - Update stored feed URL in database automatically
+  - Prevents wasting bandwidth on redirects forever
+  - Critical for long-term reliability as feeds migrate HTTP→HTTPS
+
+- [ ] **Intelligent Feed Scheduling** (1 week)
+  - Adaptive polling based on historical update frequency
+  - Respect Cache-Control: max-age headers from feeds
+  - Exponential backoff for failing feeds (1h → 2h → 4h → 8h → 24h)
+  - Add jitter to prevent thundering herd (don't fetch all feeds at :00)
+  
+### Important Features (P1) - Follow-up Priority
+- [ ] Character encoding detection and fallback
+- [ ] HTTP authentication support (Basic/Digest Auth)
+- [ ] Embedded content handling (YouTube, tweets, audio players)
+
+### Planned Enhancements
+- [ ] Additional real-world testing
+- [ ] Additional feed format edge cases
+- [ ] Additional themes (dark mode, minimalist)

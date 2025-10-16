@@ -26,7 +26,7 @@ const (
 	// MaxRedirects prevents redirect loops
 	MaxRedirects = 5
 	// UserAgent identifies the bot
-	UserAgent = "RoguePlanet/0.1 (+https://github.com/adewale/rogue_planet)"
+	UserAgent = "RoguePlanet/0.3 (+https://github.com/adewale/rogue_planet)"
 )
 
 var (
