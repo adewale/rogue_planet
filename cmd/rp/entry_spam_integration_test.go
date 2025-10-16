@@ -142,13 +142,15 @@ func TestBackwardsCompatibility(t *testing.T) {
 	baseTime := time.Now()
 
 	// Add entry published recently but first_seen long ago
-	repo.UpsertEntry(&repository.Entry{
+	if err := repo.UpsertEntry(&repository.Entry{
 		FeedID:    feedID,
 		EntryID:   "test-entry",
 		Title:     "Test Entry",
 		Published: baseTime.AddDate(0, 0, -2),
 		FirstSeen: baseTime.AddDate(0, 0, -30), // Seen 30 days ago
-	})
+	}); err != nil {
+		t.Fatalf("UpsertEntry() error = %v", err)
+	}
 
 	// Generate with default config (should filter by published)
 	if err := cmdGenerate(GenerateOptions{ConfigPath: "./config.ini", Output: io.Discard}); err != nil {

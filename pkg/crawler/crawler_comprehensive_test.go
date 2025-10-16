@@ -398,7 +398,9 @@ func TestFetchWithRetry_Comprehensive(t *testing.T) {
 		attempts := 0
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			attempts++
-			w.Write([]byte("content"))
+			if _, err := w.Write([]byte("content")); err != nil {
+				t.Errorf("Write error: %v", err)
+			}
 		}))
 		defer server.Close()
 
@@ -421,7 +423,9 @@ func TestFetchWithRetry_Comprehensive(t *testing.T) {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			w.Write([]byte("content"))
+			if _, err := w.Write([]byte("content")); err != nil {
+				t.Errorf("Write error: %v", err)
+			}
 		}))
 		defer server.Close()
 
@@ -504,7 +508,9 @@ func TestFetchWithRetry_Comprehensive(t *testing.T) {
 				w.WriteHeader(http.StatusTooManyRequests)
 				return
 			}
-			w.Write([]byte("content"))
+			if _, err := w.Write([]byte("content")); err != nil {
+				t.Errorf("Write error: %v", err)
+			}
 		}))
 		defer server.Close()
 

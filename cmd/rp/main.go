@@ -238,7 +238,9 @@ func runUpdate() {
 	fs := flag.NewFlagSet("update", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	verbose := fs.Bool("verbose", false, "Enable verbose logging")
-	fs.Parse(os.Args[2:])
+	if err := fs.Parse(os.Args[2:]); err != nil {
+		log.Fatalf("Error parsing flags: %v", err)
+	}
 
 	opts := UpdateOptions{
 		ConfigPath: *configPath,
@@ -255,7 +257,9 @@ func runFetch() {
 	fs := flag.NewFlagSet("fetch", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	verbose := fs.Bool("verbose", false, "Enable verbose logging")
-	fs.Parse(os.Args[2:])
+	if err := fs.Parse(os.Args[2:]); err != nil {
+		log.Fatalf("Error parsing flags: %v", err)
+	}
 
 	opts := FetchOptions{
 		ConfigPath: *configPath,
@@ -272,7 +276,9 @@ func runGenerate() {
 	fs := flag.NewFlagSet("generate", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	days := fs.Int("days", 0, "Number of days to include (overrides config)")
-	fs.Parse(os.Args[2:])
+	if err := fs.Parse(os.Args[2:]); err != nil {
+		log.Fatalf("Error parsing flags: %v", err)
+	}
 
 	opts := GenerateOptions{
 		ConfigPath: *configPath,

@@ -641,7 +641,9 @@ func TestCountRecentEntries(t *testing.T) {
 			Updated:   oldDate,
 			FirstSeen: now,
 		}
-		repo.UpsertEntry(entry)
+		if err := repo.UpsertEntry(entry); err != nil {
+			t.Fatalf("UpsertEntry() error = %v", err)
+		}
 	}
 
 	// Count recent entries (last 7 days)
@@ -806,13 +808,15 @@ func TestGetRecentEntriesFilterAndSortByFirstSeen(t *testing.T) {
 	}
 
 	for i, e := range entries {
-		repo.UpsertEntry(&Entry{
+		if err := repo.UpsertEntry(&Entry{
 			FeedID:    feedID,
 			EntryID:   fmt.Sprintf("entry-%d", i),
 			Title:     e.title,
 			Published: e.published,
 			FirstSeen: e.firstSeen,
-		})
+		}); err != nil {
+			t.Fatalf("UpsertEntry() error = %v", err)
+		}
 	}
 
 	// Filter by first_seen AND sort by first_seen
