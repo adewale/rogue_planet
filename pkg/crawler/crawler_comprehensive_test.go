@@ -175,7 +175,9 @@ func TestFetch_ConditionalRequests_Combinations(t *testing.T) {
 
 				w.Header().Set("ETag", `"new123"`)
 				w.Header().Set("Last-Modified", "Tue, 03 Jan 2006 15:04:05 GMT")
-				w.Write([]byte("content"))
+				if _, err := w.Write([]byte("content")); err != nil {
+					t.Errorf("Write error: %v", err)
+				}
 			}))
 			defer server.Close()
 
@@ -202,7 +204,9 @@ func TestFetch_GzipDecompression(t *testing.T) {
 
 			w.Header().Set("Content-Encoding", "gzip")
 			gzWriter := gzip.NewWriter(w)
-			gzWriter.Write(originalContent)
+			if _, err := gzWriter.Write(originalContent); err != nil {
+				t.Errorf("Write error: %v", err)
+			}
 			gzWriter.Close()
 		}))
 		defer server.Close()
@@ -221,7 +225,9 @@ func TestFetch_GzipDecompression(t *testing.T) {
 
 	t.Run("uncompressed response", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write(originalContent)
+			if _, err := w.Write(originalContent); err != nil {
+				t.Errorf("Write error: %v", err)
+			}
 		}))
 		defer server.Close()
 
@@ -259,7 +265,9 @@ func TestFetch_HTTPStatusCodes(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(tt.statusCode)
 				if tt.statusCode == http.StatusOK {
-					w.Write([]byte("content"))
+					if _, err := w.Write([]byte("content")); err != nil {
+						t.Errorf("Write error: %v", err)
+					}
 				}
 			}))
 			defer server.Close()

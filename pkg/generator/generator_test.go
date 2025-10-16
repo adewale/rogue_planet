@@ -344,7 +344,9 @@ func TestCSPHeader(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	gen.Generate(&buf, data)
+	if err := gen.Generate(&buf, data); err != nil {
+		t.Fatalf("Generate() error = %v", err)
+	}
 
 	output := buf.String()
 
@@ -377,7 +379,9 @@ func TestResponsiveDesign(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	gen.Generate(&buf, data)
+	if err := gen.Generate(&buf, data); err != nil {
+		t.Fatalf("Generate() error = %v", err)
+	}
 
 	output := buf.String()
 

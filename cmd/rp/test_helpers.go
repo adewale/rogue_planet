@@ -13,5 +13,9 @@ func setupTestDir(t *testing.T) (dir string, cleanup func()) {
 	if err := os.Chdir(dir); err != nil {
 		t.Fatalf("Failed to chdir to temp dir: %v", err)
 	}
-	return dir, func() { os.Chdir(oldWd) }
+	return dir, func() {
+		if err := os.Chdir(oldWd); err != nil {
+			t.Errorf("Failed to chdir back to %s: %v", oldWd, err)
+		}
+	}
 }

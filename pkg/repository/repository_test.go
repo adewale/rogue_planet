@@ -133,8 +133,12 @@ func TestGetFeeds(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	repo.AddFeed("https://example.com/feed1", "Feed 1")
-	repo.AddFeed("https://example.com/feed2", "Feed 2")
+	if _, err := repo.AddFeed("https://example.com/feed1", "Feed 1"); err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
+	if _, err := repo.AddFeed("https://example.com/feed2", "Feed 2"); err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
 
 	feeds, err := repo.GetFeeds(false)
 	if err != nil {
@@ -150,7 +154,9 @@ func TestGetFeedByURL(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	repo.AddFeed("https://example.com/feed", "Test Feed")
+	if _, err := repo.AddFeed("https://example.com/feed", "Test Feed"); err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
 
 	feed, err := repo.GetFeedByURL("https://example.com/feed")
 	if err != nil {
@@ -248,7 +254,9 @@ func TestGetRecentEntries(t *testing.T) {
 		Updated:   time.Now(),
 		FirstSeen: time.Now(),
 	}
-	repo.UpsertEntry(recentEntry)
+	if err := repo.UpsertEntry(recentEntry); err != nil {
+		t.Fatalf("UpsertEntry() error = %v", err)
+	}
 
 	// Add old entry
 	oldEntry := &Entry{
@@ -259,7 +267,9 @@ func TestGetRecentEntries(t *testing.T) {
 		Updated:   time.Now().AddDate(0, 0, -10),
 		FirstSeen: time.Now().AddDate(0, 0, -10),
 	}
-	repo.UpsertEntry(oldEntry)
+	if err := repo.UpsertEntry(oldEntry); err != nil {
+		t.Fatalf("UpsertEntry() error = %v", err)
+	}
 
 	// Get recent entries (last 7 days)
 	entries, err := repo.GetRecentEntries(7)
@@ -291,7 +301,9 @@ func TestPruneOldEntries(t *testing.T) {
 		Updated:   time.Now(),
 		FirstSeen: time.Now(),
 	}
-	repo.UpsertEntry(recentEntry)
+	if err := repo.UpsertEntry(recentEntry); err != nil {
+		t.Fatalf("UpsertEntry() error = %v", err)
+	}
 
 	// Add old entry
 	oldEntry := &Entry{
@@ -302,7 +314,9 @@ func TestPruneOldEntries(t *testing.T) {
 		Updated:   time.Now().AddDate(0, 0, -100),
 		FirstSeen: time.Now().AddDate(0, 0, -100),
 	}
-	repo.UpsertEntry(oldEntry)
+	if err := repo.UpsertEntry(oldEntry); err != nil {
+		t.Fatalf("UpsertEntry() error = %v", err)
+	}
 
 	// Prune entries older than 90 days
 	deleted, err := repo.PruneOldEntries(90)
@@ -347,7 +361,9 @@ func TestRemoveFeedCascade(t *testing.T) {
 	repo.UpsertEntry(entry)
 
 	// Remove feed
-	repo.RemoveFeed(feedID)
+	if err := repo.RemoveFeed(feedID); err != nil {
+		t.Fatalf("RemoveFeed() error = %v", err)
+	}
 
 	// Verify entries were also removed
 	var count int
@@ -370,7 +386,9 @@ func TestDatabasePersistence(t *testing.T) {
 		t.Fatalf("Failed to create repository: %v", err)
 	}
 
-	repo1.AddFeed("https://example.com/feed", "Test Feed")
+	if _, err := repo1.AddFeed("https://example.com/feed", "Test Feed"); err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
 	repo1.Close()
 
 	// Reopen database
@@ -540,7 +558,9 @@ func TestUpdateFeedError(t *testing.T) {
 	}
 
 	// Call again to increment error count
-	repo.UpdateFeedError(id, "Another error")
+	if err := repo.UpdateFeedError(id, "Another error"); err != nil {
+		t.Fatalf("UpdateFeedError() error = %v", err)
+	}
 	feed, _ = repo.GetFeedByURL("https://example.com/feed")
 
 	if feed.FetchErrorCount != 2 {

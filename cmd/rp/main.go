@@ -115,7 +115,9 @@ Examples:
 func runInit() {
 	fs := flag.NewFlagSet("init", flag.ExitOnError)
 	feedsFile := fs.String("f", "", "Import feeds from file")
-	fs.Parse(os.Args[2:])
+	if err := fs.Parse(os.Args[2:]); err != nil {
+		log.Fatalf("Error parsing flags: %v", err)
+	}
 
 	opts := InitOptions{
 		FeedsFile:  *feedsFile,
@@ -131,7 +133,9 @@ func runInit() {
 func runAddFeed() {
 	fs := flag.NewFlagSet("add-feed", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
-	fs.Parse(os.Args[2:])
+	if err := fs.Parse(os.Args[2:]); err != nil {
+		log.Fatalf("Error parsing flags: %v", err)
+	}
 
 	if fs.NArg() < 1 {
 		fmt.Fprintln(os.Stderr, "Usage: rp add-feed <url>")
@@ -153,7 +157,9 @@ func runAddAll() {
 	fs := flag.NewFlagSet("add-all", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	feedsFile := fs.String("f", "", "Path to feeds file")
-	fs.Parse(os.Args[2:])
+	if err := fs.Parse(os.Args[2:]); err != nil {
+		log.Fatalf("Error parsing flags: %v", err)
+	}
 
 	if *feedsFile == "" {
 		fmt.Fprintln(os.Stderr, "Usage: rp add-all -f <feeds-file>")

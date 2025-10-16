@@ -131,7 +131,9 @@ func TestBackwardsCompatibility(t *testing.T) {
 		ConfigPath: "./config.ini",
 		Output:     io.Discard,
 	}
-	cmdInit(initOpts)
+	if err := cmdInit(initOpts); err != nil {
+		t.Fatalf("cmdInit() error = %v", err)
+	}
 
 	repo, _ := repository.New(filepath.Join(dir, "data/planet.db"))
 	defer repo.Close()
@@ -149,7 +151,9 @@ func TestBackwardsCompatibility(t *testing.T) {
 	})
 
 	// Generate with default config (should filter by published)
-	cmdGenerate(GenerateOptions{ConfigPath: "./config.ini", Output: io.Discard})
+	if err := cmdGenerate(GenerateOptions{ConfigPath: "./config.ini", Output: io.Discard}); err != nil {
+		t.Fatalf("cmdGenerate() error = %v", err)
+	}
 
 	htmlContent, _ := os.ReadFile(filepath.Join(dir, "public/index.html"))
 	html := string(htmlContent)

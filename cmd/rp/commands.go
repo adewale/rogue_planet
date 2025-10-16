@@ -561,7 +561,7 @@ func cmdVerify(opts VerifyOptions) error {
 
 	// 2. Check database accessibility and schema
 	if _, err := os.Stat(cfg.Database.Path); os.IsNotExist(err) {
-		errors = append(errors, fmt.Sprintf("Database does not exist → run 'rp init' to create"))
+		errors = append(errors, "Database does not exist → run 'rp init' to create")
 	} else {
 		// Try to open database
 		repo, err := repository.New(cfg.Database.Path)
@@ -893,7 +893,9 @@ func fetchFeeds(cfg *config.Config) error {
 			if err != nil {
 				globalLogger.Error("Error fetching %s: %v", f.URL, err)
 				mu.Lock()
-				repo.UpdateFeedError(f.ID, err.Error())
+				if updateErr := repo.UpdateFeedError(f.ID, err.Error()); updateErr != nil {
+					globalLogger.Error("Failed to update feed error for %s: %v", f.URL, updateErr)
+				}
 				mu.Unlock()
 				return
 			}
@@ -903,7 +905,9 @@ func fetchFeeds(cfg *config.Config) error {
 				fmt.Printf("    Not modified (cached)\n")
 				globalLogger.Debug("%s returned 304 Not Modified", f.URL)
 				mu.Lock()
-				repo.UpdateFeedCache(f.ID, resp.NewCache.ETag, resp.NewCache.LastModified, resp.FetchTime)
+				if updateErr := repo.UpdateFeedCache(f.ID, resp.NewCache.ETag, resp.NewCache.LastModified, resp.FetchTime); updateErr != nil {
+					globalLogger.Error("Failed to update feed cache for %s: %v", f.URL, updateErr)
+				}
 				mu.Unlock()
 				return
 			}
@@ -913,7 +917,9 @@ func fetchFeeds(cfg *config.Config) error {
 			if err != nil {
 				globalLogger.Error("Error parsing %s: %v", f.URL, err)
 				mu.Lock()
-				repo.UpdateFeedError(f.ID, err.Error())
+				if updateErr := repo.UpdateFeedError(f.ID, err.Error()); updateErr != nil {
+					globalLogger.Error("Failed to update feed error for %s: %v", f.URL, updateErr)
+				}
 				mu.Unlock()
 				return
 			}
@@ -922,8 +928,12 @@ func fetchFeeds(cfg *config.Config) error {
 
 			// Update feed metadata and store entries (protected by mutex)
 			mu.Lock()
-			repo.UpdateFeed(f.ID, metadata.Title, metadata.Link, metadata.Updated)
-			repo.UpdateFeedCache(f.ID, resp.NewCache.ETag, resp.NewCache.LastModified, resp.FetchTime)
+			if updateErr := repo.UpdateFeed(f.ID, metadata.Title, metadata.Link, metadata.Updated); updateErr != nil {
+				globalLogger.Error("Failed to update feed metadata for %s: %v", f.URL, updateErr)
+			}
+			if updateErr := repo.UpdateFeedCache(f.ID, resp.NewCache.ETag, resp.NewCache.LastModified, resp.FetchTime); updateErr != nil {
+				globalLogger.Error("Failed to update feed cache for %s: %v", f.URL, updateErr)
+			}
 
 			// Store entries
 			storedCount := 0
