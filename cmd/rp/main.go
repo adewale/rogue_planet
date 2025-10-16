@@ -180,7 +180,9 @@ func runAddAll() {
 func runRemoveFeed() {
 	fs := flag.NewFlagSet("remove-feed", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
-	fs.Parse(os.Args[2:])
+	if err := fs.Parse(os.Args[2:]); err != nil {
+		log.Fatalf("Error parsing flags: %v", err)
+	}
 
 	if fs.NArg() < 1 {
 		fmt.Fprintln(os.Stderr, "Usage: rp remove-feed <url>")
@@ -201,7 +203,9 @@ func runRemoveFeed() {
 func runListFeeds() {
 	fs := flag.NewFlagSet("list-feeds", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
-	fs.Parse(os.Args[2:])
+	if err := fs.Parse(os.Args[2:]); err != nil {
+		log.Fatalf("Error parsing flags: %v", err)
+	}
 
 	opts := ListFeedsOptions{
 		ConfigPath: *configPath,
@@ -216,7 +220,9 @@ func runListFeeds() {
 func runStatus() {
 	fs := flag.NewFlagSet("status", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
-	fs.Parse(os.Args[2:])
+	if err := fs.Parse(os.Args[2:]); err != nil {
+		log.Fatalf("Error parsing flags: %v", err)
+	}
 
 	opts := StatusOptions{
 		ConfigPath: *configPath,

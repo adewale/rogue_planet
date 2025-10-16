@@ -304,7 +304,9 @@ func TestFetch_SizeLimits(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				data := make([]byte, tt.size)
-				w.Write(data)
+				if _, err := w.Write(data); err != nil {
+					t.Errorf("Write error: %v", err)
+				}
 			}))
 			defer server.Close()
 
@@ -330,7 +332,9 @@ func TestFetch_Redirects(t *testing.T) {
 				redirectCount++
 				http.Redirect(w, r, "/redirect", http.StatusFound)
 			} else {
-				w.Write([]byte("final content"))
+				if _, err := w.Write([]byte("final content")); err != nil {
+					t.Errorf("Write error: %v", err)
+				}
 			}
 		}))
 		defer server.Close()
@@ -365,7 +369,9 @@ func TestFetch_Redirects(t *testing.T) {
 
 	t.Run("301 permanent redirect", func(t *testing.T) {
 		finalServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("moved content"))
+			if _, err := w.Write([]byte("moved content")); err != nil {
+				t.Errorf("Write error: %v", err)
+			}
 		}))
 		defer finalServer.Close()
 

@@ -358,7 +358,9 @@ func TestRemoveFeedCascade(t *testing.T) {
 		Updated:   time.Now(),
 		FirstSeen: time.Now(),
 	}
-	repo.UpsertEntry(entry)
+	if err := repo.UpsertEntry(entry); err != nil {
+		t.Fatalf("UpsertEntry() error = %v", err)
+	}
 
 	// Remove feed
 	if err := repo.RemoveFeed(feedID); err != nil {
@@ -592,7 +594,9 @@ func TestCountEntries(t *testing.T) {
 			Updated:   time.Now(),
 			FirstSeen: time.Now(),
 		}
-		repo.UpsertEntry(entry)
+		if err := repo.UpsertEntry(entry); err != nil {
+			t.Fatalf("UpsertEntry() error = %v", err)
+		}
 	}
 
 	count, err = repo.CountEntries()
@@ -621,7 +625,9 @@ func TestCountRecentEntries(t *testing.T) {
 			Updated:   now,
 			FirstSeen: now,
 		}
-		repo.UpsertEntry(entry)
+		if err := repo.UpsertEntry(entry); err != nil {
+			t.Fatalf("UpsertEntry() error = %v", err)
+		}
 	}
 
 	// Add old entries (100 days ago)
