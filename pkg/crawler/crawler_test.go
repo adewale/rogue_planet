@@ -51,7 +51,9 @@ func TestFetch(t *testing.T) {
 			w.Header().Set("ETag", `"abc123"`)
 			w.Header().Set("Last-Modified", "Mon, 02 Jan 2006 15:04:05 GMT")
 			w.Header().Set("Content-Type", "application/rss+xml")
-			w.Write([]byte(`<?xml version="1.0"?><rss version="2.0"><channel></channel></rss>`))
+			if _, err := w.Write([]byte(`<?xml version="1.0"?><rss version="2.0"><channel></channel></rss>`)); err != nil {
+				t.Errorf("Write error: %v", err)
+			}
 		}))
 		defer server.Close()
 
@@ -127,7 +129,9 @@ func TestFetch(t *testing.T) {
 
 	t.Run("redirect handling", func(t *testing.T) {
 		finalServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(`<?xml version="1.0"?><rss version="2.0"><channel></channel></rss>`))
+			if _, err := w.Write([]byte(`<?xml version="1.0"?><rss version="2.0"><channel></channel></rss>`)); err != nil {
+				t.Errorf("Write error: %v", err)
+			}
 		}))
 		defer finalServer.Close()
 
@@ -175,7 +179,9 @@ func TestFetch(t *testing.T) {
 	t.Run("timeout handling", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			time.Sleep(2 * time.Second)
-			w.Write([]byte("too slow"))
+			if _, err := w.Write([]byte("too slow")); err != nil {
+				t.Errorf("Write error: %v", err)
+			}
 		}))
 		defer server.Close()
 
@@ -193,7 +199,12 @@ func TestFetch(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Send 11MB of data
 			largeData := make([]byte, 11*1024*1024)
-			w.Write(largeData)
+			if _, err := w.Write(largeData); err != nil {
+				// Expected: client closes connection when size limit is reached
+				if !strings.Contains(err.Error(), "connection reset") && !strings.Contains(err.Error(), "broken pipe") {
+					t.Errorf("Unexpected write error: %v", err)
+				}
+			}
 		}))
 		defer server.Close()
 
@@ -219,7 +230,9 @@ func TestFetchWithRetry(t *testing.T) {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			w.Write([]byte(`<?xml version="1.0"?><rss version="2.0"><channel></channel></rss>`))
+			if _, err := w.Write([]byte(`<?xml version="1.0"?><rss version="2.0"><channel></channel></rss>`)); err != nil {
+				t.Errorf("Write error: %v", err)
+			}
 		}))
 		defer server.Close()
 

@@ -296,7 +296,9 @@ func runPrune() {
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	days := fs.Int("days", 90, "Remove entries older than N days")
 	dryRun := fs.Bool("dry-run", false, "Show what would be deleted without deleting")
-	fs.Parse(os.Args[2:])
+	if err := fs.Parse(os.Args[2:]); err != nil {
+		log.Fatalf("Error parsing flags: %v", err)
+	}
 
 	opts := PruneOptions{
 		ConfigPath: *configPath,
@@ -313,7 +315,9 @@ func runPrune() {
 func runVerify() {
 	fs := flag.NewFlagSet("verify", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
-	fs.Parse(os.Args[2:])
+	if err := fs.Parse(os.Args[2:]); err != nil {
+		log.Fatalf("Error parsing flags: %v", err)
+	}
 
 	opts := VerifyOptions{
 		ConfigPath: *configPath,
@@ -329,7 +333,9 @@ func runImportOPML() {
 	fs := flag.NewFlagSet("import-opml", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	dryRun := fs.Bool("dry-run", false, "Preview feeds without importing")
-	fs.Parse(os.Args[2:])
+	if err := fs.Parse(os.Args[2:]); err != nil {
+		log.Fatalf("Error parsing flags: %v", err)
+	}
 
 	if fs.NArg() < 1 {
 		fmt.Fprintln(os.Stderr, "Usage: rp import-opml <opml-file> [--dry-run]")
@@ -352,7 +358,9 @@ func runExportOPML() {
 	fs := flag.NewFlagSet("export-opml", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	output := fs.String("output", "", "Output file (default: stdout)")
-	fs.Parse(os.Args[2:])
+	if err := fs.Parse(os.Args[2:]); err != nil {
+		log.Fatalf("Error parsing flags: %v", err)
+	}
 
 	opts := ExportOPMLOptions{
 		ConfigPath: *configPath,

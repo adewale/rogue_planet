@@ -590,7 +590,9 @@ func TestFetch_CacheUpdate(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("ETag", `"new-etag"`)
 			w.Header().Set("Last-Modified", "Wed, 04 Jan 2006 15:04:05 GMT")
-			w.Write([]byte("new content"))
+			if _, err := w.Write([]byte("new content")); err != nil {
+				t.Errorf("Write error: %v", err)
+			}
 		}))
 		defer server.Close()
 
@@ -656,7 +658,9 @@ func TestFetch_UserAgent(t *testing.T) {
 			if ua != UserAgent {
 				t.Errorf("User-Agent = %s, want %s", ua, UserAgent)
 			}
-			w.Write([]byte("content"))
+			if _, err := w.Write([]byte("content")); err != nil {
+				t.Errorf("Write error: %v", err)
+			}
 		}))
 		defer server.Close()
 
@@ -674,7 +678,9 @@ func TestFetch_UserAgent(t *testing.T) {
 			if ua != customUA {
 				t.Errorf("User-Agent = %s, want %s", ua, customUA)
 			}
-			w.Write([]byte("content"))
+			if _, err := w.Write([]byte("content")); err != nil {
+				t.Errorf("Write error: %v", err)
+			}
 		}))
 		defer server.Close()
 

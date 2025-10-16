@@ -31,7 +31,9 @@ func TestEndToEndHTMLGeneration(t *testing.T) {
 	// Create mock HTTP server serving the test feed
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/rss+xml")
-		w.Write(testFeedData)
+		if _, err := w.Write(testFeedData); err != nil {
+			t.Errorf("Write error: %v", err)
+		}
 	}))
 	defer server.Close()
 

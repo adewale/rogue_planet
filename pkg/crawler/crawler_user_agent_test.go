@@ -38,7 +38,9 @@ func TestNewWithUserAgent(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				receivedUA = r.Header.Get("User-Agent")
 				w.Header().Set("Content-Type", "application/rss+xml")
-				w.Write([]byte(`<?xml version="1.0"?><rss version="2.0"><channel><title>Test</title></channel></rss>`))
+				if _, err := w.Write([]byte(`<?xml version="1.0"?><rss version="2.0"><channel><title>Test</title></channel></rss>`)); err != nil {
+					t.Errorf("Write error: %v", err)
+				}
 			}))
 			defer server.Close()
 
