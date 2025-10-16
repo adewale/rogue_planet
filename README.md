@@ -1,5 +1,7 @@
 # Rogue Planet
 
+**Development Release v0.3.0** - This project is in active development. While core features are implemented and tested, it has not yet been deployed to production. The v1.0 production release will add feed autodiscovery, 301 redirect handling, and intelligent feed scheduling.
+
 A modern feed aggregator written in Go, inspired by Planet Planet, Planet Venus and friends. Rogue Planet downloads RSS and Atom feeds from multiple sources and aggregates them into a single reverse-chronological stream published as a static HTML page.
 
 ## Features

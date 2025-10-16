@@ -1,8 +1,8 @@
-# Rogue Planet - TODO
+# Rogue Planet - TODO & Roadmap
 
-## ✅ v0.1.0 FEATURES COMPLETE
+## Current Status: v0.3.0 ✅
 
-All planned features for the initial release have been implemented, tested, and documented.
+All planned features for v0.3.0 have been implemented, tested, and documented.
 
 ---
 
@@ -43,7 +43,7 @@ All planned features for the initial release have been implemented, tested, and 
 
 ### Phase 2: User Interface ✅
 
-#### Generator Package (85.2% coverage) ✅
+#### Generator Package (86.0% coverage) ✅
 - ✅ HTML template renderer
 - ✅ Responsive design (mobile-friendly)
 - ✅ Classic Planet Planet sidebar with feed list
@@ -205,43 +205,6 @@ Average      88.4%  █████████████████   Excell
 
 ---
 
-## Future Enhancements (Optional)
-
-These are **not required** but documented for future consideration:
-
-### Web UI
-- [ ] Configuration interface
-- [ ] Feed management dashboard
-- [ ] Real-time update status
-
-### Additional Formats
-- [ ] Multiple output formats (RSS/Atom feeds)
-- [ ] JSON Feed output
-- [ ] Archive pages (by month/year)
-
-### Advanced Features
-- [ ] WebSub/PubSubHubbub support
-- [ ] OPML import/export
-- [ ] Feed discovery from website URLs
-- [ ] Tag/category support
-- [ ] Full-text search
-- [ ] Plugin system for custom filters
-
-### DevOps
-- [ ] Docker image (Dockerfile exists as placeholder)
-- [ ] Docker Compose setup
-- [ ] Kubernetes manifests
-- [ ] GitHub Actions CI/CD workflow
-- [ ] Automated releases
-
-### Performance
-- [ ] Benchmarking suite
-- [ ] Performance optimization
-- [ ] Caching strategies
-- [ ] CDN integration guide
-
----
-
 ## Release Checklist
 
 All items completed:
@@ -279,30 +242,29 @@ The project has evolved significantly beyond the initial release:
 
 ## 🚀 LAUNCH CHECKLIST
 
-### Pre-Launch Tasks (v0.1.0)
-- [ ] **Create LICENSE file** - Add open source license (MIT, Apache 2.0, or GPL)
-- [ ] **Review all documentation** - Ensure all docs are up-to-date and accurate
+### Pre-Launch Tasks (v0.3.0)
+- [x] **Create LICENSE file** - MIT License added
+- [x] **Create GitHub repository** - Repository created at https://github.com/adewale/rogue_planet
+- [x] **Review all documentation** - Updated for v0.3.0, internal consistency verified
 - [ ] **Final test run** - Execute `make check` to verify all tests pass
 - [ ] **Build verification** - Test binary on clean system
-- [ ] **Version verification** - Confirm version is 0.3.0 in code (main.go, pkg/crawler/crawler.go, CHANGELOG)
+- [x] **Version verification** - Version is 0.3.0 in main.go, crawler.go, Makefile
 
-### GitHub Repository Setup
-- [ ] **Create GitHub repository** - Initialize on GitHub
-- [ ] **Add repository description** - "Modern feed aggregator inspired by Planet Venus, written in Go - v0.3.0 development release"
+### GitHub Repository Configuration
+- [ ] **Update repository description** - "Modern feed aggregator inspired by Planet Venus, written in Go - v0.3.0 development release"
 - [ ] **Add topics/tags** - `rss`, `atom`, `feed-aggregator`, `planet`, `go`, `golang`, `static-site-generator`
-- [ ] **Add development notice** - Clearly mark as 0.3.x development release in README
+- [x] **Add development notice to README** - Added "Development Release v0.3.0" notice
 - [ ] **Configure repository settings**
   - [ ] Enable Issues
   - [ ] Enable Discussions (optional)
   - [ ] Configure branch protection for `main`
-  - [ ] Set default branch to `main`
+  - [ ] Verify default branch is `main`
 
-### Initial Git Push
-- [ ] **Stage all files** - `git add` all project files (see GITHUB_PUSH_LIST.md)
-- [ ] **Verify staging** - Review `git status` to ensure correct files staged
-- [ ] **Create initial commit** - Commit with message: "Initial development release: Rogue Planet v0.3.0"
-- [ ] **Add remote** - `git remote add origin <repo-url>`
-- [ ] **Push to GitHub** - `git push -u origin main`
+### Code Push & Organization
+- [ ] **Review and stage changes** - Consolidate documentation changes (TODO.md, TESTING.md, CHANGELOG.md)
+- [ ] **Commit documentation updates** - Commit message: "Update documentation for v0.3.0 release"
+- [ ] **Push to GitHub** - `git push origin main`
+- [ ] **Verify README renders correctly** - Check GitHub renders installation instructions properly
 
 ### Release Creation (v0.3.0)
 - [ ] **Create v0.3.0 release tag** - `git tag -a v0.3.0 -m "Release v0.3.0 - Entry Spam Prevention"`
@@ -313,17 +275,6 @@ The project has evolved significantly beyond the initial release:
   - [ ] **Mark as pre-release** (not production-ready yet)
   - [ ] Upload pre-built binaries (optional for 0.3.0)
   - [ ] Include development disclaimer
-
-### Post-Launch Documentation
-- [x] **Add GitHub URL to code** - Update User-Agent in crawler.go with repo URL (DONE: already has github.com/adewale/rogue_planet)
-- [ ] **Update README badges** (optional)
-  - [ ] Build status badge
-  - [ ] Coverage badge (codecov.io or coveralls.io)
-  - [ ] Go Report Card badge
-  - [ ] License badge
-- [ ] **Create SECURITY.md** - Document security policy and vulnerability reporting
-- [ ] **Create issue templates** - Bug report and feature request templates
-- [ ] **Create pull request template**
 
 ### Optional CI/CD Setup
 - [ ] **GitHub Actions workflow** - Automated testing on push/PR
@@ -340,11 +291,358 @@ The project has evolved significantly beyond the initial release:
 - [ ] **Write blog post** - Technical writeup about the project
 - [ ] **Create demo site** - Host example planet somewhere public
 
-### Monitoring & Maintenance
-- [ ] **Set up GitHub notifications** - Monitor issues and PRs
-- [ ] **Plan maintenance schedule** - Dependency updates, security patches
-- [ ] **Create project roadmap** - Document future enhancement plans
-- [ ] **Set up analytics** (optional) - Track adoption and usage
+---
+
+## Roadmap
+
+### v1.0.0 - Production Ready (P0 Features)
+
+#### Feed Autodiscovery
+**Problem**: Users give website URLs (https://blog.example.com/) instead of feed URLs (https://blog.example.com/feed.xml). Browser support for RSS discovery removed in Firefox/Chrome.
+
+**Solution**: Parse HTML `<link rel="alternate">` tags to find RSS/Atom feeds
+- Support RSS, Atom, and JSON Feed autodiscovery
+- Handle multiple feeds per site (let user choose)
+- Add `rp discover <url>` command
+
+**Effort**: 2 days
+**Priority**: P0 - Critical UX improvement
+
+---
+
+#### 301 Redirect Handling
+**Problem**: Feeds permanently move (HTTP→HTTPS, domain changes). Fetching redirected URLs forever wastes bandwidth and adds latency.
+
+**Solution**: Detect permanent redirects (301 Moved Permanently) and update stored feed URL automatically
+- Update `feeds.url` in database on 301
+- Log URL changes for user visibility
+- Prevents wasting bandwidth on redirects forever
+- Critical for long-term reliability as feeds migrate HTTP→HTTPS
+
+**Effort**: 1 day
+**Priority**: P0 - Infrastructure efficiency
+
+---
+
+#### Intelligent Feed Scheduling
+**Problem**: All feeds fetched at same interval regardless of update frequency. Wastes resources on slow-updating feeds, misses updates on fast-updating feeds.
+
+**Solution**: Adaptive polling based on feed characteristics
+- Adaptive polling based on historical update frequency
+- Respect `Cache-Control: max-age` headers from feeds
+- Exponential backoff for failing feeds (1h → 2h → 4h → 8h → 24h)
+- Add jitter to prevent thundering herd (don't fetch all feeds at :00)
+- Store `last_updated`, `update_frequency`, `next_fetch` in database
+
+**Effort**: 1 week
+**Priority**: P0 - Scalability and efficiency
+
+---
+
+### v1.x - User Experience (P1 Features)
+
+#### HTML Escaping in Titles (Venus #24)
+**Problem**: When feed titles contain HTML tags (like `<dialog>`, `<foo>`), they're stripped instead of displayed as literal text.
+
+**Current Behavior**: HTML sanitization strips tags from all fields including titles.
+
+**Solution**:
+- Titles, author names, and feed names should have HTML entities escaped (show `&lt;dialog&gt;` as `<dialog>`)
+- Content and summary fields continue using full HTML sanitization (allow safe subset, block dangerous tags)
+
+**Implementation**: Use different sanitization policies for metadata (escape all HTML) vs content (allow safe HTML subset)
+
+**Effort**: Low
+**Priority**: P1 - Data accuracy issue
+
+**Source**: https://github.com/rubys/venus/issues/24
+
+---
+
+#### Responsive Image Constraints (Venus #36)
+**Problem**: Large images in feed content overflow page layout, breaking responsive design on mobile.
+
+**Current Behavior**: Images render at natural size, potentially wider than page content area.
+
+**Solution**: Add CSS to constrain images to content width
+```css
+.entry-content img {
+    max-width: 100%;
+    height: auto;
+}
+```
+
+**Implementation**: Update default template CSS and document for custom templates
+
+**Effort**: Trivial
+**Priority**: P1 - Basic UX issue
+
+**Source**: https://github.com/rubys/venus/issues/36
+
+---
+
+#### Stable Sort Dates (Venus #15)
+**Problem**: When feeds update entries (fixing typos, corrections), entry's published/updated date changes, affecting chronological sort. Creates instability in aggregated timeline.
+
+**Current Behavior**: Entries sorted by published date (with fallback to updated/fetched time).
+
+**Solution**: Already implemented via `sort_by = "first_seen"` config option in v0.3.0! Sort by timestamp when Rogue Planet first fetched the entry, which never changes even if entry is later updated.
+
+**Status**: ✅ **Implemented in v0.3.0**
+**Action Needed**: Update user documentation to highlight this feature
+
+**Rationale**:
+- Predictable chronological ordering
+- Entries don't "jump" in timeline when authors make corrections
+- Better matches user expectations for "river of news" style aggregation
+
+**Source**: https://github.com/rubys/venus/issues/15
+
+---
+
+### v1.x - Feed Management (P1 Features)
+
+#### Auto-Reactivate Inactive Feeds (Venus #34)
+**Problem**: When a feed goes inactive (author stops posting) and later resumes, it stays marked as inactive in database. Requires manual intervention to reactivate.
+
+**Current Behavior**: Feeds marked inactive are skipped during fetches. Must be manually reactivated via database update.
+
+**Solution**: When an inactive feed has new entries (detected by newer published dates than last fetch), automatically mark it active again
+```
+1. Fetch inactive feeds periodically (e.g., daily instead of hourly)
+2. If new entries found: set active=1, fetch_error_count=0
+3. Log reactivation for visibility
+```
+
+**Rationale**: Blogs often go dormant and resume. Automatic reactivation improves user experience.
+
+**Effort**: Medium
+**Priority**: P1
+
+**Source**: https://github.com/rubys/venus/issues/34
+
+---
+
+#### Character Encoding Detection
+**Problem**: Feeds often declare wrong encoding or omit encoding declaration entirely. Results in garbled text.
+
+**Current Behavior**: Relies on feed-declared encoding.
+
+**Solution**: Use charset detection library with fallback chain
+- Try declared encoding first
+- Use charset detection (chardet, encoding/japanese, etc.)
+- Fallback to UTF-8
+- Log encoding mismatches
+
+**Effort**: Medium
+**Priority**: P1 - Data quality issue
+
+---
+
+#### HTTP Authentication Support
+**Problem**: Some feeds require Basic or Digest authentication. Cannot be fetched without credentials.
+
+**Current Behavior**: No authentication support.
+
+**Solution**: Add per-feed auth configuration
+```ini
+[https://private.example.com/feed.xml]
+auth_type = basic
+auth_user = username
+auth_pass = password
+```
+
+Store credentials securely, pass in HTTP requests.
+
+**Effort**: Medium
+**Priority**: P1 - Access to private feeds
+
+---
+
+### v2.0 - Advanced Features (P2)
+
+#### Allow data-* Attributes (Venus #19)
+**Problem**: HTML5 `data-*` attributes are harmless metadata but get stripped by sanitization, breaking third-party scripts and widgets that users add to templates.
+
+**Current Behavior**: bluemonday strips data-* attributes from all elements.
+
+**Solution**: Allow data-* attributes on safe elements (div, span, article, section, etc.)
+```go
+policy.AllowDataAttributes()
+```
+
+**Rationale**:
+- Enables template customization with JavaScript libraries
+- data-* attributes are client-side only, no XSS risk
+- Standard HTML5 practice for storing custom data
+
+**Effort**: Trivial
+**Priority**: P2 - Template customization
+
+**Source**: https://github.com/rubys/venus/pull/19
+
+---
+
+#### Future Dates Configuration
+**Problem**: Some feeds contain entries with future dates (scheduled posts, timezone errors). Need policy for handling these.
+
+**Current Behavior**: Accepted as-is.
+
+**Solution**: Configuration option to ignore, accept, or clamp future-dated entries
+```ini
+[planet]
+future_dates = accept | ignore_entry | clamp_to_now
+```
+
+- `accept`: Keep as-is (default)
+- `ignore_entry`: Skip entries with pub date > now
+- `clamp_to_now`: Set pub date to fetch time if in future
+
+**Rationale**: Already in spec (line 244), needs implementation. Prevents timeline pollution from incorrectly dated entries.
+
+**Effort**: Low
+**Priority**: P2
+
+---
+
+#### Enhanced Media Tag Support (Venus #18)
+**Problem**: HTML5 video/audio tags need attributes like `preload`, `poster`, `controls` to work well, but sanitization strips them.
+
+**Current Behavior**: Only basic video/audio tags allowed, missing important attributes.
+
+**Solution**: Configure bluemonday to allow safe media attributes:
+- `<video>`: preload, poster, controls, width, height
+- `<audio>`: preload, controls
+- `<source>`: src, type
+
+**Rationale**: Better embedding of multimedia content from feeds.
+
+**Effort**: Low
+**Priority**: P2
+
+**Source**: https://github.com/rubys/venus/pull/18
+
+---
+
+#### Embedded Content Handling
+**Problem**: YouTube embeds, tweets, audio players don't display properly or get stripped entirely.
+
+**Current Behavior**: Most iframes blocked for security.
+
+**Solution**: Whitelist trusted iframe domains
+```ini
+[planet]
+trusted_iframe_domains = youtube.com, youtube-nocookie.com, vimeo.com, codepen.io
+```
+
+- Only allow iframes with https URLs from approved domains
+- Set strict sandbox attribute: `sandbox="allow-scripts allow-same-origin"`
+
+**Security Note**: Requires careful implementation to avoid SSRF and XSS risks.
+
+**Effort**: Medium
+**Priority**: P2 - Common use case
+
+---
+
+### v2.x - Nice to Have (P3)
+
+#### MathJax Support (Venus #33)
+**Problem**: Mathematical equations in feeds (especially from Blogger, academic blogs) don't render properly. MathML and TeX markup display as raw code.
+
+**Current Behavior**: Math markup passes through as text.
+
+**Solution**:
+1. Document how to add MathJax to custom templates
+2. Ensure sanitization allows MathML tags or TeX delimiters
+3. Optional: Add `enable_mathjax` config option to include in default template
+
+**Rationale**: Important for academic/technical planet sites aggregating math/science blogs.
+
+**Effort**: Low
+**Priority**: P3 - Niche use case
+
+**Source**: https://github.com/rubys/venus/issues/33
+
+---
+
+#### GitHub Gist Embeds (Venus #28)
+**Problem**: GitHub Gist embeds (iframe-based) don't display because iframes are blocked by sanitization.
+
+**Current Behavior**: All iframes stripped for security.
+
+**Solution**: Covered under "Embedded Content Handling" above - allow iframes from trusted domains including gist.github.com.
+
+**Rationale**: Common use case for developer planet sites.
+
+**Effort**: Medium (part of embedded content feature)
+**Priority**: P3 - Niche
+
+**Source**: https://github.com/rubys/venus/issues/28
+
+---
+
+### Future (Unscheduled)
+
+---
+
+## Not Implementing
+
+These features are explicitly out of scope:
+
+### ❌ Web-Based Admin Interface
+**Reason**: Against static-output philosophy. Adds attack surface, complexity, maintenance burden. CLI is sufficient for planet operators.
+
+### ❌ PostgreSQL/MySQL Support
+**Reason**: SQLite is perfect for this use case. Other databases add deployment complexity with no benefit for feed aggregation workload.
+
+### ❌ Multiple Template Engines
+**Reason**: Go templates are sufficient. Adding Jinja2 would require embedding Python or complex reimplementation. Not worth complexity.
+
+### ❌ Feed Content Modification
+**Reason**: Aggregator should aggregate, not modify. Content transformation belongs elsewhere (user scripts, external tools).
+
+---
+
+## Already Implemented ✅
+
+These Planet Venus issues are already addressed in Rogue Planet:
+
+### ✅ User-Agent Headers (Venus #29)
+- **Status**: Implemented in v0.1.0
+- **Implementation**: Rogue Planet sends proper User-Agent header on all requests
+- **Configuration**: `user_agent` in config.ini
+- **Default**: `RoguePlanet/0.3 (+https://github.com/adewale/rogue_planet)`
+
+### ✅ XSS Prevention (CVE-2009-2937)
+- **Status**: Core security feature (spec lines 548-762)
+- **Implementation**: Full HTML sanitization using bluemonday
+- Strips script tags, event handlers, dangerous URIs
+- Uses html/template for auto-escaping
+- Content Security Policy headers in generated HTML
+
+### ✅ Video Autoplay Filtering (Venus #1)
+- **Status**: Handled by bluemonday sanitization
+- **Implementation**: Dangerous attributes like autoplay stripped from all tags
+- **Source**: https://github.com/rubys/venus/issues/1
+
+### ✅ HTTP Conditional Requests
+- **Status**: Core feature (spec lines 64-156)
+- **Implementation**: Proper ETag/Last-Modified support
+- Reduces bandwidth and server load
+- Well-behaved feed fetching
+
+### ✅ OPML Import/Export
+- **Status**: v0.2.0 feature
+- **Implementation**: Full OPML 1.0/2.0 support
+- **Commands**: `rp import-opml`, `rp export-opml`
+- Compatible with Feedly, Inoreader, NewsBlur, The Old Reader
+
+### ✅ Entry Spam Prevention
+- **Status**: v0.3.0 feature
+- **Implementation**: `filter_by_first_seen` and `sort_by` config options
+- Prevents flooding timeline when adding new feeds
+- See [ENTRY_SPAM.md](ENTRY_SPAM.md) for complete details
 
 ---
 
@@ -358,44 +656,18 @@ For future contributors:
 4. Run `make check` before committing
 5. All security features are mandatory
 
+Before implementing wishlist items:
+1. Check if already implemented in current version
+2. Discuss approach in GitHub issues
+3. Ensure test coverage >75%
+4. Update documentation
+5. Follow patterns in CLAUDE.md
+
 ## License
 
-MIT License - See [LICENSE](LICENSE) file for details.
+MIT License - See [LICENSE](../LICENSE) file for details.
 
 ---
 
 *Last Updated: 2025-10-16*
 *Status: v0.3.0 - Entry spam prevention complete, P0 features planned for v1.0*
-
----
-
-## Roadmap to v1.0.0
-
-### Critical Features (P0) - Next Priority
-
-- [ ] **Feed Autodiscovery** (2 days)
-  - Parse HTML `<link rel="alternate">` tags to find RSS/Atom feeds
-  - Support RSS, Atom, and JSON Feed autodiscovery
-  handle it
-
-- [ ] **301 Redirect Handling** (1 day)
-  - Detect permanent redirects (301 Moved Permanently)
-  - Update stored feed URL in database automatically
-  - Prevents wasting bandwidth on redirects forever
-  - Critical for long-term reliability as feeds migrate HTTP→HTTPS
-
-- [ ] **Intelligent Feed Scheduling** (1 week)
-  - Adaptive polling based on historical update frequency
-  - Respect Cache-Control: max-age headers from feeds
-  - Exponential backoff for failing feeds (1h → 2h → 4h → 8h → 24h)
-  - Add jitter to prevent thundering herd (don't fetch all feeds at :00)
-  
-### Important Features (P1) - Follow-up Priority
-- [ ] Character encoding detection and fallback
-- [ ] HTTP authentication support (Basic/Digest Auth)
-- [ ] Embedded content handling (YouTube, tweets, audio players)
-
-### Planned Enhancements
-- [ ] Additional real-world testing
-- [ ] Additional feed format edge cases
-- [ ] Additional themes (dark mode, minimalist)

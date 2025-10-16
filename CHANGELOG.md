@@ -8,10 +8,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned for 1.0.0
-- Public GitHub release
+- Feed autodiscovery (parse HTML for RSS/Atom links)
+- 301 redirect handling (auto-update feed URLs)
+- Intelligent feed scheduling (adaptive polling)
 - Full production deployment documentation
 - Binary distribution packages
-- Community contribution guidelines finalized
+
+## [0.3.0] - 2025-10-16
+
+### Added - Entry Spam Prevention
+- **`filter_by_first_seen` config option**: Filter entries by discovery date instead of published date
+  - Prevents flooding timeline when adding new feeds with historical content
+  - Configurable: `filter_by_first_seen = true` in `[planet]` section
+- **`sort_by` config option**: Sort by "published" or "first_seen"
+  - Stable chronological ordering (entries don't "jump" when authors update them)
+  - Configurable: `sort_by = "first_seen"` in `[planet]` section
+- **Automatic database migration**: Backfills `first_seen` for existing entries using COALESCE
+
+### Security - SQL Injection Hardening
+- **SQL parameter validation**: Whitelist validation for dynamic SQL field names
+- **Improved NULL handling**: COALESCE-based fallback in migration queries
+- **Config validation**: `sort_by` field validated during config parsing
+
+### Testing
+- 5 new unit tests for entry spam prevention
+- 2 new integration tests for filter/sort behavior
+- 6 new config validation tests
+- All tests passing with improved edge case coverage
+
+### Documentation
+- Updated README.md with development status notice
+- Created LESSONS_FROM_MARS.md analyzing two different "Mars" aggregators
+- Merged WISHLIST.md into TODO.md for unified roadmap
+- TODO.md now includes P0/P1/P2/P3 feature priorities with Venus issue references
+- Updated CHANGELOG.md with v0.3.0 release notes
 
 ## [0.2.0] - 2025-10-13
 
@@ -148,7 +178,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 |---------|------|-------------|
 | 0.1.0 | 2025-10-10 | Initial development release - all core features complete |
 | 0.2.0 | 2025-10-13 | OPML support, verify command, improved test coverage |
-| 1.0.0 | TBD | Planned public release |
+| 0.3.0 | 2025-10-16 | Entry spam prevention, SQL injection hardening, docs consolidation |
+| 1.0.0 | TBD | Planned production release (autodiscovery, 301 handling, intelligent scheduling) |
 
 ## Links
 

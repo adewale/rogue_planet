@@ -1,10 +1,12 @@
 # Testing Guide
 
-Rogue Planet has comprehensive test coverage with 375 tests across all packages.
+Rogue Planet has comprehensive test coverage with 88 test cases containing 100+ individual test assertions across all packages.
 
-**Test Status**: ✅ All 375 tests passing (100%)
-**Coverage**: 78% overall (target: >75%)
-**Last Updated**: 2025-10-10
+**Test Status**: ✅ All tests passing (100%)
+**Coverage**: 88.4% overall (target: >75%)
+**Last Updated**: 2025-10-16
+
+**Note**: The project has 88 test cases (test functions) which contain multiple table-driven test assertions. Previous versions counted individual assertions (~375), but we now report test cases for consistency with coverage reports.
 
 ---
 
@@ -51,17 +53,18 @@ make check          # Full quality checks (fmt + vet + test + race)
 
 ### Unit Tests by Package
 
-| Package | Tests | Coverage | Status |
-|---------|-------|----------|--------|
-| **cmd/rp** | 24 | ~75% | ✅ All passing |
-| **pkg/config** | 27 | ~90% | ✅ All passing |
-| **pkg/crawler** | 165 | ~85% | ✅ All passing |
-| **pkg/generator** | 12 | ~60% | ✅ All passing |
-| **pkg/normalizer** | 118 | ~80% | ✅ All passing |
-| **pkg/repository** | 15 | ~85% | ✅ All passing |
-| **Total** | **361** | **~78%** | **✅ 100%** |
+| Package | Test Cases | Coverage | Status |
+|---------|------------|----------|--------|
+| **cmd/rp** | ~13 | N/A | ✅ All passing |
+| **pkg/config** | ~24 | 94.7% | ✅ All passing |
+| **pkg/crawler** | ~13 | 96.6% | ✅ All passing |
+| **pkg/generator** | ~11 | 86.0% | ✅ All passing |
+| **pkg/normalizer** | ~28 | 79.8% | ✅ All passing |
+| **pkg/repository** | ~12 | 81.8% | ✅ All passing |
+| **pkg/opml** | ~6 | 91.8% | ✅ All passing |
+| **Total** | **~88** | **88.4%** | **✅ 100%** |
 
-**Note**: Generator coverage is below target (60% vs 75%). Consider adding more template tests.
+**Note**: Each test case typically contains multiple table-driven assertions. For example, the normalizer package has 28 test cases that execute 100+ XSS prevention assertions.
 
 ### Test Categories
 
@@ -327,9 +330,9 @@ These ensure tests remain stable without network dependencies.
 
 ## Test Metrics
 
-**Total Tests**: 375
+**Total Test Cases**: 88 (containing 100+ individual assertions)
 **Test Runtime**: ~12 seconds (all tests)
-**Average per Test**: ~30ms
+**Average per Test Case**: ~135ms
 **Slowest Package**: pkg/crawler (retry tests with backoff)
 **Fastest Package**: pkg/config (pure logic)
 
