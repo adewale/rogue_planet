@@ -1,0 +1,63 @@
+{
+    "version": "https://jsonfeed.org/version/1.1",
+    "title": "JSON Feed Edge Cases",
+    "home_page_url": "https://edge.example.org/",
+    "feed_url": "https://edge.example.org/feed.json",
+    "items": [
+        {
+            "id": "missing-date",
+            "url": "https://edge.example.org/no-date",
+            "title": "Post Without Date",
+            "content_text": "This entry has no date_published field."
+        },
+        {
+            "url": "https://edge.example.org/no-id",
+            "title": "Post Without ID (Should Generate One)",
+            "content_html": "<p>Testing ID generation from URL.</p>",
+            "date_published": "2025-10-18T10:00:00Z"
+        },
+        {
+            "id": "empty-content",
+            "url": "https://edge.example.org/empty",
+            "title": "Post With Empty Content",
+            "content_html": "",
+            "content_text": "",
+            "date_published": "2025-10-17T10:00:00Z"
+        },
+        {
+            "id": "unicode-content",
+            "url": "https://edge.example.org/unicode",
+            "title": "Unicode Test: 你好世界 🌍 مرحبا",
+            "content_html": "<p>Testing UTF-8: Emoji 🎉, Chinese 中文, Arabic العربية, Japanese 日本語</p>",
+            "date_published": "2025-10-16T10:00:00Z"
+        },
+        {
+            "id": "relative-urls",
+            "url": "https://edge.example.org/relative",
+            "title": "Post with Relative URLs",
+            "content_html": "<p>Image: <img src=\"/images/test.jpg\" alt=\"test\"></p><p>Link: <a href=\"/about\">About</a></p>",
+            "date_published": "2025-10-15T10:00:00Z"
+        },
+        {
+            "id": "malicious-urls",
+            "url": "https://edge.example.org/malicious",
+            "title": "Post with Malicious URL Schemes",
+            "content_html": "<p><a href=\"javascript:alert('xss')\">JavaScript link</a></p><p><a href=\"data:text/html,<script>alert('xss')</script>\">Data URI</a></p><p><img src=\"javascript:alert('xss')\"></p>",
+            "date_published": "2025-10-14T10:00:00Z"
+        },
+        {
+            "id": "html-in-title",
+            "url": "https://edge.example.org/html-title",
+            "title": "Title with <script>alert('xss')</script> HTML tags",
+            "content_text": "Testing HTML sanitization in title field.",
+            "date_published": "2025-10-13T10:00:00Z"
+        },
+        {
+            "id": "future-date",
+            "url": "https://edge.example.org/future",
+            "title": "Post with Future Date",
+            "content_text": "This post is dated in the future.",
+            "date_published": "2099-12-31T23:59:59Z"
+        }
+    ]
+}

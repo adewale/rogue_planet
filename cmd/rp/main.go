@@ -57,6 +57,7 @@ func main() {
 
 func printUsage() {
 	fmt.Print(`Rogue Planet - Modern feed aggregator
+Supports RSS, Atom, and JSON Feed formats
 
 Usage:
   rp <command> [flags]
@@ -99,6 +100,7 @@ Examples:
   rp init
   rp init -f feeds.txt
   rp add-feed https://blog.golang.org/feed.atom
+  rp add-feed https://username.micro.blog/feed.json
   rp add-all -f feeds.txt
   rp list-feeds
   rp status

@@ -30,12 +30,14 @@ mkdir ~/my-planet
 cd ~/my-planet
 
 # 3. Create a feeds file with your favorite blogs
+# Supports RSS, Atom, and JSON Feed formats
 cat > feeds.txt <<'EOF'
 https://blog.golang.org/feed.atom
 https://github.blog/feed/
 https://daringfireball.net/feeds/main
 https://asymco.com/feed/
 https://xkcd.com/rss.xml
+https://jsonfeed.org/feed.json
 EOF
 
 # 4. Initialize the planet
@@ -194,11 +196,12 @@ rp update  # Fetch the new feed
 
 **Add multiple feeds at once:**
 ```bash
-# Create a file with new feeds
+# Create a file with new feeds (supports RSS, Atom, and JSON Feed)
 cat > new-feeds.txt <<'EOF'
 https://blog.example.com/rss
 https://news.example.com/feed.atom
 https://podcast.example.com/feed.xml
+https://username.micro.blog/feed.json
 EOF
 
 # Import them
@@ -211,12 +214,10 @@ rp update
 # Many sites have feed autodiscovery
 curl -s https://example.com | grep -i "rss\|atom\|feed"
 
-# Common feed locations to try:
-# https://example.com/feed
-# https://example.com/rss
-# https://example.com/atom.xml
-# https://example.com/index.xml
-# https://example.com/feed.xml
+# Common feed locations to try (Rogue Planet supports all formats):
+# RSS: https://example.com/feed, https://example.com/rss, https://example.com/feed.xml
+# Atom: https://example.com/atom.xml, https://example.com/feed.atom
+# JSON Feed: https://example.com/feed.json (common on Micro.blog sites)
 ```
 
 ### Removing Feeds

@@ -7,8 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - JSON Feed Testing
+- **Comprehensive JSON Feed 1.0 and 1.1 test coverage**
+  - Test fixtures for JSON Feed 1.0 (author field) and 1.1 (authors array, language field)
+  - Edge case testing (missing dates, missing IDs, Unicode, XSS, future dates)
+  - Security validation (XSS prevention, malicious URLs)
+  - Real-world compatibility testing
+- **JSON Feed support documentation**
+  - Already supported transparently via gofeed library
+  - Users can add JSON Feed URLs (e.g., `https://example.micro.blog/feed.json`)
+  - Same security guarantees as RSS/Atom (HTML sanitization, SSRF prevention)
+
 ### Planned for 1.0.0
-- Feed autodiscovery (parse HTML for RSS/Atom links)
+- Feed autodiscovery (parse HTML for RSS/Atom/JSON Feed links)
 - 301 redirect handling (auto-update feed URLs)
 - Intelligent feed scheduling (adaptive polling)
 - Full production deployment documentation

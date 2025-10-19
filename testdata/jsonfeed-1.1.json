@@ -1,0 +1,60 @@
+{
+    "version": "https://jsonfeed.org/version/1.1",
+    "title": "JSON Feed 1.1 Test Feed",
+    "home_page_url": "https://example.org/",
+    "feed_url": "https://example.org/feed.json",
+    "description": "A test feed for JSON Feed 1.1 spec",
+    "language": "en-US",
+    "authors": [
+        {
+            "name": "John Smith",
+            "url": "https://example.org/john",
+            "avatar": "https://example.org/john.jpg"
+        }
+    ],
+    "items": [
+        {
+            "id": "item-1-v1.1",
+            "url": "https://example.org/2025/10/multilingual-post",
+            "title": "Multilingual Post",
+            "content_html": "<p>This post demonstrates <em>version 1.1</em> features.</p>",
+            "language": "en",
+            "date_published": "2025-10-18T15:00:00Z",
+            "authors": [
+                {
+                    "name": "John Smith"
+                }
+            ]
+        },
+        {
+            "id": "item-2-v1.1",
+            "url": "https://example.org/2025/10/multiple-authors",
+            "title": "Post with Multiple Authors",
+            "content_text": "This post has multiple authors.",
+            "date_published": "2025-10-17T12:00:00Z",
+            "authors": [
+                {
+                    "name": "John Smith"
+                },
+                {
+                    "name": "Jane Doe"
+                }
+            ]
+        },
+        {
+            "id": "item-3-v1.1",
+            "url": "https://example.org/2025/10/podcast-episode",
+            "title": "Podcast Episode with Attachments",
+            "content_html": "<p>Listen to our latest episode!</p>",
+            "date_published": "2025-10-16T09:00:00Z",
+            "attachments": [
+                {
+                    "url": "https://example.org/episode1.mp3",
+                    "mime_type": "audio/mpeg",
+                    "size_in_bytes": 24986239,
+                    "duration_in_seconds": 1079
+                }
+            ]
+        }
+    ]
+}

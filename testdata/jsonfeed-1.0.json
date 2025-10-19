@@ -1,0 +1,48 @@
+{
+    "version": "https://jsonfeed.org/version/1",
+    "title": "JSON Feed 1.0 Test Feed",
+    "home_page_url": "https://example.org/",
+    "feed_url": "https://example.org/feed.json",
+    "description": "A test feed for JSON Feed 1.0 spec",
+    "author": {
+        "name": "Jane Doe",
+        "url": "https://example.org/about",
+        "avatar": "https://example.org/avatar.jpg"
+    },
+    "items": [
+        {
+            "id": "item-1",
+            "url": "https://example.org/2025/10/first-post",
+            "title": "First Post",
+            "content_html": "<p>This is the <strong>first post</strong> with HTML content.</p>",
+            "date_published": "2025-10-18T12:00:00Z",
+            "date_modified": "2025-10-18T13:00:00Z",
+            "author": {
+                "name": "Jane Doe"
+            }
+        },
+        {
+            "id": "item-2",
+            "url": "https://example.org/2025/10/second-post",
+            "title": "Second Post with Plain Text",
+            "content_text": "This is plain text content without any HTML markup.",
+            "date_published": "2025-10-17T10:00:00Z"
+        },
+        {
+            "id": "item-3",
+            "url": "https://example.org/2025/10/third-post",
+            "title": "Post with Both Content Types",
+            "content_html": "<p>HTML version of the content.</p>",
+            "content_text": "Plain text version of the content.",
+            "summary": "A short summary",
+            "date_published": "2025-10-16T08:00:00Z"
+        },
+        {
+            "id": "item-4",
+            "url": "https://example.org/2025/10/dangerous-content",
+            "title": "Post with Dangerous HTML (XSS Test)",
+            "content_html": "<p>Safe content</p><script>alert('xss')</script><p onclick=\"evil()\">Click me</p><iframe src=\"https://evil.com\"></iframe>",
+            "date_published": "2025-10-15T14:00:00Z"
+        }
+    ]
+}

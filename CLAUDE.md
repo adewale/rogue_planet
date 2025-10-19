@@ -254,6 +254,10 @@ rp version                    # Show version information
 **Test Types**:
 - **Unit tests**: Each component (crawler, normalizer, repository, generator)
 - **Format tests**: Various feed formats (RSS 1.0, RSS 2.0, Atom 1.0, JSON Feed)
+  - JSON Feed 1.0 and 1.1 test fixtures in `testdata/`
+  - Tests for `author` (v1.0) vs `authors` array (v1.1)
+  - Edge cases: missing dates/IDs, Unicode, future dates, malicious content
+  - Security: XSS prevention, URL scheme filtering
 - **Edge case tests**: Malformed feeds, missing dates, missing IDs, encoding issues
 - **Security tests**: HTML sanitization with XSS attempts
 - **Integration tests**: Full pipeline from init → add feeds → fetch → generate

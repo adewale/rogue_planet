@@ -51,7 +51,7 @@ go build -o rp ./cmd/rp
 
 ## Quick Start
 
-> **🚀 New to Rogue Planet? See [QUICKSTART.md](QUICKSTART.md) for a 5-minute setup guide!**
+> **🚀 New to Rogue Planet? See [WORKFLOWS.md](WORKFLOWS.md) for detailed setup and usage guides!**
 
 1. **Initialize a new planet**:
    ```bash
@@ -72,9 +72,10 @@ go build -o rp ./cmd/rp
 
 3. **Add feeds** (if you didn't use `-f` during init):
    ```bash
-   # Add feeds one at a time
+   # Add feeds one at a time (supports RSS, Atom, and JSON Feed)
    rp add-feed https://blog.golang.org/feed.atom
    rp add-feed https://github.blog/feed/
+   rp add-feed https://username.micro.blog/feed.json
 
    # Or add multiple feeds from a file
    rp add-all -f feeds.txt
