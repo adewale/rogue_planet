@@ -305,7 +305,10 @@ func TestFetch_SizeLimits(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				data := make([]byte, tt.size)
 				if _, err := w.Write(data); err != nil {
-					t.Errorf("Write error: %v", err)
+					// Expected: client closes connection when size limit is reached
+					if !strings.Contains(err.Error(), "connection reset") && !strings.Contains(err.Error(), "broken pipe") {
+						t.Errorf("Unexpected write error: %v", err)
+					}
 				}
 			}))
 			defer server.Close()

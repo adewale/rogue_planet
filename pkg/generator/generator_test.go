@@ -535,30 +535,73 @@ func TestNewWithTemplateError(t *testing.T) {
 }
 
 func TestNewWithTemplateBadSyntax(t *testing.T) {
-	tmpDir := t.TempDir()
-	templatePath := filepath.Join(tmpDir, "bad.html")
+	t.Run("unclosed template action", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		templatePath := filepath.Join(tmpDir, "bad.html")
 
-	// Write template with bad syntax
-	badTemplate := `{{.Title}} {{.MissingFunc}}`
-	err := os.WriteFile(templatePath, []byte(badTemplate), 0644)
-	if err != nil {
-		t.Fatalf("Failed to write template: %v", err)
-	}
+		// Write template with unclosed action - this is a parse error
+		badTemplate := `<!DOCTYPE html><html><body>{{.Title</body></html>`
+		err := os.WriteFile(templatePath, []byte(badTemplate), 0644)
+		if err != nil {
+			t.Fatalf("Failed to write template: %v", err)
+		}
 
-	gen, err := NewWithTemplate(templatePath)
-	if err != nil {
-		// Expected - template parsing might fail
-		return
-	}
+		_, err = NewWithTemplate(templatePath)
+		if err == nil {
+			t.Error("Expected error for template with unclosed action, got nil")
+		}
+	})
 
-	// Try to generate - should fail on unknown function
-	data := TemplateData{Title: "Test"}
-	var buf bytes.Buffer
-	err = gen.Generate(&buf, data)
-	if err == nil {
-		// Some errors might only show up at execution
-		t.Log("Template error might be caught at execution time")
-	}
+	t.Run("undefined function", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		templatePath := filepath.Join(tmpDir, "bad.html")
+
+		// Write template with undefined function - this may fail at execution time
+		badTemplate := `<!DOCTYPE html><html><body>{{.Title}} {{undefinedFunc .Title}}</body></html>`
+		err := os.WriteFile(templatePath, []byte(badTemplate), 0644)
+		if err != nil {
+			t.Fatalf("Failed to write template: %v", err)
+		}
+
+		gen, err := NewWithTemplate(templatePath)
+		if err != nil {
+			// Parse-time error is acceptable
+			return
+		}
+
+		// Try to execute - should fail
+		data := TemplateData{Title: "Test"}
+		var buf bytes.Buffer
+		err = gen.Generate(&buf, data)
+		if err == nil {
+			t.Error("Expected error for undefined function, got nil")
+		}
+	})
+
+	t.Run("invalid field access", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		templatePath := filepath.Join(tmpDir, "bad.html")
+
+		// Write template accessing non-existent field
+		badTemplate := `<!DOCTYPE html><html><body>{{.NonExistentField}}</body></html>`
+		err := os.WriteFile(templatePath, []byte(badTemplate), 0644)
+		if err != nil {
+			t.Fatalf("Failed to write template: %v", err)
+		}
+
+		gen, err := NewWithTemplate(templatePath)
+		if err != nil {
+			t.Fatalf("Template parsing should succeed, got: %v", err)
+		}
+
+		// Execute with empty data
+		data := TemplateData{Title: "Test"}
+		var buf bytes.Buffer
+		err = gen.Generate(&buf, data)
+		if err == nil {
+			t.Error("Expected error for accessing non-existent field, got nil")
+		}
+	})
 }
 
 func TestCopyStaticAssets(t *testing.T) {

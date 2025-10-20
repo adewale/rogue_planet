@@ -494,13 +494,25 @@ func scanFeed(row interface{ Scan(...interface{}) error }, feed *Feed) error {
 
 	// Parse times
 	if updated.Valid {
-		feed.Updated, _ = time.Parse(time.RFC3339, updated.String)
+		var err error
+		feed.Updated, err = time.Parse(time.RFC3339, updated.String)
+		if err != nil {
+			return fmt.Errorf("invalid updated timestamp %q: %w", updated.String, err)
+		}
 	}
 	if lastFetched.Valid {
-		feed.LastFetched, _ = time.Parse(time.RFC3339, lastFetched.String)
+		var err error
+		feed.LastFetched, err = time.Parse(time.RFC3339, lastFetched.String)
+		if err != nil {
+			return fmt.Errorf("invalid last_fetched timestamp %q: %w", lastFetched.String, err)
+		}
 	}
 	if nextFetch.Valid {
-		feed.NextFetch, _ = time.Parse(time.RFC3339, nextFetch.String)
+		var err error
+		feed.NextFetch, err = time.Parse(time.RFC3339, nextFetch.String)
+		if err != nil {
+			return fmt.Errorf("invalid next_fetch timestamp %q: %w", nextFetch.String, err)
+		}
 	}
 
 	return nil
@@ -560,10 +572,19 @@ func scanEntries(rows *sql.Rows) ([]Entry, error) {
 			entry.Summary = summary.String
 		}
 
-		// Parse times
-		entry.Published, _ = time.Parse(time.RFC3339, published)
-		entry.Updated, _ = time.Parse(time.RFC3339, updated)
-		entry.FirstSeen, _ = time.Parse(time.RFC3339, firstSeen)
+		// Parse times (required fields in database)
+		entry.Published, err = time.Parse(time.RFC3339, published)
+		if err != nil {
+			return nil, fmt.Errorf("invalid published timestamp %q for entry %s: %w", published, entry.EntryID, err)
+		}
+		entry.Updated, err = time.Parse(time.RFC3339, updated)
+		if err != nil {
+			return nil, fmt.Errorf("invalid updated timestamp %q for entry %s: %w", updated, entry.EntryID, err)
+		}
+		entry.FirstSeen, err = time.Parse(time.RFC3339, firstSeen)
+		if err != nil {
+			return nil, fmt.Errorf("invalid first_seen timestamp %q for entry %s: %w", firstSeen, entry.EntryID, err)
+		}
 
 		entries = append(entries, entry)
 	}

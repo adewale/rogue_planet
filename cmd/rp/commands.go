@@ -192,18 +192,11 @@ path = ./data/planet.db
 	if opts.FeedsFile != "" {
 		fmt.Fprintf(opts.Output, "\nImporting feeds from %s...\n", opts.FeedsFile)
 
-		// Load config
-		cfg, err := loadConfig(opts.ConfigPath)
+		_, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 		if err != nil {
-			return fmt.Errorf("failed to load config: %w", err)
+			return err
 		}
-
-		// Open repository
-		repo, err := repository.New(cfg.Database.Path)
-		if err != nil {
-			return fmt.Errorf("failed to open database: %w", err)
-		}
-		defer repo.Close()
+		defer cleanup()
 
 		// Load feeds from file
 		feedURLs, err := config.LoadFeedsFile(opts.FeedsFile)
@@ -212,17 +205,7 @@ path = ./data/planet.db
 		}
 
 		// Add each feed to database
-		addedCount := 0
-		for i, url := range feedURLs {
-			fmt.Fprintf(opts.Output, "  [%d/%d] Adding %s\n", i+1, len(feedURLs), url)
-			id, err := repo.AddFeed(url, "")
-			if err != nil {
-				log.Printf("         Warning: Failed to add feed: %v", err)
-				continue
-			}
-			fmt.Fprintf(opts.Output, "         ✓ Added (ID: %d)\n", id)
-			addedCount++
-		}
+		addedCount := importFeedsFromURLs(repo, feedURLs, opts.Output)
 
 		fmt.Fprintf(opts.Output, "\n✓ Imported %d/%d feeds\n", addedCount, len(feedURLs))
 
@@ -244,18 +227,11 @@ func cmdAddFeed(opts AddFeedOptions) error {
 		return fmt.Errorf("URL is required")
 	}
 
-	// Load config
-	cfg, err := loadConfig(opts.ConfigPath)
+	_, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return err
 	}
-
-	// Open repository
-	repo, err := repository.New(cfg.Database.Path)
-	if err != nil {
-		return fmt.Errorf("failed to open database: %w", err)
-	}
-	defer repo.Close()
+	defer cleanup()
 
 	// Add feed
 	id, err := repo.AddFeed(opts.URL, "")
@@ -272,18 +248,11 @@ func cmdAddAll(opts AddAllOptions) error {
 		return fmt.Errorf("feeds file is required")
 	}
 
-	// Load config
-	cfg, err := loadConfig(opts.ConfigPath)
+	_, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return err
 	}
-
-	// Open repository
-	repo, err := repository.New(cfg.Database.Path)
-	if err != nil {
-		return fmt.Errorf("failed to open database: %w", err)
-	}
-	defer repo.Close()
+	defer cleanup()
 
 	// Load feeds from file
 	feedURLs, err := config.LoadFeedsFile(opts.FeedsFile)
@@ -299,17 +268,7 @@ func cmdAddAll(opts AddAllOptions) error {
 	fmt.Fprintf(opts.Output, "Adding %d feeds from %s...\n", len(feedURLs), opts.FeedsFile)
 
 	// Add each feed to database
-	addedCount := 0
-	for i, url := range feedURLs {
-		fmt.Fprintf(opts.Output, "  [%d/%d] Adding %s\n", i+1, len(feedURLs), url)
-		id, err := repo.AddFeed(url, "")
-		if err != nil {
-			log.Printf("         Warning: Failed to add feed: %v", err)
-			continue
-		}
-		fmt.Fprintf(opts.Output, "         ✓ Added (ID: %d)\n", id)
-		addedCount++
-	}
+	addedCount := importFeedsFromURLs(repo, feedURLs, opts.Output)
 
 	fmt.Fprintf(opts.Output, "\n✓ Added %d/%d feeds\n", addedCount, len(feedURLs))
 	return nil
@@ -320,18 +279,11 @@ func cmdRemoveFeed(opts RemoveFeedOptions) error {
 		return fmt.Errorf("URL is required")
 	}
 
-	// Load config
-	cfg, err := loadConfig(opts.ConfigPath)
+	_, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return err
 	}
-
-	// Open repository
-	repo, err := repository.New(cfg.Database.Path)
-	if err != nil {
-		return fmt.Errorf("failed to open database: %w", err)
-	}
-	defer repo.Close()
+	defer cleanup()
 
 	// Find feed
 	feed, err := repo.GetFeedByURL(opts.URL)
@@ -349,18 +301,11 @@ func cmdRemoveFeed(opts RemoveFeedOptions) error {
 }
 
 func cmdListFeeds(opts ListFeedsOptions) error {
-	// Load config
-	cfg, err := loadConfig(opts.ConfigPath)
+	_, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return err
 	}
-
-	// Open repository
-	repo, err := repository.New(cfg.Database.Path)
-	if err != nil {
-		return fmt.Errorf("failed to open database: %w", err)
-	}
-	defer repo.Close()
+	defer cleanup()
 
 	// Get feeds
 	feeds, err := repo.GetFeeds(false)
@@ -398,18 +343,11 @@ func cmdListFeeds(opts ListFeedsOptions) error {
 }
 
 func cmdStatus(opts StatusOptions) error {
-	// Load config
-	cfg, err := loadConfig(opts.ConfigPath)
+	cfg, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return err
 	}
-
-	// Open repository
-	repo, err := repository.New(cfg.Database.Path)
-	if err != nil {
-		return fmt.Errorf("failed to open database: %w", err)
-	}
-	defer repo.Close()
+	defer cleanup()
 
 	// Get feed counts
 	feeds, err := repo.GetFeeds(false)
@@ -516,16 +454,11 @@ func cmdGenerate(opts GenerateOptions) error {
 }
 
 func cmdPrune(opts PruneOptions) error {
-	cfg, err := loadConfig(opts.ConfigPath)
+	_, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return err
 	}
-
-	repo, err := repository.New(cfg.Database.Path)
-	if err != nil {
-		return fmt.Errorf("failed to open database: %w", err)
-	}
-	defer repo.Close()
+	defer cleanup()
 
 	if opts.DryRun {
 		fmt.Fprintf(opts.Output, "Dry run: would delete entries older than %d days\n", opts.Days)
@@ -647,12 +580,7 @@ func cmdImportOPML(opts ImportOPMLOptions) error {
 		fmt.Fprintf(opts.Output, "Found %d feeds in OPML file\n\n", len(feeds))
 
 		// Load config and database to check for duplicates
-		cfg, err := config.LoadFromFile(opts.ConfigPath)
-		if err != nil {
-			return fmt.Errorf("failed to load config: %w", err)
-		}
-
-		repo, err := repository.New(cfg.Database.Path)
+		_, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 		if err != nil {
 			// Database might not exist yet, just show what would be imported
 			for i, feed := range feeds {
@@ -661,7 +589,7 @@ func cmdImportOPML(opts ImportOPMLOptions) error {
 			fmt.Fprintf(opts.Output, "\nDRY RUN: Would import %d feeds\n", len(feeds))
 			return nil
 		}
-		defer repo.Close()
+		defer cleanup()
 
 		// Check which feeds already exist
 		skipCount := 0
@@ -683,18 +611,11 @@ func cmdImportOPML(opts ImportOPMLOptions) error {
 	fmt.Fprintf(opts.Output, "Importing feeds from %s...\n\n", opts.OPMLFile)
 	fmt.Fprintf(opts.Output, "Found %d feeds in OPML file\n\n", len(feeds))
 
-	// Load config
-	cfg, err := config.LoadFromFile(opts.ConfigPath)
+	_, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return err
 	}
-
-	// Open repository
-	repo, err := repository.New(cfg.Database.Path)
-	if err != nil {
-		return fmt.Errorf("failed to open database: %w", err)
-	}
-	defer repo.Close()
+	defer cleanup()
 
 	// Import each feed
 	addedCount := 0
@@ -746,17 +667,11 @@ func cmdImportOPML(opts ImportOPMLOptions) error {
 
 func cmdExportOPML(opts ExportOPMLOptions) error {
 	// Load config
-	cfg, err := config.LoadFromFile(opts.ConfigPath)
+	cfg, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return err
 	}
-
-	// Open repository
-	repo, err := repository.New(cfg.Database.Path)
-	if err != nil {
-		return fmt.Errorf("failed to open database: %w", err)
-	}
-	defer repo.Close()
+	defer cleanup()
 
 	// Get all feeds
 	repoFeeds, err := repo.GetFeeds(false)
@@ -822,6 +737,40 @@ func loadConfig(path string) (*config.Config, error) {
 		return config.Default(), nil
 	}
 	return config.LoadFromFile(path)
+}
+
+// openConfigAndRepo loads config and opens database, returning both along with a cleanup function
+// The cleanup function should be called with defer to ensure the repository is closed
+func openConfigAndRepo(configPath string) (*config.Config, *repository.Repository, func(), error) {
+	cfg, err := loadConfig(configPath)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	repo, err := repository.New(cfg.Database.Path)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to open database: %w", err)
+	}
+
+	cleanup := func() { repo.Close() }
+	return cfg, repo, cleanup, nil
+}
+
+// importFeedsFromURLs adds a list of feed URLs to the repository with progress reporting
+// Returns the number of successfully added feeds
+func importFeedsFromURLs(repo *repository.Repository, feedURLs []string, output io.Writer) int {
+	addedCount := 0
+	for i, url := range feedURLs {
+		fmt.Fprintf(output, "  [%d/%d] Adding %s\n", i+1, len(feedURLs), url)
+		id, err := repo.AddFeed(url, "")
+		if err != nil {
+			log.Printf("         Warning: Failed to add feed: %v", err)
+			continue
+		}
+		fmt.Fprintf(output, "         ✓ Added (ID: %d)\n", id)
+		addedCount++
+	}
+	return addedCount
 }
 
 func fetchFeeds(cfg *config.Config) error {

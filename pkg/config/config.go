@@ -67,14 +67,18 @@ func Default() *Config {
 }
 
 // LoadFromFile loads configuration from an INI file
-func LoadFromFile(path string) (*Config, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("open config file: %w", err)
+func LoadFromFile(path string) (config *Config, err error) {
+	file, openErr := os.Open(path)
+	if openErr != nil {
+		return nil, fmt.Errorf("open config file: %w", openErr)
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("close config file: %w", closeErr)
+		}
+	}()
 
-	config := Default()
+	config = Default()
 	scanner := bufio.NewScanner(file)
 	currentSection := ""
 

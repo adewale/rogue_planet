@@ -331,7 +331,7 @@ func TestSanitizeHTML_HTMLEntities(t *testing.T) {
 		{
 			name:  "named entities",
 			input: `<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>`,
-			want:  "<script>alert(1)</script>", // Should be escaped
+			want:  "&lt;script&gt;", // HTML entities should remain encoded (safe)
 		},
 		{
 			name:  "quote entities",
@@ -344,7 +344,7 @@ func TestSanitizeHTML_HTMLEntities(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			output := n.SanitizeHTML(tt.input)
 			if !strings.Contains(output, tt.want) {
-				t.Logf("Output may not contain expected string %q\nInput: %s\nOutput: %s",
+				t.Errorf("Output missing expected string %q\nInput: %s\nOutput: %s",
 					tt.want, tt.input, output)
 			}
 		})
@@ -373,6 +373,16 @@ func TestSanitizeHTML_MalformedHTML(t *testing.T) {
 			// Should not panic and should produce some output
 			if output == "" {
 				t.Error("Sanitizer returned empty string for malformed HTML")
+			}
+
+			// Should preserve text content even if HTML is malformed
+			if strings.Contains(tt.input, "Hello") && !strings.Contains(output, "Hello") {
+				t.Errorf("Sanitizer lost text content 'Hello'\nInput: %s\nOutput: %s",
+					tt.input, output)
+			}
+			if strings.Contains(tt.input, "Content") && !strings.Contains(output, "Content") {
+				t.Errorf("Sanitizer lost text content 'Content'\nInput: %s\nOutput: %s",
+					tt.input, output)
 			}
 
 			// Should not contain obviously broken HTML
@@ -408,7 +418,7 @@ func TestSanitizeHTML_EdgeCases(t *testing.T) {
 
 			// Basic sanity check
 			if tt.input != "" && output == "" && strings.TrimSpace(tt.input) != "" {
-				t.Logf("Sanitizer may have removed all content\nInput: %s\nOutput: %s",
+				t.Errorf("Sanitizer removed all content (should preserve safe HTML)\nInput: %s\nOutput: %s",
 					tt.input, output)
 			}
 		})

@@ -116,7 +116,7 @@ func (g *Generator) Generate(w io.Writer, data TemplateData) error {
 }
 
 // GenerateToFile generates HTML and writes it to a file
-func (g *Generator) GenerateToFile(outputPath string, data TemplateData) error {
+func (g *Generator) GenerateToFile(outputPath string, data TemplateData) (err error) {
 	// Create output directory if it doesn't exist
 	dir := filepath.Dir(outputPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -124,11 +124,15 @@ func (g *Generator) GenerateToFile(outputPath string, data TemplateData) error {
 	}
 
 	// Create output file
-	f, err := os.Create(outputPath)
-	if err != nil {
-		return fmt.Errorf("create output file: %w", err)
+	f, createErr := os.Create(outputPath)
+	if createErr != nil {
+		return fmt.Errorf("create output file: %w", createErr)
 	}
-	defer f.Close()
+	defer func() {
+		if closeErr := f.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("close output file: %w", closeErr)
+		}
+	}()
 
 	// Generate HTML
 	if err := g.Generate(f, data); err != nil {
@@ -217,26 +221,34 @@ func copyDir(src, dst string) error {
 }
 
 // copyFile copies a single file
-func copyFile(src, dst string) error {
+func copyFile(src, dst string) (err error) {
 	// Open source file
-	srcFile, err := os.Open(src)
-	if err != nil {
-		return err
+	srcFile, openErr := os.Open(src)
+	if openErr != nil {
+		return openErr
 	}
-	defer srcFile.Close()
+	defer func() {
+		if closeErr := srcFile.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
 	// Get source file info
-	srcInfo, err := srcFile.Stat()
-	if err != nil {
-		return err
+	srcInfo, statErr := srcFile.Stat()
+	if statErr != nil {
+		return statErr
 	}
 
 	// Create destination file
-	dstFile, err := os.Create(dst)
-	if err != nil {
-		return err
+	dstFile, createErr := os.Create(dst)
+	if createErr != nil {
+		return createErr
 	}
-	defer dstFile.Close()
+	defer func() {
+		if closeErr := dstFile.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
 	// Copy file contents
 	if _, err := io.Copy(dstFile, srcFile); err != nil {

@@ -263,3 +263,56 @@ func TestFetchWithRetry(t *testing.T) {
 		// Should fail immediately without retries
 	})
 }
+
+func TestFetchInvalidContentType(t *testing.T) {
+	t.Run("HTML instead of feed", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/html")
+			if _, err := w.Write([]byte("<html><body>This is not a feed</body></html>")); err != nil {
+				t.Errorf("Write error: %v", err)
+			}
+		}))
+		defer server.Close()
+
+		crawler := NewForTesting()
+		resp, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+
+		// The crawler doesn't validate content-type (intentional - many feeds have incorrect headers)
+		// It just fetches the data and lets the parser handle it
+		if err != nil {
+			t.Fatalf("Fetch() error = %v", err)
+		}
+
+		// Response should contain the HTML data
+		if len(resp.Body) == 0 {
+			t.Error("Body is empty")
+		}
+
+		// Parser will fail later when trying to parse this as a feed
+		if !strings.Contains(string(resp.Body), "This is not a feed") {
+			t.Error("Expected HTML body to be returned")
+		}
+	})
+
+	t.Run("JSON instead of XML feed", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			if _, err := w.Write([]byte(`{"error": "not a feed"}`)); err != nil {
+				t.Errorf("Write error: %v", err)
+			}
+		}))
+		defer server.Close()
+
+		crawler := NewForTesting()
+		resp, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+
+		// The crawler accepts any content-type
+		if err != nil {
+			t.Fatalf("Fetch() error = %v", err)
+		}
+
+		if len(resp.Body) == 0 {
+			t.Error("Body is empty")
+		}
+	})
+}

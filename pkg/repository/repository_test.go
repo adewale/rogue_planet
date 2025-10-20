@@ -239,6 +239,82 @@ func TestUpsertEntry(t *testing.T) {
 	}
 }
 
+func TestUniqueConstraintHandling(t *testing.T) {
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	feedID, _ := repo.AddFeed("https://example.com/feed", "Test Feed")
+
+	// Create an entry
+	entry1 := &Entry{
+		FeedID:      feedID,
+		EntryID:     "unique-entry-1",
+		Title:       "Original Title",
+		Link:        "https://example.com/entry/1",
+		Content:     "Original content",
+		ContentType: "html",
+		Author:      "Author 1",
+		Published:   time.Now().Add(-1 * time.Hour),
+		Updated:     time.Now().Add(-1 * time.Hour),
+		FirstSeen:   time.Now().Add(-1 * time.Hour),
+	}
+
+	err := repo.UpsertEntry(entry1)
+	if err != nil {
+		t.Fatalf("UpsertEntry() error = %v", err)
+	}
+
+	// Try to insert the same entry again with different data
+	// This tests that the UNIQUE constraint on (feed_id, entry_id) triggers an UPDATE
+	entry2 := &Entry{
+		FeedID:      feedID,
+		EntryID:     "unique-entry-1", // Same EntryID - violates unique constraint
+		Title:       "Modified Title",
+		Link:        "https://example.com/entry/1-modified",
+		Content:     "Modified content",
+		ContentType: "html",
+		Author:      "Author 2",
+		Published:   time.Now(),
+		Updated:     time.Now(),
+		FirstSeen:   time.Now(),
+	}
+
+	err = repo.UpsertEntry(entry2)
+	if err != nil {
+		t.Fatalf("UpsertEntry() should handle unique constraint gracefully, got error: %v", err)
+	}
+
+	// Verify that we still have exactly one entry (not two)
+	var count int
+	err = repo.db.QueryRow("SELECT COUNT(*) FROM entries WHERE feed_id = ? AND entry_id = ?",
+		feedID, "unique-entry-1").Scan(&count)
+
+	if err != nil {
+		t.Fatalf("Query error: %v", err)
+	}
+
+	if count != 1 {
+		t.Errorf("Expected 1 entry after unique constraint conflict, got %d", count)
+	}
+
+	// Verify the entry was updated (not inserted as duplicate)
+	var title, author string
+	err = repo.db.QueryRow("SELECT title, author FROM entries WHERE feed_id = ? AND entry_id = ?",
+		feedID, "unique-entry-1").Scan(&title, &author)
+
+	if err != nil {
+		t.Fatalf("Query error: %v", err)
+	}
+
+	if title != "Modified Title" {
+		t.Errorf("Title = %q, want %q (should be updated)", title, "Modified Title")
+	}
+
+	if author != "Author 2" {
+		t.Errorf("Author = %q, want %q (should be updated)", author, "Author 2")
+	}
+}
+
 func TestGetRecentEntries(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
