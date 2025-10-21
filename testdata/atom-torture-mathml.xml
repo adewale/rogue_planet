@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Atom Torture Test: MathML Content</title>
+  <link href="https://example.com/"/>
+  <updated>2006-04-15T12:00:00Z</updated>
+  <id>https://example.com/atom-torture-mathml</id>
+  <author>
+    <name>Jacques Distler</name>
+  </author>
+
+  <!-- Test 1: Basic MathML equation (E=mc²) -->
+  <entry>
+    <title>Einstein's Mass-Energy Equivalence</title>
+    <link href="https://example.com/mathml1"/>
+    <id>https://example.com/mathml1</id>
+    <updated>2006-04-15T12:00:00Z</updated>
+    <content type="xhtml">
+      <div xmlns="http://www.w3.org/1999/xhtml">
+        <p>Einstein's most famous equation:</p>
+        <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+          <mi>E</mi>
+          <mo>=</mo>
+          <mi>m</mi>
+          <msup>
+            <mi>c</mi>
+            <mn>2</mn>
+          </msup>
+        </math>
+        <p>This relates energy and mass.</p>
+      </div>
+    </content>
+  </entry>
+
+  <!-- Test 2: MathML with fractions (quadratic formula) -->
+  <entry>
+    <title>The Quadratic Formula</title>
+    <link href="https://example.com/mathml2"/>
+    <id>https://example.com/mathml2</id>
+    <updated>2006-04-15T11:00:00Z</updated>
+    <content type="xhtml">
+      <div xmlns="http://www.w3.org/1999/xhtml">
+        <p>The quadratic formula solves ax² + bx + c = 0:</p>
+        <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+          <mi>x</mi>
+          <mo>=</mo>
+          <mfrac>
+            <mrow>
+              <mo>−</mo>
+              <mi>b</mi>
+              <mo>±</mo>
+              <msqrt>
+                <mrow>
+                  <msup>
+                    <mi>b</mi>
+                    <mn>2</mn>
+                  </msup>
+                  <mo>−</mo>
+                  <mn>4</mn>
+                  <mi>a</mi>
+                  <mi>c</mi>
+                </mrow>
+              </msqrt>
+            </mrow>
+            <mrow>
+              <mn>2</mn>
+              <mi>a</mi>
+            </mrow>
+          </mfrac>
+        </math>
+      </div>
+    </content>
+  </entry>
+
+  <!-- Test 3: Inline MathML within text -->
+  <entry>
+    <title>Inline Mathematical Expressions</title>
+    <link href="https://example.com/mathml3"/>
+    <id>https://example.com/mathml3</id>
+    <updated>2006-04-15T10:00:00Z</updated>
+    <content type="xhtml">
+      <div xmlns="http://www.w3.org/1999/xhtml">
+        <p>The area of a circle is
+          <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline">
+            <mi>A</mi>
+            <mo>=</mo>
+            <mi>π</mi>
+            <msup>
+              <mi>r</mi>
+              <mn>2</mn>
+            </msup>
+          </math>
+          where r is the radius.
+        </p>
+        <p>Similarly, the circumference is
+          <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline">
+            <mi>C</mi>
+            <mo>=</mo>
+            <mn>2</mn>
+            <mi>π</mi>
+            <mi>r</mi>
+          </math>.
+        </p>
+      </div>
+    </content>
+  </entry>
+
+  <!-- Test 4: MathML with summation notation -->
+  <entry>
+    <title>Summation Notation</title>
+    <link href="https://example.com/mathml4"/>
+    <id>https://example.com/mathml4</id>
+    <updated>2006-04-15T09:00:00Z</updated>
+    <content type="xhtml">
+      <div xmlns="http://www.w3.org/1999/xhtml">
+        <p>The sum of the first n natural numbers:</p>
+        <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+          <mrow>
+            <munderover>
+              <mo>∑</mo>
+              <mrow>
+                <mi>i</mi>
+                <mo>=</mo>
+                <mn>1</mn>
+              </mrow>
+              <mi>n</mi>
+            </munderover>
+            <mi>i</mi>
+            <mo>=</mo>
+            <mfrac>
+              <mrow>
+                <mi>n</mi>
+                <mo>(</mo>
+                <mi>n</mi>
+                <mo>+</mo>
+                <mn>1</mn>
+                <mo>)</mo>
+              </mrow>
+              <mn>2</mn>
+            </mfrac>
+          </mrow>
+        </math>
+      </div>
+    </content>
+  </entry>
+
+  <!-- Test 5: MathML security test - ensure no XSS via MathML -->
+  <entry>
+    <title>MathML Security Test</title>
+    <link href="https://example.com/mathml5"/>
+    <id>https://example.com/mathml5</id>
+    <updated>2006-04-15T08:00:00Z</updated>
+    <content type="xhtml">
+      <div xmlns="http://www.w3.org/1999/xhtml">
+        <p>Attempting XSS via MathML attributes (should be sanitized):</p>
+        <math xmlns="http://www.w3.org/1998/Math/MathML" onclick="alert('XSS')" onload="alert('XSS')">
+          <mi>x</mi>
+          <mo>=</mo>
+          <mn>42</mn>
+        </math>
+        <p>The math above should not execute any scripts.</p>
+      </div>
+    </content>
+  </entry>
+
+  <!-- Test 6: Mixed text and MathML -->
+  <entry>
+    <title>Pythagorean Theorem</title>
+    <link href="https://example.com/mathml6"/>
+    <id>https://example.com/mathml6</id>
+    <updated>2006-04-15T07:00:00Z</updated>
+    <content type="xhtml">
+      <div xmlns="http://www.w3.org/1999/xhtml">
+        <p>For a right triangle with sides <em>a</em>, <em>b</em>, and hypotenuse <em>c</em>:</p>
+        <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+          <msup>
+            <mi>a</mi>
+            <mn>2</mn>
+          </msup>
+          <mo>+</mo>
+          <msup>
+            <mi>b</mi>
+            <mn>2</mn>
+          </msup>
+          <mo>=</mo>
+          <msup>
+            <mi>c</mi>
+            <mn>2</mn>
+          </msup>
+        </math>
+        <p>This is one of the most fundamental theorems in geometry.</p>
+      </div>
+    </content>
+  </entry>
+</feed>

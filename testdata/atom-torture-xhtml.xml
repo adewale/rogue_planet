@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Atom Torture Test: XHTML Content</title>
+  <link href="https://example.com/"/>
+  <updated>2006-04-15T12:00:00Z</updated>
+  <id>https://example.com/atom-torture-xhtml</id>
+  <author>
+    <name>Jacques Distler</name>
+  </author>
+
+  <!-- Test 1: XHTML content type with proper namespace -->
+  <entry>
+    <title>XHTML Content with Namespace</title>
+    <link href="https://example.com/entry1"/>
+    <id>https://example.com/entry1</id>
+    <updated>2006-04-15T12:00:00Z</updated>
+    <content type="xhtml">
+      <div xmlns="http://www.w3.org/1999/xhtml">
+        <p>This is <strong>XHTML</strong> content with proper namespace.</p>
+        <p>It should handle self-closing tags: <br/></p>
+        <p>And preserve structure properly.</p>
+      </div>
+    </content>
+  </entry>
+
+  <!-- Test 2: XHTML with complex structure -->
+  <entry>
+    <title>XHTML with Lists and Links</title>
+    <link href="https://example.com/entry2"/>
+    <id>https://example.com/entry2</id>
+    <updated>2006-04-15T11:00:00Z</updated>
+    <content type="xhtml">
+      <div xmlns="http://www.w3.org/1999/xhtml">
+        <p>Here's a list:</p>
+        <ul>
+          <li>Item one with <a href="https://example.com">a link</a></li>
+          <li>Item two with <em>emphasis</em></li>
+          <li>Item three</li>
+        </ul>
+        <p>And a code example:</p>
+        <pre><code>&lt;br/&gt; is self-closing in XHTML</code></pre>
+      </div>
+    </content>
+  </entry>
+
+  <!-- Test 3: Plain text content type -->
+  <entry>
+    <title>Plain Text Content</title>
+    <link href="https://example.com/entry3"/>
+    <id>https://example.com/entry3</id>
+    <updated>2006-04-15T10:00:00Z</updated>
+    <content type="text">This is plain text. &lt;b&gt;HTML&lt;/b&gt; should not be interpreted.</content>
+  </entry>
+
+  <!-- Test 4: HTML content type (not XHTML) -->
+  <entry>
+    <title>HTML Content Type</title>
+    <link href="https://example.com/entry4"/>
+    <id>https://example.com/entry4</id>
+    <updated>2006-04-15T09:00:00Z</updated>
+    <content type="html">&lt;p&gt;This is &lt;strong&gt;HTML&lt;/strong&gt; content (entity-encoded).&lt;/p&gt;&lt;p&gt;It can have &lt;br&gt; tags without closing.&lt;/p&gt;</content>
+  </entry>
+
+  <!-- Test 5: XHTML with mixed content -->
+  <entry>
+    <title>XHTML Mixed Content</title>
+    <link href="https://example.com/entry5"/>
+    <id>https://example.com/entry5</id>
+    <updated>2006-04-15T08:00:00Z</updated>
+    <content type="xhtml">
+      <div xmlns="http://www.w3.org/1999/xhtml">
+        <h2>A Heading</h2>
+        <p>Some text with <code>inline code</code> and <strong>bold text</strong>.</p>
+        <blockquote>
+          <p>A quoted paragraph.</p>
+        </blockquote>
+        <p>An image: <img src="https://example.com/test.jpg" alt="Test image"/></p>
+      </div>
+    </content>
+  </entry>
+</feed>

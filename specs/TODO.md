@@ -566,6 +566,37 @@ trusted_iframe_domains = youtube.com, youtube-nocookie.com, vimeo.com, codepen.i
 
 ---
 
+#### Atom Torture Test Research and Validation
+**Problem**: Need to properly research Jacques Distler's original "Atom Torture Test" blog posts to ensure complete test coverage.
+
+**Current Status**: Initial test implementation based on web search results about XHTML, MathML, and SVG handling. Direct access to the original blog posts was blocked by network restrictions.
+
+**Blog Posts**:
+- https://golem.ph.utexas.edu/~distler/blog/archives/000793.html (Atom Torture Test - April 2006)
+- https://golem.ph.utexas.edu/~distler/blog/archives/000836.html (unknown content - needs research)
+
+**Tasks**:
+1. Access and thoroughly read both blog posts
+2. Document specific test cases and failure modes described
+3. Verify current test fixtures (atom-torture-*.xml) match original tests
+4. Add any missing edge cases to test suite
+5. Update normalizer_torture_test.go based on findings
+6. Document any MathML/SVG/XHTML policy decisions
+
+**Current Implementation**:
+- Created testdata/atom-torture-xhtml.xml (5 test entries)
+- Created testdata/atom-torture-mathml.xml (6 test entries)
+- Created testdata/atom-torture-svg.xml (7 test entries)
+- Created pkg/normalizer/normalizer_torture_test.go (13 test functions)
+- Tests document current behavior (MathML/SVG likely stripped)
+
+**Rationale**: These blog posts represent 20+ years of accumulated wisdom about feed aggregator edge cases. Proper implementation prevents issues that plagued Planet Venus and other aggregators.
+
+**Effort**: Low (research and documentation)
+**Priority**: P3 - Important for correctness but doesn't block core functionality
+
+---
+
 #### GitHub Gist Embeds (Venus #28)
 **Problem**: GitHub Gist embeds (iframe-based) don't display because iframes are blocked by sanitization.
 
