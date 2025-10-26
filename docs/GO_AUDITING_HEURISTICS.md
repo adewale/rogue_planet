@@ -2,23 +2,26 @@
 
 **Purpose:** Comprehensive checklist for auditing Go codebases
 **Audience:** Developers, code reviewers, AI agents, security auditors
-**Version:** 1.0
-**Last Updated:** 2025-10-20
+**Version:** 2.0
+**Last Updated:** 2025-10-26
 
 ---
 
 ## Table of Contents
 
 1. [Quick Start Checklist](#quick-start-checklist)
-2. [Security Auditing](#security-auditing)
-3. [Resource Management](#resource-management)
-4. [Concurrency Patterns](#concurrency-patterns)
-5. [Error Handling](#error-handling)
-6. [Code Quality](#code-quality)
-7. [Test Quality](#test-quality)
-8. [Performance](#performance)
-9. [Automated Tools](#automated-tools)
-10. [Priority Matrix](#priority-matrix)
+2. [Documentation Integrity](#documentation-integrity)
+3. [Security Auditing](#security-auditing)
+4. [Resource Management](#resource-management)
+5. [Concurrency Patterns](#concurrency-patterns)
+6. [Error Handling](#error-handling)
+7. [Code Quality](#code-quality)
+8. [Architecture & Design](#architecture--design)
+9. [Build & Infrastructure](#build--infrastructure)
+10. [Test Quality](#test-quality)
+11. [Performance](#performance)
+12. [Automated Tools](#automated-tools)
+13. [Priority Matrix](#priority-matrix)
 
 ---
 
@@ -34,6 +37,8 @@ Use this for rapid assessment of any Go codebase:
 - [ ] No race conditions (`go test -race` passes)
 - [ ] Errors are not ignored (search for `_ = `)
 - [ ] No panics in library code
+- [ ] TODO/checklist items are actually complete (not aspirational)
+- [ ] All referenced files exist (documentation, Makefiles, examples)
 
 ### High Priority (Should Check)
 - [ ] Errors wrapped with context (`%w` verb)
@@ -48,6 +53,123 @@ Use this for rapid assessment of any Go codebase:
 - [ ] Proper mutex usage for shared state
 - [ ] Channel operations follow best practices
 - [ ] No dead code (unused functions/variables)
+- [ ] Build targets work on clean checkout
+- [ ] Config options documented in README
+- [ ] HTTP client uses connection pooling
+- [ ] Context passed to goroutines (not context.Background())
+
+---
+
+## Documentation Integrity
+
+**Problem:** Documentation claims features are complete when they're not implemented, or references files that don't exist.
+
+### TODO/Checklist Accuracy
+
+**Heuristic:** Verify all ✅ checkmarks are actually true
+
+**Commands:**
+```bash
+# Find all claimed completions
+grep -rn "✅\|✓\|\[x\]" TODO.md ROADMAP.md CHECKLIST.md specs/
+
+# For each claimed item, verify:
+# 1. Does the file exist?
+# 2. Is the dependency in go.mod?
+# 3. Is the feature actually implemented?
+```
+
+**Real-world example:**
+```
+TODO.md claimed:
+✅ QUICKSTART.md - 5-minute setup guide     → FILE DOESN'T EXIST
+✅ THEMES.md - Complete theme guide         → FILE DOESN'T EXIST
+✅ golang.org/x/time/rate - Rate limiting   → NOT IN go.mod, NEVER IMPORTED
+```
+
+**What to verify:**
+- Every checked item is actually complete
+- Files claimed to exist are present
+- Dependencies claimed to exist are in go.mod
+- Features claimed to work are implemented
+
+**Prevention:**
+- Automate checklist verification in CI
+- Link checklist items to actual files/commits
+- Use `test -f file.md || exit 1` in validation scripts
+
+---
+
+### Dependency Documentation Accuracy
+
+**Heuristic:** Compare documented dependencies vs actual imports
+
+**Commands:**
+```bash
+# List documented dependencies
+grep -E "^- .*:" README.md CLAUDE.md docs/ | grep -oE "`[^`]+`" | sort -u
+
+# List actual dependencies
+go list -m all | cut -d' ' -f1 | sort -u
+
+# Find documented but not used
+comm -23 <(grep -oE "`[a-z]+\.[a-z]+/[^`]+" README.md | tr -d '`' | sort -u) \
+         <(go list -m all | cut -d' ' -f1 | sort -u)
+```
+
+**What to verify:**
+- Every documented dependency is in go.mod
+- Every go.mod dependency has a purpose (or remove it)
+- No "planned features" listed as "Key Dependencies"
+- Dependency versions match if specified
+
+**Real-world example:**
+```
+CLAUDE.md claimed:
+"Rate limiting: golang.org/x/time/rate"
+
+Reality:
+$ grep "time/rate" go.mod
+(nothing - dependency doesn't exist)
+```
+
+**Fix:** Move to "Planned Dependencies" section or remove
+
+---
+
+### Referenced Files Must Exist
+
+**Heuristic:** Find all file references in documentation, verify they exist
+
+**Command:**
+```bash
+# Find all file references in markdown
+grep -rh -oE '[a-zA-Z0-9_/-]+\.(go|md|sh|ini|yaml|json|txt)' *.md docs/ specs/ | sort -u > /tmp/referenced.txt
+
+# Check existence
+while read file; do
+    [ ! -f "$file" ] && echo "MISSING: $file (referenced in docs)"
+done < /tmp/referenced.txt
+```
+
+**What breaks commonly:**
+- Example files referenced but not created
+- Scripts in Makefile that don't exist
+- Documentation cross-references to files not yet written
+- Old references to files that were renamed/deleted
+
+**Real-world example:**
+```
+examples/README.md references:
+- examples/config.ini     → DOESN'T EXIST (breaks `make examples`)
+- QUICKSTART.md           → DOESN'T EXIST (404 link)
+- THEMES.md               → DOESN'T EXIST (404 link)
+
+Makefile line 172:
+./setup-example-planet.sh → DOESN'T EXIST (make target fails)
+```
+
+**Fix:** Create missing files OR update documentation to remove references
 
 ---
 
@@ -437,6 +559,66 @@ func startWorker(ctx context.Context) {
 
 ---
 
+### Context Propagation in Goroutines
+
+**Heuristic:** Goroutines should receive context from parent, not create context.Background()
+
+**Bad Pattern:**
+```go
+// PROBLEM - can't cancel from parent
+func fetchFeeds(feeds []Feed) {
+    for _, feed := range feeds {
+        go func(f Feed) {
+            // Creates independent context!
+            ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+            defer cancel()
+            crawler.Fetch(ctx, f.URL)
+        }(feed)
+    }
+}
+```
+
+**Good Pattern:**
+```go
+// CORRECT - context from parent
+func fetchFeeds(ctx context.Context, feeds []Feed) error {
+    for _, feed := range feeds {
+        go func(f Feed) {
+            // Derives from parent context
+            fetchCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+            defer cancel()
+            crawler.Fetch(fetchCtx, f.URL)
+        }(feed)
+    }
+
+    // Can be cancelled from parent
+    <-ctx.Done()
+    return ctx.Err()
+}
+```
+
+**Detection:**
+```bash
+# Find goroutines with context.Background()
+grep -B 2 -A 10 "go func" --include="*.go" -r . | grep "context.Background()"
+
+# Should find very few (only in main() or tests)
+```
+
+**What's wrong with Background() in goroutines:**
+- User hits Ctrl+C → main context cancelled
+- Goroutines with Background() keep running
+- No graceful shutdown
+- Can't enforce timeouts from parent
+
+**What to verify:**
+- Functions spawning goroutines accept context.Context parameter
+- No context.Background() inside goroutine functions
+- Context passed to all long-running operations
+- Main function sets up signal handling with context
+
+---
+
 ## Error Handling
 
 ### Ignored Errors
@@ -614,6 +796,488 @@ gocognit -over 15 .
 - Extract helper functions
 - Use early returns to reduce nesting
 - Split large functions by responsibility
+
+---
+
+### Unused Database Columns
+
+**Heuristic:** Find database columns that are written but never queried
+
+**Process:**
+```bash
+# 1. Extract column names from schema
+grep -E "^\s+[a-z_]+ (INTEGER|TEXT|BLOB|REAL)" schema.sql | awk '{print $1}' > /tmp/columns.txt
+
+# 2. For each column, search if it's queried
+while read col; do
+    grep -r "SELECT.*\b$col\b" . --include="*.go" || echo "NEVER READ: $col"
+done < /tmp/columns.txt
+
+# 3. Check WHERE clauses specifically
+while read col; do
+    grep -r "WHERE.*\b$col\b" . --include="*.go" || echo "NEVER FILTERED ON: $col"
+done < /tmp/columns.txt
+```
+
+**Real-world example:**
+```sql
+-- Schema defines:
+CREATE TABLE feeds (
+    next_fetch TEXT,           -- Written on every update
+    fetch_interval INTEGER     -- Written on every update
+);
+
+-- Code writes:
+UPDATE feeds SET next_fetch = ?, fetch_interval = ? ...
+
+-- But queries ignore it:
+SELECT * FROM feeds WHERE active = 1  -- Ignores next_fetch!
+
+-- Should be:
+SELECT * FROM feeds WHERE active = 1 AND next_fetch <= ?
+```
+
+**What this reveals:**
+- Infrastructure for unimplemented features
+- Fields that should be removed
+- Missed optimization opportunities
+- Planned features never finished
+
+**Fix:** Implement the feature OR remove unused columns
+
+---
+
+### Unused Struct Fields
+
+**Heuristic:** Find struct fields that are set but never read
+
+**Process:**
+```bash
+# 1. Find all struct definitions
+grep -n "type.*struct {" --include="*.go" -r .
+
+# 2. For each field, search for reads (manual review)
+# Look for: variable.FieldName
+# Exclude: variable.FieldName = (this is a write)
+```
+
+**Real-world example:**
+```go
+type FeedData struct {
+    Title       string
+    Link        string
+    Subscribers int  // NEVER SET (always zero)
+}
+
+// Set everywhere:
+feed := FeedData{
+    Title: f.Title,
+    Link:  f.Link,
+    // Subscribers not set!
+}
+
+// Template uses it:
+{{if gt .Subscribers 0}}
+    Subscribers: {{.Subscribers}}
+{{end}}  // Never displays (always 0)
+```
+
+**What to verify:**
+- Field is set somewhere (not always default value)
+- Field is read somewhere (not just written)
+- If unused, consider removing or documenting as TODO
+
+**Tools:**
+```bash
+# Find struct fields that might be unused
+structcheck ./...
+ineffassign ./...
+```
+
+---
+
+### Functions Tested But Unused in Production
+
+**Heuristic:** Find exported functions only called in test files
+
+**Process:**
+```bash
+# Find exported functions in package
+grep "^func.*[A-Z].*(" pkg/**/*.go | grep -v "_test.go" | cut -d' ' -f2 | cut -d'(' -f1 > /tmp/funcs.txt
+
+# For each function, check if used outside tests
+while read func; do
+    # Search in non-test files
+    grep -r "\.$func\|$func(" --include="*.go" --exclude="*_test.go" -q || \
+        echo "ONLY IN TESTS: $func"
+done < /tmp/funcs.txt
+```
+
+**Real-world example:**
+```go
+// pkg/crawler/crawler.go
+func (c *Crawler) FetchWithRetry(ctx context.Context, url string, maxRetries int) error {
+    // Well-implemented, thoroughly tested
+}
+
+// But cmd/rp/commands.go uses:
+resp, err := c.Fetch(ctx, url, cache)  // Not FetchWithRetry!
+
+// FetchWithRetry only called in:
+// - crawler_test.go (100% coverage)
+// - Never in production code
+```
+
+**When this is OK:**
+- Public API for library users
+- Future feature being built incrementally
+- Explicitly documented as "available but not used internally"
+
+**When this is a problem:**
+- Code duplication (retry logic implemented twice)
+- Missed quality improvements
+- Dead code that should be removed
+
+---
+
+### Stub Implementations (Dry-Run Flags That Don't Work)
+
+**Heuristic:** Find functions with `--dry-run` flags that don't actually preview
+
+**Pattern:**
+```bash
+# Find dry-run parameters
+grep -rn "DryRun.*bool\|dryRun.*bool\|dry-run" --include="*.go"
+
+# Check if they query before reporting
+grep -B 5 -A 15 "if.*DryRun" --include="*.go" -r . | grep "Count\|Query\|List"
+```
+
+**Bad implementation:**
+```go
+func cmdPrune(opts PruneOptions) error {
+    if opts.DryRun {
+        fmt.Printf("Dry run: would delete entries older than %d days\n", opts.Days)
+        return nil  // Doesn't actually check what would be deleted!
+    }
+    // ... actual deletion
+}
+```
+
+**Good implementation:**
+```go
+func cmdPrune(opts PruneOptions) error {
+    cutoff := time.Now().AddDate(0, 0, -opts.Days)
+
+    if opts.DryRun {
+        // Actually query what would be deleted
+        count, err := repo.CountEntriesOlderThan(cutoff)
+        if err != nil {
+            return err
+        }
+        fmt.Printf("Would delete %d entries older than %s\n", count, cutoff)
+
+        // Optionally show sample entries
+        preview, _ := repo.GetEntriesOlderThan(cutoff, 5)
+        for _, entry := range preview {
+            fmt.Printf("  - %s (%s)\n", entry.Title, entry.Published)
+        }
+        return nil
+    }
+
+    // Actual deletion
+    return repo.DeleteEntriesOlderThan(cutoff)
+}
+```
+
+**What to verify:**
+- Dry-run actually queries database/filesystem
+- Shows specific items that would be affected
+- Same logic as real operation (just doesn't commit)
+
+---
+
+### Undocumented Configuration Options
+
+**Heuristic:** Find all config fields vs documented options
+
+**Process:**
+```bash
+# 1. Find all config struct fields
+grep -A 50 "type.*Config struct" pkg/config/*.go | \
+    grep -E "^\s+[A-Z]" | awk '{print $1}' | sort -u > /tmp/config_fields.txt
+
+# 2. For each field, check if documented in README
+while read field; do
+    grep -q "$field\|$(echo $field | sed 's/\([A-Z]\)/_\L\1/g' | sed 's/^_//')" README.md || \
+        echo "UNDOCUMENTED: $field"
+done < /tmp/config_fields.txt
+```
+
+**Real-world example:**
+```go
+// pkg/config/config.go
+type PlanetConfig struct {
+    Days             int     // Documented ✓
+    FilterByFirstSeen bool   // NOT in README ✗
+    SortBy           string  // NOT in README ✗
+}
+```
+
+**Impact:**
+- Users don't know powerful features exist
+- Features stay unused
+- Support burden ("how do I sort by date?")
+- Wasted development effort
+
+**Fix:** Document ALL config options in README with:
+- Option name and type
+- Default value
+- Description
+- Example usage
+
+---
+
+## Architecture & Design
+
+**Problem:** Hard-to-test code, global state, concrete dependencies
+
+### Interfaces vs Concrete Types
+
+**Heuristic:** Check if business logic depends on concrete types or interfaces
+
+**Detection:**
+```bash
+# Find interface definitions in non-test files
+grep -rn "type.*interface" pkg/ --include="*.go" | grep -v "_test.go" | wc -l
+
+# If count is 0 or very low: architecture problem!
+```
+
+**Bad pattern (hard to test):**
+```go
+// Concrete dependencies
+func ProcessFeeds(repo *repository.Repository, crawler *crawler.Crawler) error {
+    feeds, err := repo.GetFeeds()  // Can't mock for testing!
+    if err != nil {
+        return err
+    }
+
+    for _, feed := range feeds {
+        data, err := crawler.Fetch(feed.URL)  // Can't mock HTTP!
+        if err != nil {
+            continue
+        }
+        // process...
+    }
+    return nil
+}
+```
+
+**Good pattern (easy to test):**
+```go
+// Interface dependencies
+type FeedRepository interface {
+    GetFeeds() ([]Feed, error)
+    SaveEntry(entry *Entry) error
+}
+
+type FeedCrawler interface {
+    Fetch(url string) (*FeedData, error)
+}
+
+func ProcessFeeds(repo FeedRepository, crawler FeedCrawler) error {
+    // Same code, but can inject mocks in tests!
+}
+```
+
+**Benefits:**
+- Unit tests don't need real database
+- Can test error paths easily (inject failing mock)
+- Faster tests (no I/O)
+- Dependency injection
+- Easier to swap implementations
+
+**Where to add interfaces:**
+- Database operations (Repository)
+- HTTP clients (Crawler, API clients)
+- File I/O operations
+- External services
+- Time (for testing time-dependent code)
+
+---
+
+### Global State in Packages
+
+**Heuristic:** Find package-level variables that hold mutable state
+
+**Detection:**
+```bash
+# Find global variables (exclude error sentinels)
+grep -rn "^var [a-z]" pkg/ cmd/ --include="*.go" | grep -v "_test.go" | grep -v "^var Err"
+```
+
+**Bad pattern:**
+```go
+// cmd/rp/commands.go
+var globalLogger = &Logger{level: LogLevelInfo}
+
+func (l *Logger) SetLevel(level string) {
+    l.level = parseLevel(level)  // NOT THREAD-SAFE!
+}
+
+func cmdFetch(opts FetchOptions) error {
+    globalLogger.SetLevel(opts.LogLevel)  // Mutates global state!
+    // ...
+}
+```
+
+**Problems:**
+- Not thread-safe (data races)
+- Makes testing harder (state leaks between tests)
+- Can't have multiple instances with different config
+- Harder to reason about program behavior
+
+**Good pattern:**
+```go
+// Pass dependencies explicitly
+type App struct {
+    logger *Logger
+    config *Config
+}
+
+func NewApp(cfg *Config) *App {
+    return &App{
+        logger: NewLogger(cfg.LogLevel),
+        config: cfg,
+    }
+}
+
+func (a *App) Fetch(opts FetchOptions) error {
+    a.logger.Info("fetching feeds")
+    // ...
+}
+```
+
+**What to verify:**
+- Package-level vars are truly constant (or sentinel errors)
+- Mutable state is instance variables, not global
+- Dependencies passed as parameters or struct fields
+
+**Acceptable global state:**
+- Sentinel errors: `var ErrNotFound = errors.New(...)`
+- True constants (even if declared as var)
+- sync.Once for one-time initialization
+- Package-level loggers if explicitly documented as global
+
+---
+
+## Build & Infrastructure
+
+**Problem:** Build scripts break on different platforms or reference missing files
+
+### Platform-Specific Commands in Makefiles
+
+**Heuristic:** Find commands that differ between macOS and Linux
+
+**Detection:**
+```bash
+# Find macOS-specific sed
+grep -n "sed -i ''" Makefile
+
+# Find other platform-specific commands
+grep -n "greadlink\|gsed\|ggrep\|gawk" Makefile
+
+# Find Darwin/Linux detection
+grep -n "uname.*Darwin" Makefile
+```
+
+**Bad pattern:**
+```makefile
+# BREAKS ON LINUX
+examples:
+	sed -i '' 's/foo/bar/' file.txt
+```
+
+**Portable alternatives:**
+```makefile
+# Option 1: Use .bak extension (works everywhere)
+examples:
+	sed -i.bak 's/foo/bar/' file.txt && rm file.txt.bak
+
+# Option 2: Platform detection
+ifeq ($(shell uname),Darwin)
+    SED := sed -i ''
+else
+    SED := sed -i
+endif
+
+examples:
+	$(SED) 's/foo/bar/' file.txt
+
+# Option 3: Use Go instead of shell
+examples:
+	go run scripts/transform.go file.txt
+```
+
+**What to verify:**
+- `sed`, `awk`, `grep` commands are portable
+- No assumptions about GNU vs BSD tools
+- Test on both macOS and Linux
+- Consider using Go for complex scripts
+
+**Common gotchas:**
+- `sed -i ''` (macOS) vs `sed -i` (Linux)
+- `readlink -f` (Linux only, use `greadlink` on macOS)
+- `date` command syntax differences
+- `find -printf` (GNU only)
+
+---
+
+### Makefile Target Dependencies and File Existence
+
+**Heuristic:** Test every make target on clean checkout
+
+**Process:**
+```bash
+# List all targets
+make -qp | grep "^[a-zA-Z0-9_-]*:" | cut -d: -f1 | sort -u > /tmp/targets.txt
+
+# Test each one in clean directory
+for target in $(cat /tmp/targets.txt); do
+    echo "Testing: make $target"
+    make clean
+    make $target || echo "❌ FAILED: $target"
+done
+```
+
+**What breaks commonly:**
+- Targets depending on files that don't exist
+- Targets assuming previous targets ran
+- Scripts referenced but not committed to git
+- Hardcoded paths specific to one developer
+
+**Real-world example:**
+```makefile
+# BREAKS - file doesn't exist
+examples:
+	@cp examples/config.ini /tmp/test.ini
+
+# BREAKS - script not in repo
+setup-example: build
+	@./setup-example-planet.sh
+
+# WORKS - checks existence first
+examples:
+	@test -f examples/config.ini || (echo "examples/config.ini missing" && exit 1)
+	@cp examples/config.ini /tmp/test.ini
+```
+
+**Prevention:**
+- Test make targets in CI (GitHub Actions, etc.)
+- Use `.PHONY` for targets that don't create files
+- Check file existence before operations
+- Document target dependencies in comments
 
 ---
 
@@ -796,6 +1460,262 @@ go test -benchmem -bench=. | grep "allocs/op"
 
 ---
 
+### HTTP Client Connection Pooling
+
+**Heuristic:** Check if http.Client uses optimized connection pool settings
+
+**Problem:** Go's default HTTP transport only keeps 2 idle connections per host
+
+**Detection:**
+```bash
+# Find http.Client creation
+grep -rn "http.Client{" --include="*.go"
+
+# Check if custom Transport is configured
+grep -B 5 -A 10 "http.Client{" --include="*.go" | grep "Transport:"
+```
+
+**Default (slow for concurrent requests):**
+```go
+// Uses http.DefaultTransport with MaxIdleConnsPerHost = 2
+client := &http.Client{
+    Timeout: 30 * time.Second,
+}
+```
+
+**Optimized for concurrency:**
+```go
+// Configure connection pooling
+transport := &http.Transport{
+    MaxIdleConns:        100,              // Total pool size
+    MaxIdleConnsPerHost: 10,               // Per-host (5x default!)
+    MaxConnsPerHost:     0,                // No limit on active connections
+    IdleConnTimeout:     90 * time.Second, // Keep connections alive
+    DisableCompression:  false,            // Enable gzip
+    ForceAttemptHTTP2:   true,             // Use HTTP/2 when available
+}
+
+client := &http.Client{
+    Timeout:   30 * time.Second,
+    Transport: transport,
+}
+```
+
+**Performance impact:**
+- 10-20% faster for concurrent HTTP requests
+- Reduces connection overhead
+- Especially important for services fetching many URLs
+
+**When to optimize:**
+- Fetching multiple URLs concurrently
+- Making many requests to same hosts
+- Background workers, web scrapers, API clients
+
+---
+
+### Database Prepared Statement Reuse
+
+**Heuristic:** Check if queries are prepared once or every call
+
+**Problem:** Preparing statements on every query adds overhead
+
+**Detection:**
+```bash
+# Find query patterns
+grep -rn "db.Query\|db.QueryRow\|db.Exec" --include="*.go" | grep -v Prepare
+
+# Check for statement reuse
+grep -rn "stmt.*sql.Stmt" --include="*.go"
+```
+
+**Bad pattern (prepares every call):**
+```go
+func (r *Repo) GetUser(id int) (*User, error) {
+    // Query string parsed EVERY call
+    row := r.db.QueryRow("SELECT * FROM users WHERE id = ?", id)
+    // ...
+}
+```
+
+**Good pattern (prepare once, reuse):**
+```go
+type Repo struct {
+    db   *sql.DB
+    stmt struct {
+        getUser    *sql.Stmt
+        insertUser *sql.Stmt
+        updateUser *sql.Stmt
+    }
+}
+
+func (r *Repo) init() error {
+    var err error
+
+    // Prepare statements once
+    r.stmt.getUser, err = r.db.Prepare("SELECT * FROM users WHERE id = ?")
+    if err != nil {
+        return err
+    }
+
+    r.stmt.insertUser, err = r.db.Prepare("INSERT INTO users (name, email) VALUES (?, ?)")
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func (r *Repo) GetUser(id int) (*User, error) {
+    // Reuses prepared statement
+    row := r.stmt.getUser.QueryRow(id)
+    // ...
+}
+
+func (r *Repo) Close() error {
+    r.stmt.getUser.Close()
+    r.stmt.insertUser.Close()
+    return r.db.Close()
+}
+```
+
+**Performance impact:**
+- 10-20% faster for frequent queries
+- Lower database CPU usage
+- Better for high-throughput applications
+
+**When to optimize:**
+- Frequently-called queries
+- Hot paths (called in loops)
+- Production services with high QPS
+
+---
+
+### Batch Database Operations
+
+**Heuristic:** Look for INSERT/UPDATE in loops
+
+**Problem:** One transaction per operation is slow
+
+**Detection:**
+```bash
+# Find loops with database operations
+grep -B 5 -A 5 "for.*range" --include="*.go" -r . | grep -E "db.Exec|stmt.Exec|Upsert|Insert|Update"
+```
+
+**Bad pattern (N transactions):**
+```go
+// SLOW - one transaction per entry
+func SaveEntries(entries []Entry) error {
+    for _, entry := range entries {
+        _, err := repo.UpsertEntry(&entry)  // Each is a transaction!
+        if err != nil {
+            return err
+        }
+    }
+    return nil
+}
+```
+
+**Good pattern (single transaction):**
+```go
+// FAST - batch in one transaction
+func SaveEntriesBatch(entries []Entry) error {
+    tx, err := r.db.Begin()
+    if err != nil {
+        return err
+    }
+    defer tx.Rollback() // No-op if committed
+
+    stmt, err := tx.Prepare("INSERT OR REPLACE INTO entries (...) VALUES (?, ?, ?)")
+    if err != nil {
+        return err
+    }
+    defer stmt.Close()
+
+    for _, entry := range entries {
+        _, err := stmt.Exec(entry.Title, entry.Content, entry.Published)
+        if err != nil {
+            return err
+        }
+    }
+
+    return tx.Commit()  // One commit for all
+}
+```
+
+**Performance impact:**
+- 5-10x faster for batch operations
+- Reduces database I/O
+- Atomic (all succeed or all fail)
+
+**When to use:**
+- Inserting multiple records
+- Bulk updates
+- Data migrations
+- Import/export operations
+
+**What to verify:**
+- Loops with database operations use transactions
+- Prepared statements reused in loop
+- Transaction committed once after loop
+- Proper error handling and rollback
+
+---
+
+### Test Coverage Exclusions
+
+**Heuristic:** Verify what's included/excluded in coverage reports
+
+**Problem:** Excluding packages to inflate coverage percentages
+
+**Detection:**
+```bash
+# Get coverage for all packages
+go test -coverprofile=coverage.out ./...
+
+# See what's included
+go tool cover -func=coverage.out | head -20
+
+# Check for suspiciously high averages
+go test -cover ./... | grep "coverage:"
+
+# Compare package-by-package vs overall
+```
+
+**What to verify:**
+- All packages included in coverage report (including cmd/)
+- Exclusions are documented and justified
+- Coverage percentages not cherry-picked
+- Low-coverage packages not hidden
+
+**Real-world example:**
+```
+Documentation claims: "88.4% average coverage (Excellent)"
+
+Reality:
+pkg/crawler    96.6%  ✓ Included
+pkg/config     93.8%  ✓ Included
+pkg/normalizer 80.1%  ✓ Included
+cmd/rp         26.6%  ✗ EXCLUDED from "average"
+
+Actual average: (96.6 + 93.8 + 80.1 + 26.6) / 4 = 74.3%
+Reported average: (96.6 + 93.8 + 80.1) / 3 = 90.2%
+```
+
+**Honest reporting:**
+- Include ALL packages (libraries AND commands)
+- Note exclusions explicitly: "76% average (excluding cmd/)"
+- Separate library coverage from CLI coverage
+- Don't hide low-coverage areas
+
+**When exclusions are OK:**
+- Generated code (explicitly marked)
+- Vendor directories
+- Test utilities (in testutil/ packages)
+- Platform-specific code (if documented)
+
+---
+
 ## Automated Tools
 
 ### Essential Tools
@@ -861,10 +1781,22 @@ structcheck ./...
 | Resource leaks | **High** | Low | Memory/file exhaustion |
 | Ignored errors | **High** | Medium | Silent failures |
 | Test coverage | **High** | Medium | Bugs in production |
+| TODO accuracy | **High** | Low | False completion status |
+| Referenced files exist | **High** | Low | Build failures |
+| Build portability | **High** | Low | Broken on other platforms |
 | Code duplication | **Medium** | Medium | Maintenance burden |
 | Function complexity | **Medium** | Low | Hard to modify |
 | Test assertion quality | **Medium** | Medium | False confidence |
 | Flaky tests | **Medium** | Medium | CI/CD unreliability |
+| Context propagation | **Medium** | Low | No graceful shutdown |
+| Unused infrastructure | **Medium** | Medium | Wasted effort |
+| Undocumented features | **Medium** | Low | Users miss features |
+| Missing interfaces | **Medium** | High | Hard to test |
+| Global state | **Medium** | Medium | Thread safety issues |
+| HTTP connection pooling | **Low** | Low | 10-20% slower |
+| DB prepared statements | **Low** | Medium | 10-20% slower |
+| Batch operations | **Low** | Medium | 5-10x slower |
+| Coverage exclusions | **Low** | Low | Misleading metrics |
 | Performance | **Low** | High | Slow applications |
 | Dead code | **Low** | Low | Code bloat |
 
@@ -1006,8 +1938,27 @@ This guide provides systematic heuristics for auditing Go codebases. Use it as:
 
 ---
 
-**Document Version:** 1.0
+**Document Version:** 2.0
 **Created:** 2025-10-20
-**Validated On:** Multiple Go projects including feed aggregator (4,000 lines)
+**Last Updated:** 2025-10-26
+**Validated On:** Multiple Go projects including Rogue Planet feed aggregator (4,000+ lines)
+
+## Changelog
+
+**v2.0 (2025-10-26):**
+- Added Documentation Integrity section (3 checks)
+- Added Architecture & Design section (2 checks)
+- Added Build & Infrastructure section (2 checks)
+- Expanded Code Quality section (5 new checks)
+- Expanded Concurrency Patterns with context propagation
+- Expanded Performance section (4 new checks)
+- Updated Quick Start Checklist with 6 new items
+- Updated Priority Matrix with 13 new check types
+- Total: 17 new checks from real-world Rogue Planet audit
+
+**v1.0 (2025-10-20):**
+- Initial release with core security, resource management, and testing checks
+
+---
 
 This is a living document. Please contribute improvements, new heuristics, and tools that you find effective.
