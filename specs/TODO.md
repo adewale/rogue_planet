@@ -200,8 +200,8 @@ Average      88.4%  █████████████████   Excell
 ### Dependencies
 - `github.com/mmcdole/gofeed` - Feed parsing
 - `github.com/microcosm-cc/bluemonday` - HTML sanitization
-- `github.com/mattn/go-sqlite3` - SQLite driver
-- `golang.org/x/time/rate` - Rate limiting
+- `github.com/mattn/go-sqlite3` - SQLite driver (CGO)
+- `golang.org/x/net` - HTML parsing and charset detection
 
 ---
 
