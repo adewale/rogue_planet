@@ -98,7 +98,7 @@ All planned features for v0.3.0 have been implemented, tested, and documented.
 #### Testing ✅
 - ✅ 100+ test cases across 5 packages
 - ✅ All tests passing
-- ✅ 80%+ average test coverage
+- ✅ 88.7% library average coverage (79.9% overall including cmd/rp)
 - ✅ Security tests (XSS, SSRF, SQL injection)
 - ✅ End-to-end workflow tested
 - ✅ Real-world feed parsing (Daring Fireball Atom, Asymco RSS)
@@ -180,14 +180,21 @@ All planned features for v0.3.0 have been implemented, tested, and documented.
 
 ### Coverage by Package
 ```
-config       94.7%  ██████████████████  Excellent
-crawler      96.6%  ███████████████████ Excellent
-generator    86.0%  █████████████████   Excellent
-normalizer   79.8%  ███████████████     Good
-opml         91.8%  ██████████████████  Excellent
-repository   81.8%  ████████████████    Very Good
-Average      88.4%  █████████████████   Excellent
+Package      Coverage  Status
+────────────────────────────────────────────
+cmd/rp       26.6%  █████                   Needs Improvement
+config       93.8%  ██████████████████      Excellent
+crawler      96.6%  ███████████████████     Excellent
+generator    84.4%  ████████████████        Very Good
+normalizer   85.7%  █████████████████       Very Good
+opml         91.8%  ██████████████████      Excellent
+repository   80.1%  ████████████████        Good
+
+Overall      79.9%  ███████████████         Good
+Library Avg  88.7%  █████████████████       Excellent
 ```
+
+**Note**: Overall average includes cmd/rp (26.6%). Library average excludes CLI and shows core package quality. Priority is improving cmd/rp coverage above 60%.
 
 ### Security
 - ✅ XSS Prevention (CVE-2009-2937) - 10 test cases
@@ -211,7 +218,7 @@ All items completed:
 
 - ✅ All packages implemented
 - ✅ All tests passing
-- ✅ Coverage >75% on all packages
+- ✅ Coverage >75% on library packages (cmd/rp: 26.6%, needs improvement)
 - ✅ Security audited
 - ✅ Documentation complete
 - ✅ Examples provided
