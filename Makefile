@@ -176,11 +176,6 @@ run-example: build
 	@echo "✓ Example planet created at /tmp/rogue-planet-example/"
 	@echo "  View: open /tmp/rogue-planet-example/public/index.html"
 
-## other: setup-example: Run the example setup with custom feeds
-setup-example: build
-	@echo "Running example planet setup..."
-	@./setup-example-planet.sh
-
 ## other: examples: Generate example outputs in tmp/ folder
 examples: build
 	@echo "Generating examples in tmp/ folder..."
