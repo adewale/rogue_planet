@@ -35,6 +35,13 @@ type PlanetConfig struct {
 	Template          string
 	FilterByFirstSeen bool
 	SortBy            string
+
+	// HTTP connection pooling and retry settings
+	MaxRetries             int // Number of retry attempts for failed requests (default: 3)
+	MaxIdleConns           int // Total idle connections across all hosts (default: 100)
+	MaxIdleConnsPerHost    int // Idle connections per host (default: 10)
+	MaxConnsPerHost        int // Maximum active connections per host (default: 20)
+	IdleConnTimeoutSeconds int // Idle connection timeout in seconds (default: 90)
 }
 
 // DatabaseConfig contains database settings
@@ -58,6 +65,13 @@ func Default() *Config {
 			GroupByDate:       true,
 			FilterByFirstSeen: false,
 			SortBy:            "published",
+
+			// HTTP connection pooling and retry defaults
+			MaxRetries:             3,
+			MaxIdleConns:           100,
+			MaxIdleConnsPerHost:    10,
+			MaxConnsPerHost:        20,
+			IdleConnTimeoutSeconds: 90,
 		},
 		Database: DatabaseConfig{
 			Path: "./data/planet.db",
@@ -193,6 +207,51 @@ func (c *Config) setPlanet(key, value string) error {
 			return fmt.Errorf("sort_by must be 'published' or 'first_seen', got: %s", value)
 		}
 		c.Planet.SortBy = value
+	case "max_retries":
+		n, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("invalid max_retries value: %s", value)
+		}
+		if n < 0 || n > 10 {
+			return fmt.Errorf("max_retries must be between 0 and 10")
+		}
+		c.Planet.MaxRetries = n
+	case "max_idle_conns":
+		n, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("invalid max_idle_conns value: %s", value)
+		}
+		if n < 10 || n > 1000 {
+			return fmt.Errorf("max_idle_conns must be between 10 and 1000")
+		}
+		c.Planet.MaxIdleConns = n
+	case "max_idle_conns_per_host":
+		n, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("invalid max_idle_conns_per_host value: %s", value)
+		}
+		if n < 1 || n > 100 {
+			return fmt.Errorf("max_idle_conns_per_host must be between 1 and 100")
+		}
+		c.Planet.MaxIdleConnsPerHost = n
+	case "max_conns_per_host":
+		n, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("invalid max_conns_per_host value: %s", value)
+		}
+		if n < 1 || n > 200 {
+			return fmt.Errorf("max_conns_per_host must be between 1 and 200")
+		}
+		c.Planet.MaxConnsPerHost = n
+	case "idle_conn_timeout_seconds":
+		n, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("invalid idle_conn_timeout_seconds value: %s", value)
+		}
+		if n < 10 || n > 600 {
+			return fmt.Errorf("idle_conn_timeout_seconds must be between 10 and 600")
+		}
+		c.Planet.IdleConnTimeoutSeconds = n
 	default:
 		// Unknown keys are ignored for forward compatibility
 		return nil

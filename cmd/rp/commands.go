@@ -796,9 +796,16 @@ func fetchFeeds(cfg *config.Config) error {
 
 	globalLogger.Info("Fetching %d feeds with concurrency=%d", len(feeds), cfg.Planet.ConcurrentFetch)
 
-	// Create crawler with custom user agent
-	c := crawler.NewWithUserAgent(cfg.Planet.UserAgent)
+	// Create crawler with custom configuration
+	c := crawler.NewWithConfig(crawler.CrawlerConfig{
+		UserAgent:              cfg.Planet.UserAgent,
+		MaxIdleConns:           cfg.Planet.MaxIdleConns,
+		MaxIdleConnsPerHost:    cfg.Planet.MaxIdleConnsPerHost,
+		MaxConnsPerHost:        cfg.Planet.MaxConnsPerHost,
+		IdleConnTimeoutSeconds: cfg.Planet.IdleConnTimeoutSeconds,
+	})
 	n := normalizer.New()
+	maxRetries := cfg.Planet.MaxRetries
 
 	// Use semaphore pattern for concurrency control
 	concurrency := cfg.Planet.ConcurrentFetch
@@ -834,9 +841,9 @@ func fetchFeeds(cfg *config.Config) error {
 				LastFetched:  f.LastFetched,
 			}
 
-			// Fetch feed
+			// Fetch feed with retry logic (exponential backoff)
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			resp, err := c.Fetch(ctx, f.URL, cache)
+			resp, err := c.FetchWithRetry(ctx, f.URL, cache, maxRetries)
 			cancel()
 
 			if err != nil {

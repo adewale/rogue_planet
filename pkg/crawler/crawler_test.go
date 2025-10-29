@@ -316,3 +316,133 @@ func TestFetchInvalidContentType(t *testing.T) {
 		}
 	})
 }
+
+// TestConnectionPooling verifies that the crawler is configured with proper connection pooling
+func TestConnectionPooling(t *testing.T) {
+	crawler := New()
+
+	// Verify client exists and has a transport
+	if crawler.client == nil {
+		t.Fatal("client is nil")
+	}
+
+	transport, ok := crawler.client.Transport.(*http.Transport)
+	if !ok {
+		t.Fatal("client.Transport is not *http.Transport")
+	}
+
+	// Verify connection pooling settings
+	tests := []struct {
+		name     string
+		got      interface{}
+		want     interface{}
+		testFunc func() bool
+	}{
+		{
+			name: "MaxIdleConns",
+			got:  transport.MaxIdleConns,
+			want: 100,
+			testFunc: func() bool {
+				return transport.MaxIdleConns == 100
+			},
+		},
+		{
+			name: "MaxIdleConnsPerHost",
+			got:  transport.MaxIdleConnsPerHost,
+			want: 10,
+			testFunc: func() bool {
+				return transport.MaxIdleConnsPerHost == 10
+			},
+		},
+		{
+			name: "MaxConnsPerHost",
+			got:  transport.MaxConnsPerHost,
+			want: 20,
+			testFunc: func() bool {
+				return transport.MaxConnsPerHost == 20
+			},
+		},
+		{
+			name: "IdleConnTimeout",
+			got:  transport.IdleConnTimeout,
+			want: 90 * time.Second,
+			testFunc: func() bool {
+				return transport.IdleConnTimeout == 90*time.Second
+			},
+		},
+		{
+			name: "TLSHandshakeTimeout",
+			got:  transport.TLSHandshakeTimeout,
+			want: 10 * time.Second,
+			testFunc: func() bool {
+				return transport.TLSHandshakeTimeout == 10*time.Second
+			},
+		},
+		{
+			name: "ResponseHeaderTimeout",
+			got:  transport.ResponseHeaderTimeout,
+			want: 10 * time.Second,
+			testFunc: func() bool {
+				return transport.ResponseHeaderTimeout == 10*time.Second
+			},
+		},
+		{
+			name: "ExpectContinueTimeout",
+			got:  transport.ExpectContinueTimeout,
+			want: 1 * time.Second,
+			testFunc: func() bool {
+				return transport.ExpectContinueTimeout == 1*time.Second
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if !tt.testFunc() {
+				t.Errorf("%s = %v, want %v", tt.name, tt.got, tt.want)
+			}
+		})
+	}
+
+	// Verify DialContext is configured
+	if transport.DialContext == nil {
+		t.Error("DialContext is nil, should be configured")
+	}
+}
+
+// TestConnectionReuseIntegration tests that connections are actually reused
+func TestConnectionReuseIntegration(t *testing.T) {
+	connectionCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		connectionCount++
+		w.Header().Set("Content-Type", "application/rss+xml")
+		if _, err := w.Write([]byte(`<?xml version="1.0"?><rss version="2.0"><channel><title>Test</title></channel></rss>`)); err != nil {
+			t.Errorf("Write error: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	crawler := NewForTesting()
+
+	// Make multiple requests to the same server
+	for i := 0; i < 5; i++ {
+		resp, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+		if err != nil {
+			t.Fatalf("Fetch #%d error: %v", i+1, err)
+		}
+		if resp.StatusCode != 200 {
+			t.Errorf("Fetch #%d status = %d, want 200", i+1, resp.StatusCode)
+		}
+	}
+
+	// All 5 requests should have been made
+	if connectionCount != 5 {
+		t.Errorf("Handler called %d times, want 5", connectionCount)
+	}
+
+	// Note: We can't directly verify connection reuse in this test because
+	// httptest.Server doesn't expose connection metrics. The real benefit is
+	// measured in production or with more sophisticated network benchmarks.
+	// This test at least verifies that the configured transport doesn't
+	// break normal request flow.
+}

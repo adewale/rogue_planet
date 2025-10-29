@@ -64,9 +64,34 @@ type Crawler struct {
 
 // New creates a new Crawler with default settings
 func New() *Crawler {
+	// Configure HTTP transport with connection pooling
+	transport := &http.Transport{
+		// Connection pooling settings
+		MaxIdleConns:        100,              // Total idle connections across all hosts
+		MaxIdleConnsPerHost: 10,               // Idle connections per host (key for feed fetching)
+		MaxConnsPerHost:     20,               // Maximum active connections per host
+		IdleConnTimeout:     90 * time.Second, // Keep idle connections for reuse
+
+		// Timeouts for connection establishment
+		DialContext: (&net.Dialer{
+			Timeout:   10 * time.Second, // TCP connection timeout
+			KeepAlive: 30 * time.Second, // TCP keep-alive
+		}).DialContext,
+
+		// TLS handshake timeout
+		TLSHandshakeTimeout: 10 * time.Second,
+
+		// Response header timeout
+		ResponseHeaderTimeout: 10 * time.Second,
+
+		// Expect Continue timeout
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
 	return &Crawler{
 		client: &http.Client{
-			Timeout: DefaultTimeout,
+			Transport: transport,
+			Timeout:   DefaultTimeout,
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				if len(via) >= MaxRedirects {
 					return fmt.Errorf("stopped after %d redirects", MaxRedirects)
@@ -94,6 +119,63 @@ func NewForTesting() *Crawler {
 	c := New()
 	c.skipSSRFCheck = true
 	return c
+}
+
+// CrawlerConfig contains configuration options for HTTP connection pooling
+type CrawlerConfig struct {
+	UserAgent              string
+	MaxIdleConns           int
+	MaxIdleConnsPerHost    int
+	MaxConnsPerHost        int
+	IdleConnTimeoutSeconds int
+}
+
+// NewWithConfig creates a Crawler with custom configuration
+func NewWithConfig(cfg CrawlerConfig) *Crawler {
+	// Configure HTTP transport with custom connection pooling
+	transport := &http.Transport{
+		// Connection pooling settings
+		MaxIdleConns:        cfg.MaxIdleConns,
+		MaxIdleConnsPerHost: cfg.MaxIdleConnsPerHost,
+		MaxConnsPerHost:     cfg.MaxConnsPerHost,
+		IdleConnTimeout:     time.Duration(cfg.IdleConnTimeoutSeconds) * time.Second,
+
+		// Timeouts for connection establishment
+		DialContext: (&net.Dialer{
+			Timeout:   10 * time.Second, // TCP connection timeout
+			KeepAlive: 30 * time.Second, // TCP keep-alive
+		}).DialContext,
+
+		// TLS handshake timeout
+		TLSHandshakeTimeout: 10 * time.Second,
+
+		// Response header timeout
+		ResponseHeaderTimeout: 10 * time.Second,
+
+		// Expect Continue timeout
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
+	userAgent := cfg.UserAgent
+	if userAgent == "" {
+		userAgent = UserAgent
+	}
+
+	return &Crawler{
+		client: &http.Client{
+			Transport: transport,
+			Timeout:   DefaultTimeout,
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				if len(via) >= MaxRedirects {
+					return fmt.Errorf("stopped after %d redirects", MaxRedirects)
+				}
+				return nil
+			},
+		},
+		userAgent:     userAgent,
+		maxSize:       MaxFeedSize,
+		skipSSRFCheck: false,
+	}
 }
 
 // ValidateURL checks if a URL is safe to fetch (SSRF prevention)
