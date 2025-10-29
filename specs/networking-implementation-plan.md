@@ -158,6 +158,135 @@ ConnectionTimeout:     90,
 
 ---
 
+#### 1.4 Retry-After Header Support (NEW - from audit)
+**Source**: networking-features-audit.md #1 (HIGH PRIORITY)
+**File**: `pkg/crawler/crawler.go`
+**Benefit**: Respect server rate limits, prevent bans
+
+**Current Problem**:
+```go
+// FetchWithRetry uses fixed exponential backoff
+// Ignores Retry-After header from 429/503 responses
+```
+
+**Solution**:
+```go
+// Parse Retry-After header (RFC 7231 Section 7.1.3)
+func ParseRetryAfter(header string) (time.Duration, error) {
+    // Try parsing as seconds: "120"
+    if seconds, err := strconv.Atoi(header); err == nil {
+        return time.Duration(seconds) * time.Second, nil
+    }
+
+    // Try parsing as HTTP-date: "Wed, 21 Oct 2015 07:28:00 GMT"
+    t, err := http.ParseTime(header)
+    if err != nil {
+        return 0, fmt.Errorf("invalid Retry-After format: %w", err)
+    }
+
+    delay := time.Until(t)
+    if delay < 0 {
+        delay = 0  // Already past, retry immediately
+    }
+
+    return delay, nil
+}
+
+// In FetchWithRetry (around line 295):
+if resp.StatusCode == 429 || resp.StatusCode == 503 {
+    if retryAfter := resp.Header.Get("Retry-After"); retryAfter != "" {
+        delay, err := ParseRetryAfter(retryAfter)
+        if err == nil {
+            time.Sleep(delay)
+            continue
+        }
+    }
+    // Fall back to exponential backoff if no valid Retry-After
+}
+```
+
+**Testing**:
+- Unit test: Parse "120" → 120 seconds
+- Unit test: Parse HTTP-date → duration until that time
+- Unit test: Parse invalid format → error
+- Unit test: Parse past date → 0 delay
+- Integration test: 429 with Retry-After is honored
+- Integration test: 503 with Retry-After is honored
+
+**Rationale**: Critical for production. Servers explicitly say "wait N seconds" and we must respect that to avoid bans.
+
+---
+
+#### 1.5 Timeout Configuration (NEW - from audit)
+**Source**: networking-features-audit.md #3 (HIGH PRIORITY)
+**File**: `pkg/config/config.go`, `pkg/crawler/crawler.go`
+**Benefit**: Tune for slow/fast servers, better control
+
+**Current Problem**:
+```go
+// Hardcoded timeout in crawler.go:25
+const DefaultTimeout = 30 * time.Second
+```
+
+**Solution**:
+```ini
+# Add to config.ini
+[planet]
+http_timeout = 30         # Total request timeout (seconds)
+connect_timeout = 10      # TCP connection timeout (seconds)
+read_timeout = 30         # Response read timeout (seconds)
+```
+
+**Implementation**:
+```go
+// pkg/config/config.go
+type PlanetConfig struct {
+    // ... existing fields
+    HTTPTimeout     int  // Total timeout (seconds)
+    ConnectTimeout  int  // TCP connect timeout (seconds)
+    ReadTimeout     int  // Response read timeout (seconds)
+}
+
+// Default()
+HTTPTimeout:    30,
+ConnectTimeout: 10,
+ReadTimeout:    30,
+
+// pkg/crawler/crawler.go - NewWithConfig()
+func NewWithConfig(config PlanetConfig) *Crawler {
+    transport := &http.Transport{
+        DialContext: (&net.Dialer{
+            Timeout: time.Duration(config.ConnectTimeout) * time.Second,
+        }).DialContext,
+        ResponseHeaderTimeout: time.Duration(config.ReadTimeout) * time.Second,
+        // ... connection pooling settings
+    }
+
+    client := &http.Client{
+        Transport: transport,
+        Timeout:   time.Duration(config.HTTPTimeout) * time.Second,
+        // ... existing CheckRedirect
+    }
+
+    return &Crawler{
+        client:    client,
+        userAgent: config.UserAgent,
+        maxSize:   MaxFeedSize,
+    }
+}
+```
+
+**Testing**:
+- Config parsing tests
+- Unit test: Verify timeouts applied to transport
+- Integration test: Connect timeout triggers
+- Integration test: Read timeout triggers
+- Test with 0 (use defaults)
+
+**Rationale**: Production needs vary. Some feeds are slow (increase timeout), some are fast (decrease timeout to fail fast).
+
+---
+
 ### Phase 2: 301 Redirect Handling 🔄
 **Effort**: 0.5 days | **Dependencies**: Phase 1
 
