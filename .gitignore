@@ -25,6 +25,7 @@ output/
 # Config files with secrets (keep example configs)
 config.ini
 !config.example.ini
+!examples/config.ini
 
 # IDE
 .vscode/
