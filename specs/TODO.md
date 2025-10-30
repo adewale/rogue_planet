@@ -1,8 +1,8 @@
 # Rogue Planet - TODO & Roadmap
 
-## Current Status: v0.3.0 ✅
+## Current Status: v0.4.0 🔧 (In Progress)
 
-All planned features for v0.3.0 have been implemented, tested, and documented.
+v0.3.0 is complete. Currently working on v0.4.0 bug fixes and documentation improvements.
 
 ---
 
@@ -28,7 +28,8 @@ All planned features for v0.3.0 have been implemented, tested, and documented.
 - ✅ Date normalization (multiple formats)
 - ✅ ID generation (when missing from feeds)
 - ✅ Content vs summary extraction
-- ✅ Comprehensive test suite (28 test cases)
+- ✅ Atom Torture Test suite (20 test cases, XHTML/MathML/SVG)
+- ✅ Comprehensive test suite (48 total test cases)
 
 #### Repository Package (81.8% coverage) ✅
 - ✅ SQLite database with WAL mode
@@ -85,15 +86,17 @@ All planned features for v0.3.0 have been implemented, tested, and documented.
 
 #### Documentation ✅
 - ✅ README.md with installation and usage
-- ✅ QUICKSTART.md - 5-minute setup guide
 - ✅ WORKFLOWS.md - Comprehensive workflow guide
 - ✅ CONTRIBUTING.md - Contributor guidelines
 - ✅ CHANGELOG.md - Version history
 - ✅ CLAUDE.md for development guidance
 - ✅ specs/rogue-planet-spec.md (comprehensive specification)
 - ✅ specs/testing-plan.md (testing strategy)
+- ✅ specs/research/ATOM_TORTURE_TEST_RESEARCH.md (Distler test analysis)
 - ✅ examples/ directory with sample configs
 - ✅ .gitignore
+- ⏸️ QUICKSTART.md - Deferred to v1.0 (referenced but not yet created)
+- ⏸️ THEMES.md - Deferred to v1.0 (referenced but not yet created)
 
 #### Testing ✅
 - ✅ 100+ test cases across 5 packages
@@ -205,10 +208,11 @@ Library Avg  88.7%  █████████████████       Ex
 - ✅ URL validation (scheme, private IPs)
 
 ### Dependencies
-- `github.com/mmcdole/gofeed` - Feed parsing
+- `github.com/mmcdole/gofeed` - Feed parsing (RSS, Atom, JSON Feed)
 - `github.com/microcosm-cc/bluemonday` - HTML sanitization
 - `github.com/mattn/go-sqlite3` - SQLite driver (CGO)
 - `golang.org/x/net` - HTML parsing and charset detection
+- `golang.org/x/text` - Character encoding detection
 
 ---
 
@@ -230,19 +234,22 @@ All items completed:
 
 ---
 
-## Status: 🚀 v0.3.0 - ENTRY SPAM PREVENTION COMPLETE
+## Status: 🔧 v0.4.0 - BUG FIXES & DOCUMENTATION IN PROGRESS
 
 The project has evolved significantly beyond the initial release:
-- ✅ All core features implemented and tested
+- ✅ All v0.3.0 core features implemented and tested
 - ✅ OPML import/export support (v0.2.0)
 - ✅ Entry spam prevention feature (v0.3.0)
-- ✅ Documentation complete and up-to-date
-- ✅ 88.4% average test coverage (up from 80.6%)
+- ✅ Atom Torture Test validation (v0.4.0)
+- 🔧 Documentation gaps being addressed
+- 🔧 Missing files and broken references being fixed
+- ✅ 88.7% library test coverage
 - ✅ Security hardened with SQL injection prevention
 - ✅ Build automation in place
 
-**Current Version**: 0.3.0 (Development Release)
-**Completed Features**: Core aggregation, OPML support, Entry spam prevention
+**Current Version**: 0.4.0-dev (In Progress)
+**Completed Features**: Core aggregation, OPML support, Entry spam prevention, Atom torture tests
+**Current Work**: v0.4.0 bug fixes (missing files, documentation sync)
 **Next Priority**: Feed autodiscovery, 301 redirect handling, intelligent scheduling (P0 features for v1.0)
 
 ---
@@ -573,34 +580,34 @@ trusted_iframe_domains = youtube.com, youtube-nocookie.com, vimeo.com, codepen.i
 
 ---
 
-#### Atom Torture Test Research and Validation
-**Problem**: Need to properly research Jacques Distler's original "Atom Torture Test" blog posts to ensure complete test coverage.
+#### Atom Torture Test Research and Validation ✅
+**Status**: ✅ **COMPLETED in v0.4.0**
 
-**Current Status**: Initial test implementation based on web search results about XHTML, MathML, and SVG handling. Direct access to the original blog posts was blocked by network restrictions.
+**Implementation**:
+- ✅ Comprehensive research document created: `specs/research/ATOM_TORTURE_TEST_RESEARCH.md`
+- ✅ Accessed and analyzed original Jacques Distler blog post (April 18, 2006)
+- ✅ Added 2 missing critical test cases:
+  1. XHTML case-sensitivity test (The Distler Test: "a **b**c **D**e f")
+  2. xml:base relative URL resolution test
+- ✅ Updated all test fixture headers with original source references
+- ✅ Updated test suite documentation with background and policy decisions
+- ✅ All 20 torture tests passing
 
-**Blog Posts**:
-- https://golem.ph.utexas.edu/~distler/blog/archives/000793.html (Atom Torture Test - April 2006)
-- https://golem.ph.utexas.edu/~distler/blog/archives/000836.html (unknown content - needs research)
+**Test Fixtures**:
+- testdata/atom-torture-xhtml.xml (7 test entries - added 2)
+- testdata/atom-torture-mathml.xml (6 test entries)
+- testdata/atom-torture-svg.xml (7 test entries)
+- pkg/normalizer/normalizer_torture_test.go (20 test functions)
 
-**Tasks**:
-1. Access and thoroughly read both blog posts
-2. Document specific test cases and failure modes described
-3. Verify current test fixtures (atom-torture-*.xml) match original tests
-4. Add any missing edge cases to test suite
-5. Update normalizer_torture_test.go based on findings
-6. Document any MathML/SVG/XHTML policy decisions
+**Key Findings**:
+- ✅ gofeed correctly uses XML parsing (case-sensitive)
+- ✅ xml:base support working correctly
+- ✅ MathML/SVG stripped for security (documented policy, correct decision)
+- ✅ Comprehensive XSS prevention validated
 
-**Current Implementation**:
-- Created testdata/atom-torture-xhtml.xml (5 test entries)
-- Created testdata/atom-torture-mathml.xml (6 test entries)
-- Created testdata/atom-torture-svg.xml (7 test entries)
-- Created pkg/normalizer/normalizer_torture_test.go (13 test functions)
-- Tests document current behavior (MathML/SVG likely stripped)
+**Reference**: https://golem.ph.utexas.edu/~distler/blog/archives/000793.html
 
-**Rationale**: These blog posts represent 20+ years of accumulated wisdom about feed aggregator edge cases. Proper implementation prevents issues that plagued Planet Venus and other aggregators.
-
-**Effort**: Low (research and documentation)
-**Priority**: P3 - Important for correctness but doesn't block core functionality
+**Completed**: 2025-10-30
 
 ---
 
@@ -707,5 +714,51 @@ MIT License - See [LICENSE](../LICENSE) file for details.
 
 ---
 
-*Last Updated: 2025-10-16*
-*Status: v0.3.0 - Entry spam prevention complete, P0 features planned for v1.0*
+---
+
+## v0.4.0 Work In Progress 🔧
+
+### Completed This Sprint
+- ✅ P2.6 - Atom Torture Test research and implementation (2025-10-30)
+  - Comprehensive research document
+  - 2 new test cases added
+  - All documentation updated
+  - 20 torture tests passing
+
+### Remaining for v0.4.0
+
+**Priority 1 - BLOCKING (5 tasks, ~1 day)**:
+- ❌ P1.1: Create examples/config.ini
+- ❌ P1.2: Fix macOS-specific sed in Makefile
+- ❌ P1.3: Create or remove QUICKSTART.md references
+- ❌ P1.4: Create or remove THEMES.md references
+- ❌ P1.5: Remove setup-example-planet.sh reference
+
+**Priority 2 - DOCUMENTATION (5 tasks, ~1 day)**:
+- ❌ P2.1: Update TODO.md (this file - in progress)
+- ❌ P2.2: Document filter_by_first_seen and sort_by config options
+- ❌ P2.3: Fix rate limiting documentation (not implemented)
+- ❌ P2.4: Fix 301 redirect documentation (not auto-updated)
+- ❌ P2.5: Clarify coverage reporting (include/exclude cmd/rp)
+
+**Priority 3 - INCOMPLETE FEATURES (pick 2 of 4)**:
+- ❌ P3.1: Implement dry-run prune preview (1 hour)
+- ❌ P3.2: 301 redirect URL updating (3 hours) or defer
+- ❌ P3.3: Feed pause/activate commands (2 hours)
+- ⏸️ P3.4: Rate limiting (deferred to v1.0)
+
+**Priority 4 - CODE QUALITY (4 tasks, ~30 mins)**:
+- ❌ P4.1-P4.4: Quick cleanup and comments
+
+**Priority 5 - OPTIONAL (1 day)**:
+- ⏸️ P5.1-P5.4: HTTP pooling, config validation, sentinel errors, test coverage
+
+**Estimate to v0.4.0 Release**: 3.5 days (minimum) or 4.5 days (with P5)
+
+**See**: `specs/v0.4.0-plan.md` for complete details
+
+---
+
+*Last Updated: 2025-10-30*
+*Status: v0.4.0 in progress - P2.6 (Atom Torture Tests) complete*
+*Next: Address P1 blocking issues and P2 documentation gaps*
