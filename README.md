@@ -2,7 +2,7 @@
 
 [![Build Status](https://github.com/adewale/rogue_planet/actions/workflows/go.yml/badge.svg)](https://github.com/adewale/rogue_planet/actions/workflows/go.yml)
 
-**Development Release v0.3.0** - This project is in active development. While core features are implemented and tested, it has not yet been deployed to production. The v1.0 production release will add feed autodiscovery, 301 redirect handling, and intelligent feed scheduling.
+**Development Release v0.4.0** - This project is in active development. Core features are implemented and tested, with production-ready HTTP handling including rate limiting, 301 redirect handling, and connection pooling. The v1.0 release will add feed autodiscovery and intelligent feed scheduling.
 
 A modern feed aggregator written in Go, inspired by Planet Planet, Planet Venus and friends. Rogue Planet downloads RSS and Atom feeds from multiple sources and aggregates them into a single reverse-chronological stream published as a static HTML page.
 
@@ -10,7 +10,13 @@ A modern feed aggregator written in Go, inspired by Planet Planet, Planet Venus 
 
 - **Modern Go Implementation**: Clean, well-tested codebase using contemporary Go patterns
 - **Multiple Feed Formats**: Supports RSS 1.0, RSS 2.0, Atom 1.0, and JSON Feed
-- **HTTP Conditional Requests**: Implements proper ETag/Last-Modified caching to minimize bandwidth
+- **HTTP Performance**:
+  - Conditional requests with ETag/Last-Modified caching
+  - Per-domain rate limiting (default: 60 req/min with burst of 10)
+  - HTTP/1.1 connection pooling and keep-alive
+  - Configurable timeouts for all HTTP stages
+  - Automatic retry with exponential backoff
+  - 301 permanent redirect auto-updating
 - **Security First**:
   - XSS prevention via HTML sanitization (prevents CVE-2009-2937)
   - SSRF protection (blocks private IPs and localhost)
@@ -141,6 +147,12 @@ path = ./data/planet.db
 
 **Smart Content Display**: The `days` setting controls how many days back to look for entries. However, if no entries are found within that time window (e.g., feeds haven't updated recently), Rogue Planet automatically falls back to showing the most recent 50 entries regardless of age. This ensures your planet always has content to display, even if feeds go stale.
 
+**Advanced HTTP Configuration**: For production deployments, you can configure HTTP performance settings including connection pooling, rate limiting, timeouts, and retry behavior. See `examples/config.ini` for the complete list of available options including:
+- `requests_per_minute` and `rate_limit_burst` for per-domain rate limiting
+- `http_timeout_seconds`, `dial_timeout_seconds`, etc. for fine-grained timeout control
+- `max_retries` for exponential backoff retry behavior
+- Connection pooling parameters (`max_idle_conns`, `max_conns_per_host`, etc.)
+
 ## Architecture
 
 Rogue Planet follows a clear pipeline architecture:
@@ -178,11 +190,14 @@ Prevents Server-Side Request Forgery attacks by:
 
 ### Good Netizen Behavior
 
-Implements proper HTTP conditional requests to minimize server load:
-- Stores ETag and Last-Modified headers exactly as received
+Implements proper HTTP behavior to minimize server load and avoid being blocked:
+- **Conditional Requests**: Stores ETag and Last-Modified headers exactly as received
 - Sends If-None-Match and If-Modified-Since on subsequent requests
 - Handles 304 Not Modified responses correctly
 - Never fabricates or modifies cache headers
+- **Rate Limiting**: Per-domain rate limiting (default 60 req/min) prevents overwhelming servers
+- **Retry-After**: Respects HTTP 429 responses and Retry-After headers
+- **301 Redirects**: Automatically updates feed URLs on permanent redirects
 
 ## Test Coverage
 

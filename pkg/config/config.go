@@ -42,6 +42,16 @@ type PlanetConfig struct {
 	MaxIdleConnsPerHost    int // Idle connections per host (default: 10)
 	MaxConnsPerHost        int // Maximum active connections per host (default: 20)
 	IdleConnTimeoutSeconds int // Idle connection timeout in seconds (default: 90)
+
+	// HTTP timeout settings
+	HTTPTimeoutSeconds        int // Overall HTTP request timeout (default: 30)
+	DialTimeoutSeconds        int // TCP connection timeout (default: 10)
+	TLSHandshakeTimeoutSeconds int // TLS handshake timeout (default: 10)
+	ResponseHeaderTimeoutSeconds int // Response header timeout (default: 10)
+
+	// Rate limiting settings (per domain)
+	RequestsPerMinute int // Maximum requests per domain per minute (default: 60)
+	RateLimitBurst    int // Burst size for rate limiter (default: 10)
 }
 
 // DatabaseConfig contains database settings
@@ -72,6 +82,16 @@ func Default() *Config {
 			MaxIdleConnsPerHost:    10,
 			MaxConnsPerHost:        20,
 			IdleConnTimeoutSeconds: 90,
+
+			// HTTP timeout defaults
+			HTTPTimeoutSeconds:        30,
+			DialTimeoutSeconds:        10,
+			TLSHandshakeTimeoutSeconds: 10,
+			ResponseHeaderTimeoutSeconds: 10,
+
+			// Rate limiting defaults
+			RequestsPerMinute: 60,
+			RateLimitBurst:    10,
 		},
 		Database: DatabaseConfig{
 			Path: "./data/planet.db",
@@ -252,6 +272,60 @@ func (c *Config) setPlanet(key, value string) error {
 			return fmt.Errorf("idle_conn_timeout_seconds must be between 10 and 600")
 		}
 		c.Planet.IdleConnTimeoutSeconds = n
+	case "http_timeout_seconds":
+		n, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("invalid http_timeout_seconds value: %s", value)
+		}
+		if n < 5 || n > 300 {
+			return fmt.Errorf("http_timeout_seconds must be between 5 and 300")
+		}
+		c.Planet.HTTPTimeoutSeconds = n
+	case "dial_timeout_seconds":
+		n, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("invalid dial_timeout_seconds value: %s", value)
+		}
+		if n < 1 || n > 60 {
+			return fmt.Errorf("dial_timeout_seconds must be between 1 and 60")
+		}
+		c.Planet.DialTimeoutSeconds = n
+	case "tls_handshake_timeout_seconds":
+		n, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("invalid tls_handshake_timeout_seconds value: %s", value)
+		}
+		if n < 1 || n > 60 {
+			return fmt.Errorf("tls_handshake_timeout_seconds must be between 1 and 60")
+		}
+		c.Planet.TLSHandshakeTimeoutSeconds = n
+	case "response_header_timeout_seconds":
+		n, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("invalid response_header_timeout_seconds value: %s", value)
+		}
+		if n < 1 || n > 60 {
+			return fmt.Errorf("response_header_timeout_seconds must be between 1 and 60")
+		}
+		c.Planet.ResponseHeaderTimeoutSeconds = n
+	case "requests_per_minute":
+		n, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("invalid requests_per_minute value: %s", value)
+		}
+		if n < 1 || n > 600 {
+			return fmt.Errorf("requests_per_minute must be between 1 and 600")
+		}
+		c.Planet.RequestsPerMinute = n
+	case "rate_limit_burst":
+		n, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("invalid rate_limit_burst value: %s", value)
+		}
+		if n < 1 || n > 50 {
+			return fmt.Errorf("rate_limit_burst must be between 1 and 50")
+		}
+		c.Planet.RateLimitBurst = n
 	default:
 		// Unknown keys are ignored for forward compatibility
 		return nil

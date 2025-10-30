@@ -151,6 +151,9 @@ pkg/config/          - Configuration parsing (INI format)
 pkg/opml/            - OPML parsing and generation (feed list import/export)
   opml.go            - OPML 1.0/2.0 parsing and generation
   opml_test.go       - OPML parsing tests (91.8% coverage)
+pkg/ratelimit/       - Per-domain rate limiting
+  ratelimit.go       - Rate limiter manager using token bucket algorithm
+  ratelimit_test.go  - Rate limiter tests including concurrency tests
 testdata/            - Test fixtures (saved feed snapshots)
 specs/               - Specifications and design documents
 examples/            - Example configurations and themes
@@ -220,8 +223,9 @@ rp version                    # Show version information
 3. **Good Netizen Behavior**:
    - Include version and contact URL in User-Agent: `RoguePlanet/1.0 (+https://yoursite.com/about)`
    - Respect Cache-Control headers
-   - Implement rate limiting per domain
+   - Per-domain rate limiting (default: 60 req/min with burst of 10)
    - Honor 429 responses with exponential backoff
+   - Handle 301 permanent redirects by auto-updating feed URLs
    - Default fetch interval: 1 hour (not more frequent than 15 minutes)
 
 4. **Graceful Degradation**: One failing feed should not break the entire aggregation - log errors and continue
@@ -425,6 +429,17 @@ See specs/rogue-planet-spec.md lines 763-1000 for complete lessons learned.
 - `Marshal()` converts to XML bytes, `Write()` writes to file
 - Compatible with exports from Feedly, Inoreader, NewsBlur, The Old Reader
 - Used by `cmdImportOPML()` and `cmdExportOPML()` commands
+
+**Rate Limiter (pkg/ratelimit/ratelimit.go)**:
+- Per-domain rate limiting using token bucket algorithm from `golang.org/x/time/rate`
+- Thread-safe with RWMutex for concurrent access
+- Lazy limiter creation with double-checked locking pattern
+- Default: 60 requests/minute per domain with burst of 10
+- Configurable via `requests_per_minute` and `rate_limit_burst` in config.ini
+- Fail-open strategy: allows requests on URL parsing errors
+- `Wait()` blocks until rate limit allows request (respects context cancellation)
+- `Allow()` checks if request would be allowed without blocking
+- `Stats()` provides observability into rate limiter state per domain
 
 **Verify Command (cmd/rp/commands.go: cmdVerify)**:
 - Validates config.ini syntax and accessibility

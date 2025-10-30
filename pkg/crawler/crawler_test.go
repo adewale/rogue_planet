@@ -446,3 +446,231 @@ func TestConnectionReuseIntegration(t *testing.T) {
 	// This test at least verifies that the configured transport doesn't
 	// break normal request flow.
 }
+
+func TestParseRetryAfter(t *testing.T) {
+	tests := []struct {
+		name     string
+		header   string
+		expected time.Duration
+	}{
+		{
+			name:     "seconds format",
+			header:   "120",
+			expected: 120 * time.Second,
+		},
+		{
+			name:     "seconds with whitespace",
+			header:   "  60  ",
+			expected: 60 * time.Second,
+		},
+		{
+			name:     "HTTP-date format",
+			header:   time.Now().Add(2 * time.Minute).Format(time.RFC1123),
+			expected: 2 * time.Minute, // Approximately, we'll check range
+		},
+		{
+			name:     "empty string",
+			header:   "",
+			expected: 0,
+		},
+		{
+			name:     "invalid seconds",
+			header:   "abc",
+			expected: 0,
+		},
+		{
+			name:     "negative seconds",
+			header:   "-60",
+			expected: 0,
+		},
+		{
+			name:     "zero seconds",
+			header:   "0",
+			expected: 0,
+		},
+		{
+			name:     "exceeds max (24 hours)",
+			header:   "90000", // > 86400 seconds
+			expected: 0,
+		},
+		{
+			name:     "past HTTP-date",
+			header:   time.Now().Add(-1 * time.Hour).Format(time.RFC1123),
+			expected: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseRetryAfter(tt.header)
+
+			// For HTTP-date tests, check within a reasonable range
+			if strings.Contains(tt.name, "HTTP-date") && tt.expected > 0 {
+				if result < tt.expected-5*time.Second || result > tt.expected+5*time.Second {
+					t.Errorf("parseRetryAfter(%q) = %v, want approximately %v", tt.header, result, tt.expected)
+				}
+			} else {
+				if result != tt.expected {
+					t.Errorf("parseRetryAfter(%q) = %v, want %v", tt.header, result, tt.expected)
+				}
+			}
+		})
+	}
+}
+
+func TestFetchWithRetry_RespectsRetryAfter(t *testing.T) {
+	attemptCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attemptCount++
+
+		if attemptCount < 3 {
+			// Return 429 with Retry-After header
+			w.Header().Set("Retry-After", "1") // 1 second
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
+
+		// Third attempt succeeds
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write([]byte("<rss><channel><title>Test</title></channel></rss>"))
+		if err != nil {
+			t.Errorf("Write error: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	crawler := NewForTesting()
+	ctx := context.Background()
+
+	startTime := time.Now()
+	resp, err := crawler.FetchWithRetry(ctx, server.URL, FeedCache{}, 3)
+	duration := time.Since(startTime)
+
+	if err != nil {
+		t.Fatalf("FetchWithRetry error: %v", err)
+	}
+
+	if resp.StatusCode != 200 {
+		t.Errorf("StatusCode = %d, want 200", resp.StatusCode)
+	}
+
+	if attemptCount != 3 {
+		t.Errorf("attemptCount = %d, want 3", attemptCount)
+	}
+
+	// Should have waited at least 2 seconds (2 retries × 1 second Retry-After)
+	// Allow some tolerance for timing
+	if duration < 1800*time.Millisecond {
+		t.Errorf("Duration = %v, expected at least 2 seconds (respecting Retry-After)", duration)
+	}
+}
+
+func TestFetch_CapturesRetryAfter(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Retry-After", "60")
+		w.WriteHeader(http.StatusTooManyRequests)
+	}))
+	defer server.Close()
+
+	crawler := NewForTesting()
+	resp, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+
+	if err == nil {
+		t.Fatal("Expected error for 429 response")
+	}
+
+	if resp == nil {
+		t.Fatal("Expected response even with error")
+	}
+
+	if resp.StatusCode != 429 {
+		t.Errorf("StatusCode = %d, want 429", resp.StatusCode)
+	}
+
+	expected := 60 * time.Second
+	if resp.RetryAfter != expected {
+		t.Errorf("RetryAfter = %v, want %v", resp.RetryAfter, expected)
+	}
+}
+
+func TestFetch_Tracks301PermanentRedirect(t *testing.T) {
+	// Create a server that redirects with 301
+	redirectCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/old-feed" {
+			redirectCount++
+			// 301 Permanent Redirect
+			w.Header().Set("Location", "/new-feed")
+			w.WriteHeader(http.StatusMovedPermanently)
+			return
+		}
+		// Final destination
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write([]byte("<rss><channel><title>Test</title></channel></rss>"))
+		if err != nil {
+			t.Errorf("Write error: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	crawler := NewForTesting()
+	resp, err := crawler.Fetch(context.Background(), server.URL+"/old-feed", FeedCache{})
+
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+
+	if resp.StatusCode != 200 {
+		t.Errorf("StatusCode = %d, want 200", resp.StatusCode)
+	}
+
+	if !resp.PermanentRedirect {
+		t.Error("PermanentRedirect = false, want true (301 redirect was encountered)")
+	}
+
+	if !strings.HasSuffix(resp.FinalURL, "/new-feed") {
+		t.Errorf("FinalURL = %s, want to end with /new-feed", resp.FinalURL)
+	}
+
+	if redirectCount != 1 {
+		t.Errorf("redirectCount = %d, want 1", redirectCount)
+	}
+}
+
+func TestFetch_Distinguishes301From302(t *testing.T) {
+	// Test that 302 redirects are NOT marked as permanent
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/temp-redirect" {
+			// 302 Temporary Redirect
+			w.Header().Set("Location", "/current-feed")
+			w.WriteHeader(http.StatusFound)
+			return
+		}
+		// Final destination
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write([]byte("<rss><channel><title>Test</title></channel></rss>"))
+		if err != nil {
+			t.Errorf("Write error: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	crawler := NewForTesting()
+	resp, err := crawler.Fetch(context.Background(), server.URL+"/temp-redirect", FeedCache{})
+
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+
+	if resp.StatusCode != 200 {
+		t.Errorf("StatusCode = %d, want 200", resp.StatusCode)
+	}
+
+	if resp.PermanentRedirect {
+		t.Error("PermanentRedirect = true, want false (302 redirect is temporary, not permanent)")
+	}
+
+	if !strings.HasSuffix(resp.FinalURL, "/current-feed") {
+		t.Errorf("FinalURL = %s, want to end with /current-feed", resp.FinalURL)
+	}
+}

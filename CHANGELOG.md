@@ -20,10 +20,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned for 1.0.0
 - Feed autodiscovery (parse HTML for RSS/Atom/JSON Feed links)
-- 301 redirect handling (auto-update feed URLs)
 - Intelligent feed scheduling (adaptive polling)
 - Full production deployment documentation
 - Binary distribution packages
+
+## [0.4.0] - 2025-10-30
+
+### Added - Production HTTP Performance
+- **Per-domain rate limiting** using token bucket algorithm
+  - Default: 60 requests/minute per domain with burst of 10
+  - Configurable via `requests_per_minute` and `rate_limit_burst`
+  - Thread-safe concurrent access with RWMutex
+  - Observability via Stats() method
+- **Fine-grained HTTP timeouts**
+  - `http_timeout_seconds`: Overall request timeout (default: 30)
+  - `dial_timeout_seconds`: TCP connection timeout (default: 10)
+  - `tls_handshake_timeout_seconds`: TLS handshake timeout (default: 10)
+  - `response_header_timeout_seconds`: Response header timeout (default: 10)
+- **301 permanent redirect handling**
+  - Automatically updates feed URLs in database on 301 responses
+  - Logs redirect for transparency
+  - Preserves feed metadata (ETag, Last-Modified)
+- **Retry-After header support**
+  - Respects server-specified retry delays (RFC 7231)
+  - Honors HTTP 429 rate limit responses
+  - Integrates with exponential backoff retry logic
+
+### Changed
+- Updated README.md development status to v0.4.0
+- Enhanced "Good Netizen Behavior" documentation
+- Added rate limiter implementation notes to CLAUDE.md
+
+### Testing
+- 11 new unit tests for rate limiter (concurrency, context cancellation, stats)
+- Integration tests verify backwards compatibility with old configs
+- All 8 packages passing tests (~37 seconds total)
+
+### Dependencies
+- Added `golang.org/x/time v0.14.0` for rate limiting
 
 ## [0.3.0] - 2025-10-16
 
