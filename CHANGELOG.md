@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Architecture & Testing
+- **pkg/fetcher package**: Extracted feed processing business logic
+  - Separates orchestration (concurrency, rate limiting) from core logic
+  - Dependency injection with interfaces (FeedCrawler, FeedNormalizer, FeedRepository)
+  - 88.5% test coverage with 10 comprehensive tests (6 unit + 2 integration + 2 benchmarks)
+  - Test-to-code ratio: 4.1:1 (highest in codebase)
+- **Concurrency testing suite**: Timing-based tests prevent performance regressions
+  - `TestFetchFeed_Concurrency`: Verifies parallel execution (catches 10x slowdowns)
+  - `TestFetchFeed_MutexProtectsDatabase`: Validates selective locking
+  - Uses atomic counters to measure actual concurrent operations
+- **Documentation enhancements**
+  - 6 new lessons in LESSONS_LEARNED.md (concurrency, mutex placement, testing)
+  - GO_AUDITING_HEURISTICS.md v2.2: mutex placement and concurrency testing sections
+  - Comprehensive analysis of performance regression and prevention
+
+### Fixed - Performance
+- **Critical 10x performance regression**: Restored concurrent feed processing
+  - Issue: Mutex incorrectly placed around entire FetchFeed() operation
+  - Impact: HTTP fetching and parsing were serialized instead of concurrent
+  - Solution: Selective locking (only database operations protected)
+  - Result: 50 feeds in ~10s instead of ~100s
+
+### Changed - Code Quality
+- Extracted `setVerboseLogging()` helper to remove duplication
+- Improved test coverage: 67.7% → 70.4% overall (+2.7pp)
+- Added timing assertions that prevent future performance regressions
+
 ### Added - JSON Feed Testing
 - **Comprehensive JSON Feed 1.0 and 1.1 test coverage**
   - Test fixtures for JSON Feed 1.0 (author field) and 1.1 (authors array, language field)
