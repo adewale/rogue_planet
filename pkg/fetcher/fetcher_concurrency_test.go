@@ -218,7 +218,6 @@ type mockRepositoryWithConcurrency struct {
 	mockRepository
 	concurrentOps    *int32
 	maxConcurrentOps *int32
-	mu               sync.Mutex // Protects tracking (not database ops)
 }
 
 func (m *mockRepositoryWithConcurrency) trackOperation() func() {
