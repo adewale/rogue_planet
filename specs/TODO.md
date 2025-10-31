@@ -312,6 +312,13 @@ The project has evolved significantly beyond the initial release:
 
 ### v1.0.0 - Production Ready (P0 Features)
 
+**Status**: 1 of 3 original P0 features delivered early in v0.4.0
+
+**Completed Early (v0.4.0)**:
+- ✅ 301 Permanent Redirect Handling - Delivered in v0.4.0 (originally planned for v1.0.0)
+
+**Remaining for v1.0.0**:
+
 #### Feed Autodiscovery
 **Problem**: Users give website URLs (https://blog.example.com/) instead of feed URLs (https://blog.example.com/feed.xml). Browser support for RSS discovery removed in Firefox/Chrome.
 
@@ -322,20 +329,6 @@ The project has evolved significantly beyond the initial release:
 
 **Effort**: 2 days
 **Priority**: P0 - Critical UX improvement
-
----
-
-#### 301 Redirect Handling
-**Problem**: Feeds permanently move (HTTP→HTTPS, domain changes). Fetching redirected URLs forever wastes bandwidth and adds latency.
-
-**Solution**: Detect permanent redirects (301 Moved Permanently) and update stored feed URL automatically
-- Update `feeds.url` in database on 301
-- Log URL changes for user visibility
-- Prevents wasting bandwidth on redirects forever
-- Critical for long-term reliability as feeds migrate HTTP→HTTPS
-
-**Effort**: 1 day
-**Priority**: P0 - Infrastructure efficiency
 
 ---
 
