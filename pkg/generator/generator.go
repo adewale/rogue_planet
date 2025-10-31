@@ -281,8 +281,7 @@ func templateFuncs() template.FuncMap {
 
 // relativeTime returns a human-readable relative time string
 func relativeTime(t time.Time) string {
-	now := time.Now()
-	diff := now.Sub(t)
+	diff := time.Since(t)
 
 	switch {
 	case diff < time.Minute:

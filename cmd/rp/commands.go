@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -163,6 +164,10 @@ func cmdInit(opts InitOptions) error {
 	// Create directories
 	dirs := []string{"data", "public"}
 	for _, dir := range dirs {
+		// Safety check: reject parent directory references to prevent path traversal
+		if strings.Contains(dir, "..") {
+			return fmt.Errorf("invalid directory path: %s (contains parent directory reference)", dir)
+		}
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
@@ -958,6 +963,12 @@ func generateSite(cfg *config.Config) error {
 			continue
 		}
 
+		// SAFETY: Content was sanitized by normalizer.Parse() before storage.
+		// See pkg/normalizer/normalizer.go:56-69 for HTML sanitization using bluemonday.
+		// Title, Content, and Summary are safe for template.HTML after sanitization:
+		// - XSS vectors removed (script tags, event handlers, javascript: URLs)
+		// - Only http/https schemes allowed in links
+		// - Dangerous tags stripped (object, embed, iframe, base)
 		genEntries = append(genEntries, generator.EntryData{
 			Title:     template.HTML(entry.Title),
 			Link:      entry.Link,

@@ -13,6 +13,47 @@ import (
 	"strings"
 )
 
+// Configuration validation constants define acceptable ranges for config values.
+// These limits ensure resource safety and prevent misconfiguration.
+const (
+	// Concurrency limits
+	MinConcurrentFetches = 1
+	MaxConcurrentFetches = 50  // Prevents resource exhaustion
+
+	// Retry limits
+	MinMaxRetries = 0
+	MaxMaxRetries = 10 // Reasonable retry limit
+
+	// HTTP connection pool limits
+	MinMaxIdleConns        = 10   // Minimum for connection reuse
+	MaxMaxIdleConns        = 1000 // Prevents memory bloat
+	MinMaxIdleConnsPerHost = 1
+	MaxMaxIdleConnsPerHost = 100
+	MinMaxConnsPerHost     = 1
+	MaxMaxConnsPerHost     = 200
+
+	// Timeout limits (seconds)
+	MinIdleConnTimeout       = 10  // 10 seconds
+	MaxIdleConnTimeout       = 600 // 10 minutes
+	MinHTTPTimeout           = 5   // 5 seconds
+	MaxHTTPTimeout           = 300 // 5 minutes
+	MinDialTimeout           = 1   // 1 second
+	MaxDialTimeout           = 60  // 1 minute
+	MinTLSHandshakeTimeout   = 1   // 1 second
+	MaxTLSHandshakeTimeout   = 60  // 1 minute
+	MinResponseHeaderTimeout = 1   // 1 second
+	MaxResponseHeaderTimeout = 60  // 1 minute
+
+	// Rate limiting
+	MinRequestsPerMinute = 1
+	MaxRequestsPerMinute = 600 // 10 requests/second max
+	MinRateLimitBurst    = 1
+	MaxRateLimitBurst    = 50
+
+	// Content limits
+	MinDays = 1 // At least 1 day of content
+)
+
 // Config represents the application configuration
 type Config struct {
 	Planet   PlanetConfig
@@ -106,11 +147,8 @@ func LoadFromFile(path string) (config *Config, err error) {
 	if openErr != nil {
 		return nil, fmt.Errorf("open config file: %w", openErr)
 	}
-	defer func() {
-		if closeErr := file.Close(); closeErr != nil && err == nil {
-			err = fmt.Errorf("close config file: %w", closeErr)
-		}
-	}()
+	// Close file when done. Close errors during read are rarely actionable.
+	defer file.Close()
 
 	config = Default()
 	scanner := bufio.NewScanner(file)
@@ -191,8 +229,8 @@ func (c *Config) setPlanet(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("invalid days value: %s", value)
 		}
-		if days < 1 {
-			return fmt.Errorf("days must be >= 1")
+		if days < MinDays {
+			return fmt.Errorf("days must be >= %d", MinDays)
 		}
 		c.Planet.Days = days
 	case "log_level":
@@ -202,8 +240,8 @@ func (c *Config) setPlanet(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("invalid concurrent_fetches value: %s", value)
 		}
-		if n < 1 || n > 50 {
-			return fmt.Errorf("concurrent_fetches must be between 1 and 50")
+		if n < MinConcurrentFetches || n > MaxConcurrentFetches {
+			return fmt.Errorf("concurrent_fetches must be between %d and %d", MinConcurrentFetches, MaxConcurrentFetches)
 		}
 		c.Planet.ConcurrentFetch = n
 	case "user_agent":
@@ -232,8 +270,8 @@ func (c *Config) setPlanet(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("invalid max_retries value: %s", value)
 		}
-		if n < 0 || n > 10 {
-			return fmt.Errorf("max_retries must be between 0 and 10")
+		if n < MinMaxRetries || n > MaxMaxRetries {
+			return fmt.Errorf("max_retries must be between %d and %d", MinMaxRetries, MaxMaxRetries)
 		}
 		c.Planet.MaxRetries = n
 	case "max_idle_conns":
@@ -241,8 +279,8 @@ func (c *Config) setPlanet(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("invalid max_idle_conns value: %s", value)
 		}
-		if n < 10 || n > 1000 {
-			return fmt.Errorf("max_idle_conns must be between 10 and 1000")
+		if n < MinMaxIdleConns || n > MaxMaxIdleConns {
+			return fmt.Errorf("max_idle_conns must be between %d and %d", MinMaxIdleConns, MaxMaxIdleConns)
 		}
 		c.Planet.MaxIdleConns = n
 	case "max_idle_conns_per_host":
@@ -250,8 +288,8 @@ func (c *Config) setPlanet(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("invalid max_idle_conns_per_host value: %s", value)
 		}
-		if n < 1 || n > 100 {
-			return fmt.Errorf("max_idle_conns_per_host must be between 1 and 100")
+		if n < MinMaxIdleConnsPerHost || n > MaxMaxIdleConnsPerHost {
+			return fmt.Errorf("max_idle_conns_per_host must be between %d and %d", MinMaxIdleConnsPerHost, MaxMaxIdleConnsPerHost)
 		}
 		c.Planet.MaxIdleConnsPerHost = n
 	case "max_conns_per_host":
@@ -259,8 +297,8 @@ func (c *Config) setPlanet(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("invalid max_conns_per_host value: %s", value)
 		}
-		if n < 1 || n > 200 {
-			return fmt.Errorf("max_conns_per_host must be between 1 and 200")
+		if n < MinMaxConnsPerHost || n > MaxMaxConnsPerHost {
+			return fmt.Errorf("max_conns_per_host must be between %d and %d", MinMaxConnsPerHost, MaxMaxConnsPerHost)
 		}
 		c.Planet.MaxConnsPerHost = n
 	case "idle_conn_timeout_seconds":
@@ -268,8 +306,8 @@ func (c *Config) setPlanet(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("invalid idle_conn_timeout_seconds value: %s", value)
 		}
-		if n < 10 || n > 600 {
-			return fmt.Errorf("idle_conn_timeout_seconds must be between 10 and 600")
+		if n < MinIdleConnTimeout || n > MaxIdleConnTimeout {
+			return fmt.Errorf("idle_conn_timeout_seconds must be between %d and %d", MinIdleConnTimeout, MaxIdleConnTimeout)
 		}
 		c.Planet.IdleConnTimeoutSeconds = n
 	case "http_timeout_seconds":
@@ -277,8 +315,8 @@ func (c *Config) setPlanet(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("invalid http_timeout_seconds value: %s", value)
 		}
-		if n < 5 || n > 300 {
-			return fmt.Errorf("http_timeout_seconds must be between 5 and 300")
+		if n < MinHTTPTimeout || n > MaxHTTPTimeout {
+			return fmt.Errorf("http_timeout_seconds must be between %d and %d", MinHTTPTimeout, MaxHTTPTimeout)
 		}
 		c.Planet.HTTPTimeoutSeconds = n
 	case "dial_timeout_seconds":
@@ -286,8 +324,8 @@ func (c *Config) setPlanet(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("invalid dial_timeout_seconds value: %s", value)
 		}
-		if n < 1 || n > 60 {
-			return fmt.Errorf("dial_timeout_seconds must be between 1 and 60")
+		if n < MinDialTimeout || n > MaxDialTimeout {
+			return fmt.Errorf("dial_timeout_seconds must be between %d and %d", MinDialTimeout, MaxDialTimeout)
 		}
 		c.Planet.DialTimeoutSeconds = n
 	case "tls_handshake_timeout_seconds":
@@ -295,8 +333,8 @@ func (c *Config) setPlanet(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("invalid tls_handshake_timeout_seconds value: %s", value)
 		}
-		if n < 1 || n > 60 {
-			return fmt.Errorf("tls_handshake_timeout_seconds must be between 1 and 60")
+		if n < MinTLSHandshakeTimeout || n > MaxTLSHandshakeTimeout {
+			return fmt.Errorf("tls_handshake_timeout_seconds must be between %d and %d", MinTLSHandshakeTimeout, MaxTLSHandshakeTimeout)
 		}
 		c.Planet.TLSHandshakeTimeoutSeconds = n
 	case "response_header_timeout_seconds":
@@ -304,8 +342,8 @@ func (c *Config) setPlanet(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("invalid response_header_timeout_seconds value: %s", value)
 		}
-		if n < 1 || n > 60 {
-			return fmt.Errorf("response_header_timeout_seconds must be between 1 and 60")
+		if n < MinResponseHeaderTimeout || n > MaxResponseHeaderTimeout {
+			return fmt.Errorf("response_header_timeout_seconds must be between %d and %d", MinResponseHeaderTimeout, MaxResponseHeaderTimeout)
 		}
 		c.Planet.ResponseHeaderTimeoutSeconds = n
 	case "requests_per_minute":
@@ -313,8 +351,8 @@ func (c *Config) setPlanet(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("invalid requests_per_minute value: %s", value)
 		}
-		if n < 1 || n > 600 {
-			return fmt.Errorf("requests_per_minute must be between 1 and 600")
+		if n < MinRequestsPerMinute || n > MaxRequestsPerMinute {
+			return fmt.Errorf("requests_per_minute must be between %d and %d", MinRequestsPerMinute, MaxRequestsPerMinute)
 		}
 		c.Planet.RequestsPerMinute = n
 	case "rate_limit_burst":
@@ -322,8 +360,8 @@ func (c *Config) setPlanet(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("invalid rate_limit_burst value: %s", value)
 		}
-		if n < 1 || n > 50 {
-			return fmt.Errorf("rate_limit_burst must be between 1 and 50")
+		if n < MinRateLimitBurst || n > MaxRateLimitBurst {
+			return fmt.Errorf("rate_limit_burst must be between %d and %d", MinRateLimitBurst, MaxRateLimitBurst)
 		}
 		c.Planet.RateLimitBurst = n
 	default:
@@ -363,6 +401,15 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("database path is required")
 	}
 
+	// Path validation - prevent path traversal attacks
+	// Reject parent directory references in paths (the main security concern)
+	if strings.Contains(c.Database.Path, "..") {
+		return fmt.Errorf("database path must not contain parent directory references (..): %s", c.Database.Path)
+	}
+	if strings.Contains(c.Planet.OutputDir, "..") {
+		return fmt.Errorf("output directory must not contain parent directory references (..): %s", c.Planet.OutputDir)
+	}
+
 	// Set default and validate sort_by
 	if c.Planet.SortBy == "" {
 		c.Planet.SortBy = "published"
@@ -374,8 +421,11 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// LoadFeedsFile loads feed URLs from a text file
-// One URL per line, lines starting with # are treated as comments
+// LoadFeedsFile loads feed URLs from a text file.
+// Each line should contain a single URL. Lines starting with '#' are comments.
+// Empty lines are ignored.
+//
+// Returns a slice of feed URLs or an error if the file cannot be read.
 func LoadFeedsFile(path string) ([]string, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
