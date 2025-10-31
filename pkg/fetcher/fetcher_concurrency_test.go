@@ -53,11 +53,11 @@ func (m *mockSlowCrawler) FetchWithRetry(ctx context.Context, feedURL string, ca
 // and not serialized by incorrect mutex placement.
 func TestFetchFeed_Concurrency(t *testing.T) {
 	const (
-		numFeeds     = 6
-		concurrency  = 3
-		fetchDelay   = 100 * time.Millisecond
-		maxExpected  = 250 * time.Millisecond // 2 batches: 200ms + overhead
-		minConcurrent = 2                       // Should see at least 2 concurrent
+		numFeeds      = 6
+		concurrency   = 3
+		fetchDelay    = 100 * time.Millisecond
+		maxExpected   = 250 * time.Millisecond // 2 batches: 200ms + overhead
+		minConcurrent = 2                      // Should see at least 2 concurrent
 	)
 
 	var concurrentOps int32
@@ -163,9 +163,9 @@ func TestFetchFeed_MutexProtectsDatabase(t *testing.T) {
 
 	// Repository that tracks concurrent operations
 	mr := &mockRepositoryWithConcurrency{
-		mockRepository:    mockRepository{},
-		concurrentOps:     &concurrentDBWrites,
-		maxConcurrentOps:  &maxConcurrentDBWrites,
+		mockRepository:   mockRepository{},
+		concurrentOps:    &concurrentDBWrites,
+		maxConcurrentOps: &maxConcurrentDBWrites,
 	}
 
 	ml := &mockLogger{}

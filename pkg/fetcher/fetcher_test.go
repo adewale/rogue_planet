@@ -40,19 +40,19 @@ func (m *mockNormalizer) Parse(feedData []byte, feedURL string, fetchTime time.T
 }
 
 type mockRepository struct {
-	updateFeedErrorCalled   bool
-	updateFeedURLCalled     bool
-	updateFeedCacheCalled   bool
-	updateFeedCalled        bool
-	upsertEntryCalled       bool
-	upsertEntryCount        int
-	updateFeedURLNewURL     string
-	updateFeedErrorMsg      string
-	upsertEntryError        error
-	updateFeedError         error
-	updateFeedCacheError    error
-	updateFeedURLError      error
-	updateFeedErrorError    error
+	updateFeedErrorCalled bool
+	updateFeedURLCalled   bool
+	updateFeedCacheCalled bool
+	updateFeedCalled      bool
+	upsertEntryCalled     bool
+	upsertEntryCount      int
+	updateFeedURLNewURL   string
+	updateFeedErrorMsg    string
+	upsertEntryError      error
+	updateFeedError       error
+	updateFeedCacheError  error
+	updateFeedURLError    error
+	updateFeedErrorError  error
 }
 
 func (m *mockRepository) UpdateFeedError(id int64, errorMsg string) error {
