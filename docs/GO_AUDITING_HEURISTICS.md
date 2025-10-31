@@ -35,6 +35,7 @@ Use this for rapid assessment of any Go codebase:
 - [ ] No SSRF vulnerabilities (validate URLs, block private IPs)
 - [ ] All resources properly closed (files, HTTP connections, database)
 - [ ] No race conditions (`go test -race` passes)
+- [ ] Mutex placement correct (locks only shared resources, not I/O)
 - [ ] Errors are not ignored (search for `_ = `)
 - [ ] No panics in library code
 - [ ] TODO/checklist items are actually complete (not aspirational)
@@ -45,6 +46,7 @@ Use this for rapid assessment of any Go codebase:
 ### High Priority (Should Check)
 - [ ] Errors wrapped with context (`%w` verb)
 - [ ] Test coverage >80% for critical packages
+- [ ] Concurrency tests verify timing (not just correctness)
 - [ ] No code duplication >10 lines
 - [ ] Test assertions are effective (not just `t.Log()`)
 - [ ] No functions >100 lines
@@ -704,6 +706,177 @@ func increment() {
 - Mutex is locked before access, unlocked after
 - Consider using `defer mu.Unlock()` to prevent forgetting
 - Watch for long critical sections (mutex held too long)
+
+---
+
+### Mutex Placement for Performance
+
+**Heuristic:** Verify mutex protects ONLY shared resources, not entire operations
+
+**Problem:** Incorrect mutex placement can cause 10x performance regression by serializing operations that should run concurrently
+
+**Bad Pattern (serializes everything):**
+```go
+// WRONG - Locks around entire operation including HTTP and parsing
+var mu sync.Mutex
+
+func fetchFeed(feed Feed) error {
+    mu.Lock()
+    defer mu.Unlock()
+
+    // HTTP fetch - SHOULD BE CONCURRENT
+    resp, err := http.Get(feed.URL)
+    if err != nil {
+        return err
+    }
+    defer resp.Body.Close()
+
+    // Parse feed - SHOULD BE CONCURRENT
+    data, err := parseFeed(resp.Body)
+    if err != nil {
+        return err
+    }
+
+    // Database write - NEEDS MUTEX (only this part!)
+    return repo.SaveFeed(data)
+}
+
+// With 10 concurrent goroutines:
+// - HTTP fetching: Serialized (WRONG - 10x slower!)
+// - Parsing: Serialized (WRONG - 10x slower!)
+// - Database writes: Serialized (CORRECT)
+```
+
+**Good Pattern (selective locking):**
+```go
+// CORRECT - Lock only database operations
+func fetchFeed(ctx context.Context, feed Feed, repo *Repository, mu sync.Locker) error {
+    // HTTP fetch - NO LOCK (concurrent)
+    resp, err := http.Get(feed.URL)
+    if err != nil {
+        // Database write - WITH LOCK
+        mu.Lock()
+        repo.SaveFeedError(feed.ID, err.Error())
+        mu.Unlock()
+        return err
+    }
+    defer resp.Body.Close()
+
+    // Parse feed - NO LOCK (concurrent)
+    data, err := parseFeed(resp.Body)
+    if err != nil {
+        mu.Lock()
+        repo.SaveFeedError(feed.ID, err.Error())
+        mu.Unlock()
+        return err
+    }
+
+    // Database writes - WITH LOCK
+    mu.Lock()
+    err = repo.SaveFeed(data)
+    for _, entry := range data.Entries {
+        repo.SaveEntry(entry)
+    }
+    mu.Unlock()
+
+    return err
+}
+
+// With 10 concurrent goroutines:
+// - HTTP fetching: Concurrent (CORRECT - 10x faster!)
+// - Parsing: Concurrent (CORRECT - 10x faster!)
+// - Database writes: Serialized (CORRECT)
+```
+
+**Alternative Pattern (pass mutex to component):**
+```go
+// Component handles locking internally
+type Fetcher struct {
+    repo      Repository
+    repoMutex sync.Locker  // For database protection only
+}
+
+func (f *Fetcher) FetchFeed(ctx context.Context, feed Feed) error {
+    // HTTP fetch - NO LOCK
+    resp, err := http.Get(feed.URL)
+    if err != nil {
+        f.lock()
+        f.repo.SaveFeedError(feed.ID, err.Error())
+        f.unlock()
+        return err
+    }
+    defer resp.Body.Close()
+
+    // Parse - NO LOCK
+    data, err := parseFeed(resp.Body)
+    if err != nil {
+        f.lock()
+        f.repo.SaveFeedError(feed.ID, err.Error())
+        f.unlock()
+        return err
+    }
+
+    // Database writes - WITH LOCK
+    f.lock()
+    f.repo.SaveFeed(data)
+    for _, entry := range data.Entries {
+        f.repo.SaveEntry(entry)
+    }
+    f.unlock()
+
+    return nil
+}
+
+func (f *Fetcher) lock() {
+    if f.repoMutex != nil {
+        f.repoMutex.Lock()
+    }
+}
+
+func (f *Fetcher) unlock() {
+    if f.repoMutex != nil {
+        f.repoMutex.Unlock()
+    }
+}
+```
+
+**Detection:**
+```bash
+# Find locks around large code blocks
+grep -B 2 -A 30 "mu.Lock()" --include="*.go" -r . | grep -E "http\.|Parse|Fetch"
+
+# Look for defer Unlock() at function start (suspicious - entire function locked?)
+grep -A 3 "func.*{" --include="*.go" -r . | grep -B 2 "defer.*Unlock()"
+
+# Check mutex placement in concurrent code
+grep -B 10 -A 10 "go func" --include="*.go" -r . | grep -E "Lock\(\)|Unlock\(\)"
+```
+
+**Real-world impact:**
+```
+With concurrency=10 and 50 feeds taking 2s each:
+- Incorrect placement: ~100 seconds (sequential)
+- Correct placement: ~10 seconds (5 batches of 10 concurrent)
+- Performance regression: 10x slower
+```
+
+**What to analyze:**
+- What operations are inside the lock?
+- Which operations can run concurrently (HTTP, parsing, computation)?
+- Which operations MUST be serialized (database writes, shared state)?
+- Is the mutex protecting data or protecting entire workflow?
+
+**Questions to ask:**
+1. Does this operation do I/O? (HTTP, file reads) → Should NOT be locked
+2. Does this operation do CPU work? (parsing, encoding) → Should NOT be locked
+3. Does this operation modify shared state? (database, cache) → SHOULD be locked
+4. What's the performance impact if this is serialized?
+
+**Prevention:**
+- Write timing-based tests that verify concurrency
+- Measure max concurrent operations during tests
+- Document what the mutex protects
+- Code review checklist: "What does this mutex protect?"
 
 ---
 
@@ -1649,6 +1822,283 @@ done
 
 ---
 
+### Concurrency Testing with Timing Assertions
+
+**Heuristic:** Verify concurrent operations actually run concurrently, not serially
+
+**Problem:** Unit tests can pass even when code is accidentally serialized, causing 10x performance regressions in production
+
+**Why regular tests miss this:**
+- Unit tests verify correctness, not performance
+- Correctness is same whether operations run serially or concurrently
+- Performance regression only visible under realistic concurrency
+
+**Detection:**
+```bash
+# Find concurrency-related tests
+grep -rn "TestConcurr\|Test.*Parallel\|Test.*Goroutine" --include="*_test.go"
+
+# Check if they have timing assertions
+grep -B 5 -A 15 "TestConcurr" --include="*_test.go" | grep "time.Since\|elapsed"
+
+# Check if they measure actual concurrency
+grep -B 5 -A 15 "TestConcurr" --include="*_test.go" | grep "atomic\|concurrent"
+```
+
+**Bad Pattern (tests correctness only):**
+```go
+// WEAK - Only tests that it works, not that it's concurrent
+func TestFetchFeeds(t *testing.T) {
+    feeds := []Feed{
+        {URL: "http://example.com/feed1"},
+        {URL: "http://example.com/feed2"},
+        {URL: "http://example.com/feed3"},
+    }
+
+    var wg sync.WaitGroup
+    for _, feed := range feeds {
+        wg.Add(1)
+        go func(f Feed) {
+            defer wg.Done()
+            result := fetchFeed(f)
+            if result.Error != nil {
+                t.Errorf("fetch failed: %v", result.Error)
+            }
+        }(feed)
+    }
+    wg.Wait()
+
+    // ✓ Tests correctness
+    // ✗ Doesn't verify concurrency
+    // ✗ Would pass even if serialized!
+}
+```
+
+**Good Pattern 1 (timing-based verification):**
+```go
+// STRONG - Verifies timing matches concurrent expectations
+func TestFetchFeed_Concurrency(t *testing.T) {
+    const (
+        numFeeds     = 6
+        concurrency  = 3
+        fetchDelay   = 100 * time.Millisecond
+        maxExpected  = 250 * time.Millisecond // 2 batches of 3
+    )
+
+    // Mock that tracks timing
+    crawler := &mockSlowCrawler{
+        delay: fetchDelay,  // Each fetch takes 100ms
+    }
+
+    // Setup feeds
+    feeds := make([]Feed, numFeeds)
+    for i := 0; i < numFeeds; i++ {
+        feeds[i] = Feed{URL: fmt.Sprintf("http://example.com/feed%d", i)}
+    }
+
+    // Process with semaphore (max 3 concurrent)
+    start := time.Now()
+    var wg sync.WaitGroup
+    sem := make(chan struct{}, concurrency)
+
+    for _, feed := range feeds {
+        wg.Add(1)
+        go func(f Feed) {
+            defer wg.Done()
+            sem <- struct{}{}
+            defer func() { <-sem }()
+            fetchFeed(f)
+        }(feed)
+    }
+
+    wg.Wait()
+    elapsed := time.Since(start)
+
+    // CRITICAL: Verify timing
+    // Should complete in ~200ms (2 batches of 3 concurrent)
+    // Would take ~600ms if serialized
+    if elapsed > maxExpected {
+        t.Errorf("Took too long: %v (expected <%v). Feeds may be processing serially instead of concurrently.",
+                 elapsed, maxExpected)
+    }
+
+    t.Logf("✓ Processed %d feeds in %v with concurrency=%d", numFeeds, elapsed, concurrency)
+}
+```
+
+**Good Pattern 2 (atomic counter verification):**
+```go
+// STRONG - Measures actual concurrent operations
+func TestFetchFeed_ActualConcurrency(t *testing.T) {
+    var concurrentOps int32
+    var maxConcurrent int32
+
+    crawler := &mockCrawler{
+        fetchFunc: func() error {
+            // Track concurrent operations
+            current := atomic.AddInt32(&concurrentOps, 1)
+            defer atomic.AddInt32(&concurrentOps, -1)
+
+            // Update max if needed
+            for {
+                oldMax := atomic.LoadInt32(&maxConcurrent)
+                if current <= oldMax || atomic.CompareAndSwapInt32(&maxConcurrent, oldMax, current) {
+                    break
+                }
+            }
+
+            time.Sleep(10 * time.Millisecond)  // Simulate work
+            return nil
+        },
+    }
+
+    // Process 10 feeds concurrently
+    feeds := make([]Feed, 10)
+    var wg sync.WaitGroup
+    for _, feed := range feeds {
+        wg.Add(1)
+        go func(f Feed) {
+            defer wg.Done()
+            fetchFeed(f)
+        }(feed)
+    }
+    wg.Wait()
+
+    // Verify we actually achieved concurrency
+    maxSeen := atomic.LoadInt32(&maxConcurrent)
+    if maxSeen < 2 {
+        t.Errorf("Max concurrent operations was %d, expected at least 2. Feeds appear to be serialized!",
+                 maxSeen)
+    }
+
+    t.Logf("✓ Max concurrent operations: %d", maxSeen)
+}
+```
+
+**Good Pattern 3 (verify selective locking):**
+```go
+// STRONG - Verifies HTTP is concurrent but database is serialized
+func TestFetchFeed_MutexProtectsDatabase(t *testing.T) {
+    var concurrentFetches int32
+    var concurrentDBWrites int32
+    var maxConcurrentFetches int32
+    var maxConcurrentDBWrites int32
+
+    crawler := &mockCrawler{
+        fetchFunc: func() error {
+            current := atomic.AddInt32(&concurrentFetches, 1)
+            defer atomic.AddInt32(&concurrentFetches, -1)
+
+            // Track max
+            for {
+                oldMax := atomic.LoadInt32(&maxConcurrentFetches)
+                if current <= oldMax || atomic.CompareAndSwapInt32(&maxConcurrentFetches, oldMax, current) {
+                    break
+                }
+            }
+
+            time.Sleep(10 * time.Millisecond)
+            return nil
+        },
+    }
+
+    repo := &mockRepository{
+        saveFunc: func() error {
+            current := atomic.AddInt32(&concurrentDBWrites, 1)
+            defer atomic.AddInt32(&concurrentDBWrites, -1)
+
+            // Track max
+            for {
+                oldMax := atomic.LoadInt32(&maxConcurrentDBWrites)
+                if current <= oldMax || atomic.CompareAndSwapInt32(&maxConcurrentDBWrites, oldMax, current) {
+                    break
+                }
+            }
+
+            time.Sleep(5 * time.Millisecond)
+            return nil
+        },
+    }
+
+    // Process 10 feeds concurrently
+    var wg sync.WaitGroup
+    for i := 0; i < 10; i++ {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            fetchFeed(Feed{URL: "http://example.com"})
+        }()
+    }
+    wg.Wait()
+
+    // Verify HTTP is concurrent
+    maxFetches := atomic.LoadInt32(&maxConcurrentFetches)
+    if maxFetches < 2 {
+        t.Errorf("Max concurrent fetches was %d, expected at least 2. HTTP fetching is serialized!",
+                 maxFetches)
+    }
+
+    // Verify database writes are serialized (mutex working)
+    maxDBWrites := atomic.LoadInt32(&maxConcurrentDBWrites)
+    if maxDBWrites > 1 {
+        t.Errorf("Max concurrent DB writes was %d, expected 1. Mutex not protecting database!",
+                 maxDBWrites)
+    }
+
+    t.Logf("✓ Max concurrent fetches: %d (good), Max concurrent DB writes: %d (correct)",
+           maxFetches, maxDBWrites)
+}
+```
+
+**What to verify:**
+- Tests measure elapsed time and compare to expected
+- Expected time assumes concurrent execution (not serial)
+- Test fails if operations are serialized
+- Atomic counters track actual concurrency level
+- Test distinguishes between "should be concurrent" and "should be serialized"
+
+**Common mistakes in concurrency tests:**
+- Only testing correctness, not concurrency
+- Using delays that hide performance issues
+- Not measuring actual concurrent operations
+- Timeout too generous (test passes even when slow)
+- Not testing under realistic load
+
+**Real-world example (what would catch the bug):**
+```go
+// This test would IMMEDIATELY catch mutex serialization bug:
+func TestFetchFeed_NotSerialized(t *testing.T) {
+    const numFeeds = 6
+    const fetchDelay = 100 * time.Millisecond
+    const maxAllowed = 250 * time.Millisecond  // 2 batches
+
+    start := time.Now()
+    // ... fetch 6 feeds with concurrency=3
+    elapsed := time.Since(start)
+
+    // With correct code: ~200ms (PASS)
+    // With serialization bug: ~600ms (FAIL!)
+    if elapsed > maxAllowed {
+        t.Fatalf("SERIALIZATION BUG: Took %v, expected <%v", elapsed, maxAllowed)
+    }
+}
+```
+
+**When to write these tests:**
+- Any code that uses goroutines for performance
+- Any code with mutexes around I/O operations
+- After any refactoring that moves mutex placement
+- Features where performance matters (fetchers, crawlers, bulk processors)
+
+**Testing checklist:**
+- [ ] Test measures elapsed time
+- [ ] Expected time assumes concurrency (not serial)
+- [ ] Test would fail if code is serialized
+- [ ] Test tracks max concurrent operations
+- [ ] Test verifies mutex protects only what it should
+
+---
+
 ### Skipped Tests
 
 **Heuristic:** Find tests marked as skipped
@@ -2137,9 +2587,11 @@ structcheck ./...
 | XSS vulnerabilities | **Critical** | Low | User compromise |
 | SSRF | **Critical** | Low | Internal network access |
 | Race conditions | **Critical** | Medium | Data corruption |
+| Mutex placement | **Critical** | Low | 10x performance regression |
 | Resource leaks | **High** | Low | Memory/file exhaustion |
 | Ignored errors | **High** | Medium | Silent failures |
 | Test coverage | **High** | Medium | Bugs in production |
+| Concurrency testing | **High** | Medium | Silent serialization |
 | TODO accuracy | **High** | Low | False completion status |
 | Referenced files exist | **High** | Low | Build failures |
 | Build portability | **High** | Low | Broken on other platforms |
@@ -2297,12 +2749,25 @@ This guide provides systematic heuristics for auditing Go codebases. Use it as:
 
 ---
 
-**Document Version:** 2.1
+**Document Version:** 2.2
 **Created:** 2025-10-20
-**Last Updated:** 2025-10-30
+**Last Updated:** 2025-10-31
 **Validated On:** Multiple Go projects including Rogue Planet feed aggregator (4,000+ lines)
 
 ## Changelog
+
+**v2.2 (2025-10-31):**
+- **Critical addition:** Mutex Placement for Performance section (Concurrency Patterns)
+  - Identifies 10x performance regressions from incorrect mutex placement
+  - Detection patterns for locks around I/O operations
+  - Examples of selective locking vs. over-locking
+- **New test methodology:** Concurrency Testing with Timing Assertions (Test Quality)
+  - Timing-based verification that operations run concurrently
+  - Atomic counter patterns to measure actual concurrency
+  - Three comprehensive test patterns with real examples
+- Updated Quick Start Checklist: Added mutex placement check
+- Updated Priority Matrix: Added mutex placement (Critical) and concurrency testing (High)
+- Lessons learned from v0.4.0 fetcher refactoring performance regression
 
 **v2.1 (2025-10-30):**
 - Added lessons from v0.4.0 rate limiting implementation

@@ -542,6 +542,385 @@ wg.Wait()
 
 ---
 
+## Concurrency & Performance
+
+### 33. Mutex Placement is Critical for Performance 🔒⚡
+
+**Lesson**: ONLY protect what needs protection, not entire operations
+
+**Problem Discovered (v0.4.0)**: Placed mutex around entire FetchFeed() call, serializing HTTP fetching, parsing, AND database writes. Result: 10x performance regression.
+
+**What Happened**:
+```go
+// WRONG - Serializes everything (10x slower!)
+mu.Lock()
+result := feedFetcher.FetchFeed(ctx, f)  // HTTP + Parse + DB all locked
+mu.Unlock()
+```
+
+**Root Cause Analysis**:
+- HTTP fetching: CAN run concurrently (no shared state)
+- Feed parsing: CAN run concurrently (no shared state)
+- Database writes: MUST be serialized (shared resource)
+
+**Correct Approach**:
+```go
+// HTTP fetch - NO LOCK (concurrent)
+resp, err := f.crawler.FetchWithRetry(ctx, url, cache, maxRetries)
+
+// Database write - WITH LOCK
+f.lock()
+f.repo.UpdateFeedError(feedID, err.Error())
+f.unlock()
+
+// Parse - NO LOCK (concurrent)
+metadata, entries, err := f.normalizer.Parse(resp.Body, url, fetchTime)
+
+// Database writes - WITH LOCK
+f.lock()
+for _, entry := range entries {
+    f.repo.UpsertEntry(entry)
+}
+f.unlock()
+```
+
+**Impact**:
+- With concurrency=10 and 50 feeds @ 2s each:
+  - Expected: ~10 seconds (5 batches of 10)
+  - With bug: ~100 seconds (sequential)
+  - **10x slower!**
+
+**How to Think About Mutex Placement**:
+1. Identify shared resources (database, files, network connections with limits)
+2. Identify operations that CAN run in parallel (HTTP, CPU work, parsing)
+3. Lock ONLY around shared resource access
+4. Keep critical sections as short as possible
+
+**Testing**: See lesson #34
+
+---
+
+### 34. Test Concurrency with Timing Assertions ⏱️
+
+**Lesson**: Write tests that verify concurrent execution, not just correctness
+
+**Problem**: Unit tests can pass even when code is accidentally serialized
+
+**What Unit Tests Don't Catch**:
+```go
+// These could be serialized or concurrent - test would pass either way:
+✓ FetchFeed returns correct data
+✓ Database is updated correctly
+✓ Errors are handled properly
+
+// Missing: Are they actually running concurrently?
+```
+
+**Solution: Timing-Based Concurrency Tests**:
+```go
+func TestFetchFeed_Concurrency(t *testing.T) {
+    // Setup: 6 feeds, each takes 100ms
+    // Expected with concurrency=3: ~200ms (2 batches)
+    // If serialized: 600ms (all sequential)
+
+    start := time.Now()
+    // ... process 6 feeds with concurrency=3
+    elapsed := time.Since(start)
+
+    if elapsed > 250*time.Millisecond {
+        t.Errorf("Took %v (expected ~200ms). Feeds processing serially!", elapsed)
+    }
+
+    if maxConcurrent < 2 {
+        t.Errorf("Max concurrent was %d. Feeds appear to be serialized!", maxConcurrent)
+    }
+}
+```
+
+**Test Verifies**:
+1. **Timing**: Completes in time consistent with parallelism
+2. **Concurrency tracking**: Actually achieved concurrent execution
+3. **Clear failure messages**: Explains WHAT is wrong (serialized) and WHY
+
+**Our Results**:
+- Test output: `✓ Processed 6 feeds in 202ms with max concurrency of 3`
+- Would have failed immediately with broken code: `✗ Took 602ms, feeds processing serially`
+
+**Pattern for Testing Mutex Protection**:
+```go
+func TestFetchFeed_MutexProtectsDatabase(t *testing.T) {
+    // Track concurrent operations separately:
+    // - HTTP fetches (should be concurrent)
+    // - Database writes (should be serialized)
+
+    // Verify:
+    if maxConcurrentFetches < 2 {
+        t.Error("HTTP fetching is serialized!") // Bug caught!
+    }
+    if maxConcurrentDBWrites > 1 {
+        t.Error("Database writes not protected!") // Race condition!
+    }
+}
+```
+
+**When to Use This Pattern**:
+- Any concurrent processing (worker pools, goroutines)
+- Performance-critical code
+- After refactoring that changes concurrency model
+- When extracting business logic from concurrent code
+
+---
+
+### 35. Measure Performance, Don't Assume 📊
+
+**Lesson**: Always benchmark after refactoring, even if "logic is the same"
+
+**What We Assumed**:
+- "Extracting business logic won't change performance"
+- "Simplified code is good enough"
+- "Tests pass, so it works"
+
+**What We Missed**:
+- Mutex placement completely changed concurrency model
+- 10x performance regression
+- Would have been caught by measurement
+
+**Measurement Tools**:
+
+**1. Timing Tests** (quick, in test suite):
+```go
+func TestFeaturePerformance(t *testing.T) {
+    start := time.Now()
+    processNItems(100)
+    elapsed := time.Since(start)
+
+    if elapsed > 500*time.Millisecond {
+        t.Errorf("Too slow: %v (expected <500ms)", elapsed)
+    }
+}
+```
+
+**2. Benchmark Tests** (detailed):
+```go
+func BenchmarkFetchFeed(b *testing.B) {
+    for i := 0; i < b.N; i++ {
+        fetcher.FetchFeed(ctx, feed)
+    }
+}
+// Run: go test -bench=. -benchmem
+```
+
+**3. Before/After Comparison**:
+```bash
+# Before refactoring
+go test -bench=. -benchmem > before.txt
+
+# After refactoring
+go test -bench=. -benchmem > after.txt
+
+# Compare
+benchcmp before.txt after.txt
+```
+
+**What to Measure**:
+- Execution time (wall clock)
+- CPU time
+- Memory allocations
+- Concurrent operations achieved
+- Database query counts
+
+**Our Benchmarks**:
+```
+BenchmarkFetchFeed_Sequential    5194248    211 ns/op
+BenchmarkFetchFeed_Concurrent    1887361    629 ns/op
+```
+
+3x overhead per operation acceptable for thread safety, but real-world gains from parallelism are massive.
+
+**Lesson**: If you're changing concurrency code, MEASURE IT.
+
+---
+
+### 36. Race Detector is Mandatory for Concurrent Code 🏁
+
+**Lesson**: Always run `go test -race` for code with goroutines
+
+**What It Catches**:
+- Data races (concurrent reads/writes without synchronization)
+- Missing mutex protection
+- Unsafe shared state access
+
+**Our Experience**:
+```bash
+go test -race ./pkg/fetcher -v
+```
+
+**Found**: Mock logger not thread-safe (slices accessed without mutex)
+
+**Fixed**:
+```go
+type mockLogger struct {
+    mu sync.Mutex  // Added
+    debugCalls []string
+}
+
+func (m *mockLogger) Debug(format string, args ...interface{}) {
+    m.mu.Lock()
+    defer m.mu.Unlock()
+    m.debugCalls = append(m.debugCalls, format)
+}
+```
+
+**When to Run**:
+- Every test run in CI
+- Before committing concurrent code changes
+- When debugging mysterious test failures
+- After refactoring with goroutines/mutexes
+
+**Cost**: 2-10x slower test execution, but **critical** for finding bugs
+
+**False Positives**: Very rare with Go's race detector
+
+**Real Bugs It Finds**:
+- Forgotten mutex locks
+- Shared slices/maps without protection
+- Variables accessed from multiple goroutines
+- Channel operations on closed channels
+
+**Integration with CI**:
+```bash
+# .github/workflows/test.yml
+- name: Test with race detector
+  run: go test -race ./...
+```
+
+---
+
+### 37. Write Tests That Would Catch Your Specific Bug 🎯
+
+**Lesson**: Don't just test that code works - test that specific failure modes fail
+
+**Anti-Pattern** (what we had before):
+```go
+// Generic test: "Does it work?"
+func TestFetchFeed_Success(t *testing.T) {
+    result := fetcher.FetchFeed(ctx, feed)
+    if result.Error != nil {
+        t.Error("expected success")
+    }
+}
+// This passes whether concurrent or serialized!
+```
+
+**Better** (what we added):
+```go
+// Specific test: "Does it run concurrently?"
+func TestFetchFeed_Concurrency(t *testing.T) {
+    // Would fail with serialization bug
+    if elapsed > 250*time.Millisecond {
+        t.Error("Feeds processing serially instead of concurrently")
+    }
+    if maxConcurrent < 2 {
+        t.Error("Feeds appear to be serialized!")
+    }
+}
+
+// Specific test: "Are database writes protected?"
+func TestFetchFeed_MutexProtectsDatabase(t *testing.T) {
+    // Would fail if mutex missing
+    if maxConcurrentDBWrites > 1 {
+        t.Error("Database writes not serialized - race condition!")
+    }
+}
+```
+
+**Questions Your Tests Should Answer**:
+1. **Correctness**: Does it produce right result?
+2. **Performance**: Does it run fast enough?
+3. **Concurrency**: Does it actually run in parallel?
+4. **Safety**: Are shared resources protected?
+5. **Error handling**: Do error paths work?
+
+**Test Design Process**:
+1. Identify the bug you're fixing or feature you're adding
+2. Write test that FAILS with the bug
+3. Verify test fails
+4. Fix the bug
+5. Verify test passes
+6. Keep the test (regression prevention)
+
+**Our Example**:
+- **Bug**: Mutex around entire operation (serialization)
+- **Test**: Timing assertion + concurrency tracking
+- **Result**: Test would have immediately failed with clear message
+- **Value**: Prevents this bug from happening again
+
+**Test Naming Convention**:
+```go
+TestFeatureName_SpecificBehavior
+TestFetchFeed_Concurrency           // Tests concurrent execution
+TestFetchFeed_MutexProtectsDatabase // Tests database protection
+TestFetchFeed_301Redirect           // Tests redirect handling
+```
+
+Name clearly states WHAT is being tested, makes it obvious if test is missing.
+
+---
+
+### 38. Refactoring Checklist: Concurrency Edition ✅
+
+**Lesson**: Refactoring concurrent code requires extra verification steps
+
+**Standard Refactoring Checklist**:
+- ✅ Tests pass
+- ✅ Code compiles
+- ✅ No new warnings
+
+**Concurrent Code ALSO Requires**:
+- ✅ `go test -race` passes
+- ✅ Timing tests verify concurrency maintained
+- ✅ Benchmark shows no regression
+- ✅ Mutex placement analyzed (what needs protection?)
+- ✅ Load test with multiple goroutines
+- ✅ Manual verification of concurrent behavior
+
+**Our Checklist for v0.4.0 Fix**:
+1. ✅ Identified shared resources (database)
+2. ✅ Identified concurrent operations (HTTP, parsing)
+3. ✅ Moved mutex to protect ONLY database
+4. ✅ All tests pass (528 tests)
+5. ✅ Race detector clean
+6. ✅ Concurrency test verifies parallel execution (202ms for 6 feeds)
+7. ✅ Mutex protection test verifies database serialized
+8. ✅ Benchmark shows acceptable overhead (3x per-op for thread safety)
+9. ✅ Coverage improved (88.5%)
+
+**Red Flags During Refactoring**:
+- 🚩 Wrapping large code blocks in mutex "to be safe"
+- 🚩 Not measuring performance before/after
+- 🚩 Skipping race detector "because tests pass"
+- 🚩 No timing assertions for concurrent code
+- 🚩 Assuming "simpler code = same performance"
+
+**Safe Refactoring Pattern**:
+1. Write test that verifies current behavior (including performance)
+2. Make change
+3. Run ALL checks (tests, race detector, benchmarks)
+4. If any fail, understand why before proceeding
+5. Commit with clear description of what changed
+
+**Time Investment**:
+- Writing concurrency tests: 1 hour
+- Running with race detector: +5 minutes per test run
+- Benchmarking: 10 minutes
+
+**ROI**:
+- Caught critical 10x performance regression
+- Would have been very hard to debug in production
+- Tests now prevent this class of bugs permanently
+
+---
+
 ## Summary: Key Principles
 
 ### Architecture

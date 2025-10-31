@@ -13,6 +13,7 @@ import (
 
 	"github.com/adewale/rogue_planet/pkg/config"
 	"github.com/adewale/rogue_planet/pkg/crawler"
+	"github.com/adewale/rogue_planet/pkg/fetcher"
 	"github.com/adewale/rogue_planet/pkg/generator"
 	"github.com/adewale/rogue_planet/pkg/normalizer"
 	"github.com/adewale/rogue_planet/pkg/opml"
@@ -390,9 +391,7 @@ func cmdStatus(opts StatusOptions) error {
 }
 
 func cmdUpdate(opts UpdateOptions) error {
-	if opts.Verbose {
-		log.SetFlags(log.LstdFlags | log.Lshortfile)
-	}
+	setVerboseLogging(opts.Verbose)
 
 	// Load config
 	cfg, err := loadConfig(opts.ConfigPath)
@@ -417,9 +416,7 @@ func cmdUpdate(opts UpdateOptions) error {
 }
 
 func cmdFetch(opts FetchOptions) error {
-	if opts.Verbose {
-		log.SetFlags(log.LstdFlags | log.Lshortfile)
-	}
+	setVerboseLogging(opts.Verbose)
 
 	cfg, err := loadConfig(opts.ConfigPath)
 	if err != nil {
@@ -740,6 +737,13 @@ func loadConfig(path string) (*config.Config, error) {
 	return config.LoadFromFile(path)
 }
 
+// setVerboseLogging configures log output to include file and line numbers
+func setVerboseLogging(verbose bool) {
+	if verbose {
+		log.SetFlags(log.LstdFlags | log.Lshortfile)
+	}
+}
+
 // openConfigAndRepo loads config and opens database, returning both along with a cleanup function
 // The cleanup function should be called with defer to ensure the repository is closed
 func openConfigAndRepo(configPath string) (*config.Config, *repository.Repository, func(), error) {
@@ -810,7 +814,6 @@ func fetchFeeds(cfg *config.Config) error {
 		ResponseHeaderTimeoutSeconds: cfg.Planet.ResponseHeaderTimeoutSeconds,
 	})
 	n := normalizer.New()
-	maxRetries := cfg.Planet.MaxRetries
 
 	// Create rate limiter for per-domain rate limiting
 	rateLimiter := ratelimit.New(cfg.Planet.RequestsPerMinute, cfg.Planet.RateLimitBurst)
@@ -829,6 +832,9 @@ func fetchFeeds(cfg *config.Config) error {
 	var wg sync.WaitGroup
 	var mu sync.Mutex // Protects repo writes
 
+	// Create fetcher with dependencies (passes mutex for database protection)
+	feedFetcher := fetcher.New(c, n, repo, &mu, globalLogger, cfg.Planet.MaxRetries)
+
 	// Fetch feeds concurrently
 	for i, feed := range feeds {
 		wg.Add(1)
@@ -840,15 +846,6 @@ func fetchFeeds(cfg *config.Config) error {
 			defer func() { <-sem }()
 
 			fmt.Printf("  [%d/%d] Fetching %s\n", index+1, len(feeds), f.URL)
-			globalLogger.Debug("Starting fetch for %s (ID: %d)", f.URL, f.ID)
-
-			// Prepare cache
-			cache := crawler.FeedCache{
-				URL:          f.URL,
-				ETag:         f.ETag,
-				LastModified: f.LastModified,
-				LastFetched:  f.LastFetched,
-			}
 
 			// Apply rate limiting before fetching
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -858,94 +855,22 @@ func fetchFeeds(cfg *config.Config) error {
 				return
 			}
 
-			// Fetch feed with retry logic (exponential backoff)
-			resp, err := c.FetchWithRetry(ctx, f.URL, cache, maxRetries)
+			// Fetch and process feed (fetcher handles mutex internally for database writes)
+			result := feedFetcher.FetchFeed(ctx, f)
 			cancel()
 
-			if err != nil {
-				globalLogger.Error("Error fetching %s: %v", f.URL, err)
-				mu.Lock()
-				if updateErr := repo.UpdateFeedError(f.ID, err.Error()); updateErr != nil {
-					globalLogger.Error("Failed to update feed error for %s: %v", f.URL, updateErr)
-				}
-				mu.Unlock()
+			// Report results
+			if result.Error != nil {
+				// Error already logged by fetcher
 				return
 			}
 
-			// Handle 301 permanent redirect - update feed URL in database
-			if resp.PermanentRedirect && resp.FinalURL != f.URL {
-				globalLogger.Info("Feed %s permanently redirected to %s (301)", f.URL, resp.FinalURL)
-				mu.Lock()
-				if updateErr := repo.UpdateFeedURL(f.ID, resp.FinalURL); updateErr != nil {
-					globalLogger.Error("Failed to update feed URL for %s: %v", f.URL, updateErr)
-				} else {
-					globalLogger.Info("Updated feed URL from %s to %s", f.URL, resp.FinalURL)
-				}
-				mu.Unlock()
-			}
-
-			// Handle 304 Not Modified
-			if resp.NotModified {
+			if result.NotModified {
 				fmt.Printf("    Not modified (cached)\n")
-				globalLogger.Debug("%s returned 304 Not Modified", f.URL)
-				mu.Lock()
-				if updateErr := repo.UpdateFeedCache(f.ID, resp.NewCache.ETag, resp.NewCache.LastModified, resp.FetchTime); updateErr != nil {
-					globalLogger.Error("Failed to update feed cache for %s: %v", f.URL, updateErr)
-				}
-				mu.Unlock()
 				return
 			}
 
-			// Parse and normalize feed
-			metadata, entries, err := n.Parse(resp.Body, f.URL, resp.FetchTime)
-			if err != nil {
-				globalLogger.Error("Error parsing %s: %v", f.URL, err)
-				mu.Lock()
-				if updateErr := repo.UpdateFeedError(f.ID, err.Error()); updateErr != nil {
-					globalLogger.Error("Failed to update feed error for %s: %v", f.URL, updateErr)
-				}
-				mu.Unlock()
-				return
-			}
-
-			globalLogger.Debug("Parsed %d entries from %s", len(entries), f.URL)
-
-			// Update feed metadata and store entries (protected by mutex)
-			mu.Lock()
-			if updateErr := repo.UpdateFeed(f.ID, metadata.Title, metadata.Link, metadata.Updated); updateErr != nil {
-				globalLogger.Error("Failed to update feed metadata for %s: %v", f.URL, updateErr)
-			}
-			if updateErr := repo.UpdateFeedCache(f.ID, resp.NewCache.ETag, resp.NewCache.LastModified, resp.FetchTime); updateErr != nil {
-				globalLogger.Error("Failed to update feed cache for %s: %v", f.URL, updateErr)
-			}
-
-			// Store entries
-			storedCount := 0
-			for _, entry := range entries {
-				repoEntry := &repository.Entry{
-					FeedID:      f.ID,
-					EntryID:     entry.ID,
-					Title:       entry.Title,
-					Link:        entry.Link,
-					Author:      entry.Author,
-					Published:   entry.Published,
-					Updated:     entry.Updated,
-					Content:     entry.Content,
-					ContentType: entry.ContentType,
-					Summary:     entry.Summary,
-					FirstSeen:   entry.FirstSeen,
-				}
-
-				if err := repo.UpsertEntry(repoEntry); err != nil {
-					globalLogger.Warn("Error storing entry from %s: %v", f.URL, err)
-				} else {
-					storedCount++
-				}
-			}
-			mu.Unlock()
-
-			fmt.Printf("    Stored %d entries\n", storedCount)
-			globalLogger.Info("Successfully processed %s: %d entries", f.URL, storedCount)
+			fmt.Printf("    Stored %d entries\n", result.StoredEntries)
 		}(i, feed)
 	}
 
