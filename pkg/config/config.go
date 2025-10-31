@@ -18,7 +18,7 @@ import (
 const (
 	// Concurrency limits
 	MinConcurrentFetches = 1
-	MaxConcurrentFetches = 50  // Prevents resource exhaustion
+	MaxConcurrentFetches = 50 // Prevents resource exhaustion
 
 	// Retry limits
 	MinMaxRetries = 0

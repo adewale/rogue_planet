@@ -263,14 +263,14 @@ func (r *Repository) runMigrations(fromVersion, toVersion int) error {
 
 		// Execute migration
 		if err := migrateFn(); err != nil {
-			tx.Rollback()
+			_ = tx.Rollback() // Rollback on error; ignore rollback errors
 			return fmt.Errorf("migration to v%d failed: %w", v, err)
 		}
 
 		// Record version
 		_, err = tx.Exec("INSERT INTO schema_version (version) VALUES (?)", v)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback() // Rollback on error; ignore rollback errors
 			return fmt.Errorf("record v%d version: %w", v, err)
 		}
 
