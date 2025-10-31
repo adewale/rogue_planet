@@ -409,6 +409,10 @@ func (c *Config) Validate() error {
 	if strings.Contains(c.Planet.OutputDir, "..") {
 		return fmt.Errorf("output directory must not contain parent directory references (..): %s", c.Planet.OutputDir)
 	}
+	// Validate template path if specified (empty is allowed - uses default template)
+	if c.Planet.Template != "" && strings.Contains(c.Planet.Template, "..") {
+		return fmt.Errorf("template path must not contain parent directory references (..): %s", c.Planet.Template)
+	}
 
 	// Set default and validate sort_by
 	if c.Planet.SortBy == "" {

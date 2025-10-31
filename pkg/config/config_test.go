@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -291,6 +292,55 @@ func TestValidate(t *testing.T) {
 		err := config.Validate()
 		if err == nil {
 			t.Error("Expected error for empty database path")
+		}
+	})
+
+	t.Run("database path with parent reference", func(t *testing.T) {
+		config := Default()
+		config.Database.Path = "../etc/passwd"
+
+		err := config.Validate()
+		if err == nil {
+			t.Error("Expected error for database path with ..")
+		}
+		if err != nil && !strings.Contains(err.Error(), "parent directory") {
+			t.Errorf("Expected parent directory error, got: %v", err)
+		}
+	})
+
+	t.Run("output dir with parent reference", func(t *testing.T) {
+		config := Default()
+		config.Planet.OutputDir = "../../somewhere"
+
+		err := config.Validate()
+		if err == nil {
+			t.Error("Expected error for output dir with ..")
+		}
+		if err != nil && !strings.Contains(err.Error(), "parent directory") {
+			t.Errorf("Expected parent directory error, got: %v", err)
+		}
+	})
+
+	t.Run("template path with parent reference", func(t *testing.T) {
+		config := Default()
+		config.Planet.Template = "../../../etc/passwd"
+
+		err := config.Validate()
+		if err == nil {
+			t.Error("Expected error for template path with ..")
+		}
+		if err != nil && !strings.Contains(err.Error(), "parent directory") {
+			t.Errorf("Expected parent directory error, got: %v", err)
+		}
+	})
+
+	t.Run("empty template path allowed", func(t *testing.T) {
+		config := Default()
+		config.Planet.Template = "" // Should be valid - uses default
+
+		err := config.Validate()
+		if err != nil {
+			t.Errorf("Validate() error = %v, want nil for empty template", err)
 		}
 	})
 }
