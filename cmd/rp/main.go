@@ -3,55 +3,63 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 )
 
 const version = "0.4.0"
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	if len(os.Args) < 2 {
 		printUsage()
-		os.Exit(1)
+		return fmt.Errorf("no command specified")
 	}
 
 	command := os.Args[1]
 
 	switch command {
 	case "init":
-		runInit()
+		return runInit()
 	case "add-feed":
-		runAddFeed()
+		return runAddFeed()
 	case "add-all":
-		runAddAll()
+		return runAddAll()
 	case "remove-feed":
-		runRemoveFeed()
+		return runRemoveFeed()
 	case "list-feeds":
-		runListFeeds()
+		return runListFeeds()
 	case "status":
-		runStatus()
+		return runStatus()
 	case "update":
-		runUpdate()
+		return runUpdate()
 	case "fetch":
-		runFetch()
+		return runFetch()
 	case "generate":
-		runGenerate()
+		return runGenerate()
 	case "prune":
-		runPrune()
+		return runPrune()
 	case "verify":
-		runVerify()
+		return runVerify()
 	case "import-opml":
-		runImportOPML()
+		return runImportOPML()
 	case "export-opml":
-		runExportOPML()
+		return runExportOPML()
 	case "version":
 		fmt.Printf("rp version %s\n", version)
+		return nil
 	case "help", "--help", "-h":
 		printUsage()
+		return nil
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)
 		printUsage()
-		os.Exit(1)
+		return fmt.Errorf("unknown command: %s", command)
 	}
 }
 
@@ -114,11 +122,11 @@ Examples:
 `)
 }
 
-func runInit() {
+func runInit() error {
 	fs := flag.NewFlagSet("init", flag.ExitOnError)
 	feedsFile := fs.String("f", "", "Import feeds from file")
 	if err := fs.Parse(os.Args[2:]); err != nil {
-		log.Fatalf("Error parsing flags: %v", err)
+		return fmt.Errorf("parsing flags: %w", err)
 	}
 
 	opts := InitOptions{
@@ -127,21 +135,19 @@ func runInit() {
 		Output:     os.Stdout,
 	}
 
-	if err := cmdInit(opts); err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+	return cmdInit(opts)
 }
 
-func runAddFeed() {
+func runAddFeed() error {
 	fs := flag.NewFlagSet("add-feed", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	if err := fs.Parse(os.Args[2:]); err != nil {
-		log.Fatalf("Error parsing flags: %v", err)
+		return fmt.Errorf("parsing flags: %w", err)
 	}
 
 	if fs.NArg() < 1 {
 		fmt.Fprintln(os.Stderr, "Usage: rp add-feed <url>")
-		os.Exit(1)
+		return fmt.Errorf("missing feed URL argument")
 	}
 
 	opts := AddFeedOptions{
@@ -150,22 +156,20 @@ func runAddFeed() {
 		Output:     os.Stdout,
 	}
 
-	if err := cmdAddFeed(opts); err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+	return cmdAddFeed(opts)
 }
 
-func runAddAll() {
+func runAddAll() error {
 	fs := flag.NewFlagSet("add-all", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	feedsFile := fs.String("f", "", "Path to feeds file")
 	if err := fs.Parse(os.Args[2:]); err != nil {
-		log.Fatalf("Error parsing flags: %v", err)
+		return fmt.Errorf("parsing flags: %w", err)
 	}
 
 	if *feedsFile == "" {
 		fmt.Fprintln(os.Stderr, "Usage: rp add-all -f <feeds-file>")
-		os.Exit(1)
+		return fmt.Errorf("missing feeds file argument")
 	}
 
 	opts := AddAllOptions{
@@ -174,21 +178,19 @@ func runAddAll() {
 		Output:     os.Stdout,
 	}
 
-	if err := cmdAddAll(opts); err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+	return cmdAddAll(opts)
 }
 
-func runRemoveFeed() {
+func runRemoveFeed() error {
 	fs := flag.NewFlagSet("remove-feed", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	if err := fs.Parse(os.Args[2:]); err != nil {
-		log.Fatalf("Error parsing flags: %v", err)
+		return fmt.Errorf("parsing flags: %w", err)
 	}
 
 	if fs.NArg() < 1 {
 		fmt.Fprintln(os.Stderr, "Usage: rp remove-feed <url>")
-		os.Exit(1)
+		return fmt.Errorf("missing feed URL argument")
 	}
 
 	opts := RemoveFeedOptions{
@@ -197,16 +199,14 @@ func runRemoveFeed() {
 		Output:     os.Stdout,
 	}
 
-	if err := cmdRemoveFeed(opts); err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+	return cmdRemoveFeed(opts)
 }
 
-func runListFeeds() {
+func runListFeeds() error {
 	fs := flag.NewFlagSet("list-feeds", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	if err := fs.Parse(os.Args[2:]); err != nil {
-		log.Fatalf("Error parsing flags: %v", err)
+		return fmt.Errorf("parsing flags: %w", err)
 	}
 
 	opts := ListFeedsOptions{
@@ -214,16 +214,14 @@ func runListFeeds() {
 		Output:     os.Stdout,
 	}
 
-	if err := cmdListFeeds(opts); err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+	return cmdListFeeds(opts)
 }
 
-func runStatus() {
+func runStatus() error {
 	fs := flag.NewFlagSet("status", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	if err := fs.Parse(os.Args[2:]); err != nil {
-		log.Fatalf("Error parsing flags: %v", err)
+		return fmt.Errorf("parsing flags: %w", err)
 	}
 
 	opts := StatusOptions{
@@ -231,17 +229,15 @@ func runStatus() {
 		Output:     os.Stdout,
 	}
 
-	if err := cmdStatus(opts); err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+	return cmdStatus(opts)
 }
 
-func runUpdate() {
+func runUpdate() error {
 	fs := flag.NewFlagSet("update", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	verbose := fs.Bool("verbose", false, "Enable verbose logging")
 	if err := fs.Parse(os.Args[2:]); err != nil {
-		log.Fatalf("Error parsing flags: %v", err)
+		return fmt.Errorf("parsing flags: %w", err)
 	}
 
 	opts := UpdateOptions{
@@ -250,17 +246,15 @@ func runUpdate() {
 		Output:     os.Stdout,
 	}
 
-	if err := cmdUpdate(opts); err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+	return cmdUpdate(opts)
 }
 
-func runFetch() {
+func runFetch() error {
 	fs := flag.NewFlagSet("fetch", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	verbose := fs.Bool("verbose", false, "Enable verbose logging")
 	if err := fs.Parse(os.Args[2:]); err != nil {
-		log.Fatalf("Error parsing flags: %v", err)
+		return fmt.Errorf("parsing flags: %w", err)
 	}
 
 	opts := FetchOptions{
@@ -269,17 +263,15 @@ func runFetch() {
 		Output:     os.Stdout,
 	}
 
-	if err := cmdFetch(opts); err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+	return cmdFetch(opts)
 }
 
-func runGenerate() {
+func runGenerate() error {
 	fs := flag.NewFlagSet("generate", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	days := fs.Int("days", 0, "Number of days to include (overrides config)")
 	if err := fs.Parse(os.Args[2:]); err != nil {
-		log.Fatalf("Error parsing flags: %v", err)
+		return fmt.Errorf("parsing flags: %w", err)
 	}
 
 	opts := GenerateOptions{
@@ -288,18 +280,16 @@ func runGenerate() {
 		Output:     os.Stdout,
 	}
 
-	if err := cmdGenerate(opts); err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+	return cmdGenerate(opts)
 }
 
-func runPrune() {
+func runPrune() error {
 	fs := flag.NewFlagSet("prune", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	days := fs.Int("days", 90, "Remove entries older than N days")
 	dryRun := fs.Bool("dry-run", false, "Show what would be deleted without deleting")
 	if err := fs.Parse(os.Args[2:]); err != nil {
-		log.Fatalf("Error parsing flags: %v", err)
+		return fmt.Errorf("parsing flags: %w", err)
 	}
 
 	opts := PruneOptions{
@@ -309,16 +299,14 @@ func runPrune() {
 		Output:     os.Stdout,
 	}
 
-	if err := cmdPrune(opts); err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+	return cmdPrune(opts)
 }
 
-func runVerify() {
+func runVerify() error {
 	fs := flag.NewFlagSet("verify", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	if err := fs.Parse(os.Args[2:]); err != nil {
-		log.Fatalf("Error parsing flags: %v", err)
+		return fmt.Errorf("parsing flags: %w", err)
 	}
 
 	opts := VerifyOptions{
@@ -326,22 +314,20 @@ func runVerify() {
 		Output:     os.Stdout,
 	}
 
-	if err := cmdVerify(opts); err != nil {
-		os.Exit(1)
-	}
+	return cmdVerify(opts)
 }
 
-func runImportOPML() {
+func runImportOPML() error {
 	fs := flag.NewFlagSet("import-opml", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	dryRun := fs.Bool("dry-run", false, "Preview feeds without importing")
 	if err := fs.Parse(os.Args[2:]); err != nil {
-		log.Fatalf("Error parsing flags: %v", err)
+		return fmt.Errorf("parsing flags: %w", err)
 	}
 
 	if fs.NArg() < 1 {
 		fmt.Fprintln(os.Stderr, "Usage: rp import-opml <opml-file> [--dry-run]")
-		os.Exit(1)
+		return fmt.Errorf("missing OPML file argument")
 	}
 
 	opts := ImportOPMLOptions{
@@ -351,17 +337,15 @@ func runImportOPML() {
 		Output:     os.Stdout,
 	}
 
-	if err := cmdImportOPML(opts); err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+	return cmdImportOPML(opts)
 }
 
-func runExportOPML() {
+func runExportOPML() error {
 	fs := flag.NewFlagSet("export-opml", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
 	output := fs.String("output", "", "Output file (default: stdout)")
 	if err := fs.Parse(os.Args[2:]); err != nil {
-		log.Fatalf("Error parsing flags: %v", err)
+		return fmt.Errorf("parsing flags: %w", err)
 	}
 
 	opts := ExportOPMLOptions{
@@ -370,7 +354,5 @@ func runExportOPML() {
 		Output:     os.Stdout,
 	}
 
-	if err := cmdExportOPML(opts); err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+	return cmdExportOPML(opts)
 }

@@ -1,6 +1,6 @@
 # Rogue Planet Makefile
 
-VERSION := 0.3.0
+VERSION := 0.4.0
 BINARY_NAME := rp
 BIN_DIR := bin
 COVERAGE_DIR := coverage

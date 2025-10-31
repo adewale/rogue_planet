@@ -358,13 +358,21 @@ func (r *Repository) GetRecentEntries(days int) ([]Entry, error) {
 	return scanEntries(rows)
 }
 
+// validSortFields maps user-provided sort field names to safe SQL column names.
+// This whitelist approach prevents SQL injection even if validation logic changes.
+var validSortFields = map[string]string{
+	"published":  "e.published",
+	"first_seen": "e.first_seen",
+}
+
 // GetRecentEntriesWithOptions returns entries based on filtering and sorting preferences.
 // If filterByFirstSeen is true, only entries first seen within the time window are returned.
 // sortBy determines the ordering: "published" or "first_seen".
 // Falls back to the most recent 50 entries if none found in the time window.
 func (r *Repository) GetRecentEntriesWithOptions(days int, filterByFirstSeen bool, sortBy string) ([]Entry, error) {
-	// Validate sortBy parameter to prevent SQL injection
-	if sortBy != "published" && sortBy != "first_seen" {
+	// Validate sortBy using whitelist map (defense-in-depth against SQL injection)
+	sortField, ok := validSortFields[sortBy]
+	if !ok {
 		return nil, fmt.Errorf("invalid sortBy value: %s (must be 'published' or 'first_seen')", sortBy)
 	}
 
@@ -374,12 +382,6 @@ func (r *Repository) GetRecentEntriesWithOptions(days int, filterByFirstSeen boo
 	filterField := "e.published"
 	if filterByFirstSeen {
 		filterField = "e.first_seen"
-	}
-
-	// Choose sort field (validated above)
-	sortField := "e.published"
-	if sortBy == "first_seen" {
-		sortField = "e.first_seen"
 	}
 
 	query := fmt.Sprintf(`
