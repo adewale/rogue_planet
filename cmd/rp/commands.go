@@ -7,8 +7,10 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/adewale/rogue_planet/pkg/config"
@@ -819,6 +821,20 @@ func fetchFeeds(cfg *config.Config) error {
 	rateLimiter := ratelimit.New(cfg.Planet.RequestsPerMinute, cfg.Planet.RateLimitBurst)
 	globalLogger.Debug("Rate limiter configured: %d requests/min, burst=%d", cfg.Planet.RequestsPerMinute, cfg.Planet.RateLimitBurst)
 
+	// Set up signal handling for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	// Handle signals in background
+	go func() {
+		sig := <-sigChan
+		globalLogger.Info("Received signal %v, cancelling fetches...", sig)
+		cancel()
+	}()
+
 	// Use semaphore pattern for concurrency control
 	concurrency := cfg.Planet.ConcurrentFetch
 	if concurrency < 1 {
@@ -842,22 +858,39 @@ func fetchFeeds(cfg *config.Config) error {
 			defer wg.Done()
 
 			// Acquire semaphore
-			sem <- struct{}{}
-			defer func() { <-sem }()
+			select {
+			case sem <- struct{}{}:
+				defer func() { <-sem }()
+			case <-ctx.Done():
+				globalLogger.Debug("Skipping %s (cancelled)", f.URL)
+				return
+			}
+
+			// Check if already cancelled before starting
+			select {
+			case <-ctx.Done():
+				globalLogger.Debug("Skipping %s (cancelled)", f.URL)
+				return
+			default:
+			}
 
 			fmt.Printf("  [%d/%d] Fetching %s\n", index+1, len(feeds), f.URL)
 
-			// Apply rate limiting before fetching
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			if err := rateLimiter.Wait(ctx, f.URL); err != nil {
-				globalLogger.Error("Rate limiter error for %s: %v", f.URL, err)
-				cancel()
+			// Apply rate limiting before fetching (use parent context)
+			fetchCtx, fetchCancel := context.WithTimeout(ctx, 30*time.Second)
+			defer fetchCancel()
+
+			if err := rateLimiter.Wait(fetchCtx, f.URL); err != nil {
+				if err == context.Canceled {
+					globalLogger.Debug("Fetch cancelled for %s", f.URL)
+				} else {
+					globalLogger.Error("Rate limiter error for %s: %v", f.URL, err)
+				}
 				return
 			}
 
 			// Fetch and process feed (fetcher handles mutex internally for database writes)
-			result := feedFetcher.FetchFeed(ctx, f)
-			cancel()
+			result := feedFetcher.FetchFeed(fetchCtx, f)
 
 			// Report results
 			if result.Error != nil {
@@ -876,7 +909,19 @@ func fetchFeeds(cfg *config.Config) error {
 
 	// Wait for all fetches to complete
 	wg.Wait()
-	globalLogger.Info("Completed fetching all feeds")
+
+	// Stop listening for signals
+	signal.Stop(sigChan)
+	close(sigChan)
+
+	// Check if we were cancelled
+	select {
+	case <-ctx.Done():
+		globalLogger.Info("Fetch operation cancelled")
+		return fmt.Errorf("operation cancelled by user")
+	default:
+		globalLogger.Info("Completed fetching all feeds")
+	}
 
 	return nil
 }

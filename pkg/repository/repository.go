@@ -92,10 +92,70 @@ func (r *Repository) Close() error {
 	return r.db.Close()
 }
 
-// initSchema creates the database schema
+const currentSchemaVersion = 2
+
+// initSchema creates the database schema and runs migrations
 func (r *Repository) initSchema() error {
+	// Create schema_version table if it doesn't exist
+	_, err := r.db.Exec(`
+		CREATE TABLE IF NOT EXISTS schema_version (
+			version INTEGER PRIMARY KEY,
+			applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("create schema_version table: %w", err)
+	}
+
+	// Get current schema version
+	version, err := r.getSchemaVersion()
+	if err != nil {
+		return fmt.Errorf("get schema version: %w", err)
+	}
+
+	// If version is 0, this is either a new database or a pre-migration database
+	if version == 0 {
+		// Check if tables exist to determine if this is truly new or legacy
+		var tableCount int
+		err = r.db.QueryRow("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('feeds', 'entries')").Scan(&tableCount)
+		if err != nil {
+			return fmt.Errorf("check existing tables: %w", err)
+		}
+
+		if tableCount == 0 {
+			// New database - create initial schema
+			if err := r.createInitialSchema(); err != nil {
+				return fmt.Errorf("create initial schema: %w", err)
+			}
+			version = currentSchemaVersion
+		} else {
+			// Legacy database - detect version by checking schema
+			version, err = r.detectLegacyVersion()
+			if err != nil {
+				return fmt.Errorf("detect legacy version: %w", err)
+			}
+		}
+
+		// Set initial version
+		if err := r.setSchemaVersion(version); err != nil {
+			return fmt.Errorf("set initial schema version: %w", err)
+		}
+	}
+
+	// Run migrations if needed
+	if version < currentSchemaVersion {
+		if err := r.runMigrations(version, currentSchemaVersion); err != nil {
+			return fmt.Errorf("run migrations: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// createInitialSchema creates the complete schema for a new database
+func (r *Repository) createInitialSchema() error {
 	schema := `
-	CREATE TABLE IF NOT EXISTS feeds (
+	CREATE TABLE feeds (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		url TEXT NOT NULL UNIQUE,
 		title TEXT,
@@ -111,7 +171,7 @@ func (r *Repository) initSchema() error {
 		fetch_interval INTEGER DEFAULT 3600
 	);
 
-	CREATE TABLE IF NOT EXISTS entries (
+	CREATE TABLE entries (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		feed_id INTEGER NOT NULL,
 		entry_id TEXT NOT NULL,
@@ -128,26 +188,118 @@ func (r *Repository) initSchema() error {
 		UNIQUE(feed_id, entry_id)
 	);
 
-	CREATE INDEX IF NOT EXISTS idx_entries_published ON entries(published DESC);
-	CREATE INDEX IF NOT EXISTS idx_entries_updated ON entries(updated DESC);
-	CREATE INDEX IF NOT EXISTS idx_entries_feed_id ON entries(feed_id);
-	CREATE INDEX IF NOT EXISTS idx_entries_first_seen ON entries(first_seen DESC);
-	CREATE INDEX IF NOT EXISTS idx_feeds_active ON feeds(active);
-	CREATE INDEX IF NOT EXISTS idx_feeds_next_fetch ON feeds(next_fetch);
+	CREATE INDEX idx_entries_published ON entries(published DESC);
+	CREATE INDEX idx_entries_updated ON entries(updated DESC);
+	CREATE INDEX idx_entries_feed_id ON entries(feed_id);
+	CREATE INDEX idx_entries_first_seen ON entries(first_seen DESC);
+	CREATE INDEX idx_feeds_active ON feeds(active);
+	CREATE INDEX idx_feeds_next_fetch ON feeds(next_fetch);
 	`
 
 	_, err := r.db.Exec(schema)
+	return err
+}
+
+// getSchemaVersion returns the current schema version
+func (r *Repository) getSchemaVersion() (int, error) {
+	var version int
+	err := r.db.QueryRow("SELECT MAX(version) FROM schema_version").Scan(&version)
 	if err != nil {
-		return err
+		// If no rows, version is 0
+		if err.Error() == "sql: Scan error on column index 0, name \"MAX(version)\": converting NULL to int is unsupported" {
+			return 0, nil
+		}
+		return 0, err
+	}
+	return version, nil
+}
+
+// setSchemaVersion records that a schema version has been applied
+func (r *Repository) setSchemaVersion(version int) error {
+	_, err := r.db.Exec("INSERT INTO schema_version (version) VALUES (?)", version)
+	return err
+}
+
+// detectLegacyVersion detects the schema version of a pre-migration database
+func (r *Repository) detectLegacyVersion() (int, error) {
+	// Check if first_seen column exists in entries table
+	var hasFirstSeen bool
+	err := r.db.QueryRow(`
+		SELECT COUNT(*) > 0
+		FROM pragma_table_info('entries')
+		WHERE name = 'first_seen'
+	`).Scan(&hasFirstSeen)
+	if err != nil {
+		return 0, err
 	}
 
-	// Backfill first_seen for entries that don't have it
-	// This ensures backwards compatibility with databases created before this feature
-	// Uses COALESCE to handle NULL values and falls back to current time if both are NULL
+	if hasFirstSeen {
+		// v0.3.0+ database (has first_seen column)
+		return 2, nil
+	}
+
+	// v0.1.0-v0.2.0 database (no first_seen column)
+	return 1, nil
+}
+
+// runMigrations runs all migrations from fromVersion to toVersion
+func (r *Repository) runMigrations(fromVersion, toVersion int) error {
+	migrations := map[int]func() error{
+		2: r.migrateToV2, // Add first_seen column (v0.3.0)
+	}
+
+	for v := fromVersion + 1; v <= toVersion; v++ {
+		migrateFn, exists := migrations[v]
+		if !exists {
+			// No migration needed for this version
+			continue
+		}
+
+		// Run migration in a transaction
+		tx, err := r.db.Begin()
+		if err != nil {
+			return fmt.Errorf("begin transaction for v%d: %w", v, err)
+		}
+
+		// Execute migration
+		if err := migrateFn(); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("migration to v%d failed: %w", v, err)
+		}
+
+		// Record version
+		_, err = tx.Exec("INSERT INTO schema_version (version) VALUES (?)", v)
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("record v%d version: %w", v, err)
+		}
+
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("commit migration v%d: %w", v, err)
+		}
+	}
+
+	return nil
+}
+
+// migrateToV2 adds the first_seen column and backfills data (v0.3.0)
+func (r *Repository) migrateToV2() error {
+	// Add first_seen column
+	_, err := r.db.Exec(`ALTER TABLE entries ADD COLUMN first_seen TEXT`)
+	if err != nil {
+		return fmt.Errorf("add first_seen column: %w", err)
+	}
+
+	// Create index
+	_, err = r.db.Exec(`CREATE INDEX idx_entries_first_seen ON entries(first_seen DESC)`)
+	if err != nil {
+		return fmt.Errorf("create first_seen index: %w", err)
+	}
+
+	// Backfill first_seen for existing entries
 	_, err = r.db.Exec(`
 		UPDATE entries
 		SET first_seen = COALESCE(
-			NULLIF(first_seen, ''),
 			published,
 			updated,
 			datetime('now')
