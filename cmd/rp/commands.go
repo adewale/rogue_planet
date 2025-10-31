@@ -391,9 +391,7 @@ func cmdStatus(opts StatusOptions) error {
 }
 
 func cmdUpdate(opts UpdateOptions) error {
-	if opts.Verbose {
-		log.SetFlags(log.LstdFlags | log.Lshortfile)
-	}
+	setVerboseLogging(opts.Verbose)
 
 	// Load config
 	cfg, err := loadConfig(opts.ConfigPath)
@@ -418,9 +416,7 @@ func cmdUpdate(opts UpdateOptions) error {
 }
 
 func cmdFetch(opts FetchOptions) error {
-	if opts.Verbose {
-		log.SetFlags(log.LstdFlags | log.Lshortfile)
-	}
+	setVerboseLogging(opts.Verbose)
 
 	cfg, err := loadConfig(opts.ConfigPath)
 	if err != nil {
@@ -739,6 +735,13 @@ func loadConfig(path string) (*config.Config, error) {
 		return config.Default(), nil
 	}
 	return config.LoadFromFile(path)
+}
+
+// setVerboseLogging configures log output to include file and line numbers
+func setVerboseLogging(verbose bool) {
+	if verbose {
+		log.SetFlags(log.LstdFlags | log.Lshortfile)
+	}
 }
 
 // openConfigAndRepo loads config and opens database, returning both along with a cleanup function
