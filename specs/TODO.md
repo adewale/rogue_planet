@@ -239,7 +239,10 @@ All items completed:
 The project has evolved significantly beyond the initial release:
 - ✅ All v0.4.0 core features implemented and tested
 - ✅ OPML import/export support (v0.2.0)
-- ✅ Entry spam prevention feature (v0.3.0)
+- ✅ Entry spam prevention & stable sort (v0.3.0)
+  - Stable Sort Dates (Venus #15) - `sort_by = "first_seen"` option
+- ✅ Responsive design (v0.1.0)
+  - Responsive Image Constraints (Venus #36) - CSS max-width: 100%
 - ✅ Atom Torture Test validation (v0.4.0)
 - ✅ Per-domain rate limiting implemented (v0.4.0)
 - ✅ 301 permanent redirect handling (v0.4.0)
@@ -312,6 +315,18 @@ The project has evolved significantly beyond the initial release:
 
 ### v1.0.0 - Production Ready (P0 Features)
 
+**Status**: 1 of 3 original P0 features delivered early in v0.4.0
+**Bonus**: 2 additional v1.x P1 features already implemented
+
+**Completed Early (from v1.0.0 P0)**:
+- ✅ 301 Permanent Redirect Handling - Delivered in v0.4.0 (originally planned for v1.0.0)
+
+**Completed (from v1.x P1 wishlist)**:
+- ✅ Responsive Image Constraints (Venus #36) - Implemented in v0.1.0
+- ✅ Stable Sort Dates (Venus #15) - Implemented in v0.3.0 as `sort_by = "first_seen"`
+
+**Remaining for v1.0.0**:
+
 #### Feed Autodiscovery
 **Problem**: Users give website URLs (https://blog.example.com/) instead of feed URLs (https://blog.example.com/feed.xml). Browser support for RSS discovery removed in Firefox/Chrome.
 
@@ -322,20 +337,6 @@ The project has evolved significantly beyond the initial release:
 
 **Effort**: 2 days
 **Priority**: P0 - Critical UX improvement
-
----
-
-#### 301 Redirect Handling
-**Problem**: Feeds permanently move (HTTP→HTTPS, domain changes). Fetching redirected URLs forever wastes bandwidth and adds latency.
-
-**Solution**: Detect permanent redirects (301 Moved Permanently) and update stored feed URL automatically
-- Update `feeds.url` in database on 301
-- Log URL changes for user visibility
-- Prevents wasting bandwidth on redirects forever
-- Critical for long-term reliability as feeds migrate HTTP→HTTPS
-
-**Effort**: 1 day
-**Priority**: P0 - Infrastructure efficiency
 
 ---
 
@@ -371,47 +372,6 @@ The project has evolved significantly beyond the initial release:
 **Priority**: P1 - Data accuracy issue
 
 **Source**: https://github.com/rubys/venus/issues/24
-
----
-
-#### Responsive Image Constraints (Venus #36)
-**Problem**: Large images in feed content overflow page layout, breaking responsive design on mobile.
-
-**Current Behavior**: Images render at natural size, potentially wider than page content area.
-
-**Solution**: Add CSS to constrain images to content width
-```css
-.entry-content img {
-    max-width: 100%;
-    height: auto;
-}
-```
-
-**Implementation**: Update default template CSS and document for custom templates
-
-**Effort**: Trivial
-**Priority**: P1 - Basic UX issue
-
-**Source**: https://github.com/rubys/venus/issues/36
-
----
-
-#### Stable Sort Dates (Venus #15)
-**Problem**: When feeds update entries (fixing typos, corrections), entry's published/updated date changes, affecting chronological sort. Creates instability in aggregated timeline.
-
-**Current Behavior**: Entries sorted by published date (with fallback to updated/fetched time).
-
-**Solution**: Already implemented via `sort_by = "first_seen"` config option in v0.3.0! Sort by timestamp when Rogue Planet first fetched the entry, which never changes even if entry is later updated.
-
-**Status**: ✅ **Implemented in v0.3.0**
-**Action Needed**: Update user documentation to highlight this feature
-
-**Rationale**:
-- Predictable chronological ordering
-- Entries don't "jump" in timeline when authors make corrections
-- Better matches user expectations for "river of news" style aggregation
-
-**Source**: https://github.com/rubys/venus/issues/15
 
 ---
 
@@ -557,6 +517,36 @@ trusted_iframe_domains = youtube.com, youtube-nocookie.com, vimeo.com, codepen.i
 
 **Effort**: Medium
 **Priority**: P2 - Common use case
+
+---
+
+---
+
+## Completed v1.x/v2.x Features (Delivered Early)
+
+The following features from the v1.x and v2.x wishlist were implemented before v1.0.0:
+
+### ✅ Responsive Image Constraints (Venus #36) - v0.1.0
+**Feature**: Images in feed content automatically constrained to page width
+**Implementation**: CSS in default template
+```css
+.entry-content img {
+    max-width: 100%;
+    height: auto;
+}
+```
+**Location**: pkg/generator/generator.go:510-512
+**Benefit**: Prevents layout overflow on mobile devices
+**Priority**: Was v1.x P1, delivered in initial release
+
+---
+
+### ✅ Stable Sort Dates (Venus #15) - v0.3.0
+**Feature**: Entries can be sorted by discovery time instead of published date
+**Implementation**: `sort_by = "first_seen"` config option
+**Benefit**: Entries don't "jump" in timeline when authors make corrections
+**Location**: pkg/config/config.go, pkg/repository/repository.go
+**Priority**: Was v1.x P1, delivered in v0.3.0
 
 ---
 

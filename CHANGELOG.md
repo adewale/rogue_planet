@@ -65,9 +65,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`filter_by_first_seen` config option**: Filter entries by discovery date instead of published date
   - Prevents flooding timeline when adding new feeds with historical content
   - Configurable: `filter_by_first_seen = true` in `[planet]` section
-- **`sort_by` config option**: Sort by "published" or "first_seen"
+- **`sort_by` config option**: Sort by "published" or "first_seen" (Venus #15: Stable Sort Dates)
   - Stable chronological ordering (entries don't "jump" when authors update them)
   - Configurable: `sort_by = "first_seen"` in `[planet]` section
+  - Solves long-standing Planet Venus issue with timeline instability
 - **Automatic database migration**: Backfills `first_seen` for existing entries using COALESCE
 
 ### Security - SQL Injection Hardening
@@ -212,7 +213,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Smart content fallback (recent entries if time window empty)
 - Date grouping ("Today", "Yesterday", etc.)
 - Relative time display ("2 hours ago")
-- Responsive mobile-friendly design
+- **Responsive mobile-friendly design** (Venus #36: Responsive Image Constraints)
+  - Images automatically constrained to page width with CSS max-width: 100%
+  - Prevents layout overflow on mobile devices
 - Custom theme support
 
 ---
