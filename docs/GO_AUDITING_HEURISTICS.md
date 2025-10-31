@@ -39,6 +39,8 @@ Use this for rapid assessment of any Go codebase:
 - [ ] No panics in library code
 - [ ] TODO/checklist items are actually complete (not aspirational)
 - [ ] All referenced files exist (documentation, Makefiles, examples)
+- [ ] Version numbers consistent (code, CHANGELOG, README)
+- [ ] Implemented features documented (README, CHANGELOG, examples/)
 
 ### High Priority (Should Check)
 - [ ] Errors wrapped with context (`%w` verb)
@@ -170,6 +172,193 @@ Makefile line 172:
 ```
 
 **Fix:** Create missing files OR update documentation to remove references
+
+---
+
+### Version Number Consistency
+
+**Heuristic:** Version constants in code must match documentation and changelog
+
+**Problem:** Code declares one version, but docs claim another version
+
+**Detection:**
+```bash
+# Find version constants in code
+grep -rn "const version\|Version.*=.*\"[0-9]" --include="*.go" cmd/ main.go
+
+# Compare to CHANGELOG.md
+head -50 CHANGELOG.md | grep "^\#\# \["
+
+# Compare to README.md
+grep -i "version\|release\|v[0-9]\.[0-9]" README.md | head -5
+```
+
+**Real-world example:**
+```
+cmd/rp/main.go:10:    const version = "0.3.0"
+CHANGELOG.md:27:      ## [0.4.0] - 2025-10-30
+README.md:5:          Development Release v0.4.0
+
+Three different version numbers!
+```
+
+**What to verify:**
+- Version constant in code matches CHANGELOG latest release
+- README development status matches current version
+- Git tags match release versions
+- Binary output (`./app version`) shows correct number
+
+**Impact:**
+- Users confused about what version they're running
+- Bug reports reference wrong version
+- Deployment confusion (deploying wrong version)
+- Release notes don't match artifacts
+
+**Prevention:**
+- Automated check in CI: extract version from code, verify matches CHANGELOG
+- Single source of truth (generate CHANGELOG from code or vice versa)
+- Pre-release checklist includes version number verification
+
+---
+
+### Documentation Synchronization After Features
+
+**Heuristic:** Implementing a feature requires updating multiple documentation files
+
+**Problem:** Feature is implemented but documentation in various locations is stale
+
+**Checklist when implementing new features:**
+```bash
+# 1. Check if feature mentioned in specs/plans
+grep -rn "new_feature\|NewFeature" specs/*.md
+
+# 2. Update main README.md (features list, configuration, examples)
+grep -rn "new_feature" README.md || echo "Not in README!"
+
+# 3. Update CHANGELOG.md (added/changed/fixed sections)
+head -50 CHANGELOG.md | grep "new_feature" || echo "Not in CHANGELOG!"
+
+# 4. Update CLAUDE.md if it affects dev workflow
+grep -rn "new_feature" CLAUDE.md || echo "Not in CLAUDE!"
+
+# 5. Update TODO.md status (planned → completed)
+grep -rn "new_feature" specs/TODO.md
+
+# 6. Update relevant spec documents
+grep -rn "new_feature" specs/*-plan.md
+
+# 7. Update examples/config.ini if config option added
+grep -rn "new_feature\|new_config_option" examples/*.ini || echo "Not in examples!"
+```
+
+**Real-world example from v0.4.0 rate limiting:**
+```
+Files that needed updates:
+✓ pkg/ratelimit/ratelimit.go (new package)
+✓ pkg/config/config.go (config fields)
+✓ cmd/rp/commands.go (integration)
+✓ examples/config.ini (documented options)
+✓ README.md (features list)
+✓ CLAUDE.md (implementation notes)
+✓ CHANGELOG.md (v0.4.0 section)
+✗ specs/TODO.md (still said "not implemented") ← MISSED
+✗ specs/v0.4.0-plan.md (still said "not implemented") ← MISSED
+✗ specs/NETWORKING_FEATURES_STATUS.md (outdated) ← MISSED
+```
+
+**Minimum documentation checklist:**
+1. **CHANGELOG.md** - Required for all changes
+2. **README.md** - Required if user-visible
+3. **examples/config.ini** - Required if config option added
+4. **specs/TODO.md** - Update status if feature was planned
+5. **CLAUDE.md** - Update if dev workflow changes
+6. **Spec documents** - Mark complete or add completion notes
+
+**Prevention:**
+- Documentation update checklist in PR template
+- Automated check: feature branch name matches CHANGELOG entry
+- Final review step: "Have you updated all docs?"
+
+---
+
+### Spec Document Lifecycle Management
+
+**Heuristic:** Planning documents should indicate their status (planned/in-progress/complete)
+
+**Problem:** Specification documents become stale after features are implemented
+
+**Detection:**
+```bash
+# Find spec/plan documents
+find specs/ -name "*-plan.md" -o -name "*-spec.md" -o -name "TODO.md"
+
+# Check if they have status indicators
+for file in specs/*-plan.md; do
+    echo "=== $file ==="
+    head -10 "$file" | grep -i "status\|complete\|done\|finished" || echo "NO STATUS"
+done
+```
+
+**Good practice - status header:**
+```markdown
+# Feature X Implementation Plan
+
+**Status**: ✅ COMPLETED (2025-10-30)
+**Target**: v0.4.0
+**Dependencies**: None
+
+## What Was Implemented
+
+- [x] Component A (completed 2025-10-28)
+- [x] Component B (completed 2025-10-29)
+- [x] Component C (completed 2025-10-30)
+
+## What Changed From Plan
+
+- Decided to use library X instead of Y
+- Added integration test coverage
+- Deferred feature D to v1.0
+
+---
+
+[Original plan content below]
+```
+
+**Real-world example:**
+```markdown
+specs/v0.4.0-plan.md currently says:
+
+**Status**: Planning          ← WRONG (it's complete!)
+**Target**: Address critical issues
+
+Should say:
+
+**Status**: ✅ COMPLETED (2025-10-30)
+**Actual Release**: v0.4.0 on 2025-10-30
+
+## Implementation Summary
+- P2.3 (Rate limiting): Implemented pkg/ratelimit/
+- P2.4 (301 redirects): Implemented UpdateFeedURL()
+- P3.2 (301 auto-update): Integrated into fetchFeeds
+```
+
+**Status types:**
+- `📋 PLANNED` - Not started, spec complete
+- `🔧 IN PROGRESS` - Currently being implemented
+- `✅ COMPLETED (date)` - Finished, note completion date
+- `❌ CANCELLED` - Not doing, explain why
+- `⏸️ DEFERRED TO v#.#` - Postponed, note which version
+
+**Impact of not managing:**
+- False expectations (users think it's still planned)
+- Duplicate work (someone implements it again)
+- Lost context (why was it done this way?)
+- Documentation debt accumulates
+
+**Prevention:**
+- Update spec status in same PR as feature
+- Quarterly spec review: mark old plans as complete/cancelled
+- Template for spec documents includes status field
 
 ---
 
@@ -847,6 +1036,78 @@ SELECT * FROM feeds WHERE active = 1 AND next_fetch <= ?
 
 ---
 
+### Undocumented Future/Reserved Fields
+
+**Heuristic:** Database columns or struct fields reserved for future use should have TODO comments
+
+**Problem:** Fields exist and are populated but never used - no explanation why
+
+**Detection:**
+```bash
+# 1. Find database columns from schema
+grep -E "^\s+[a-z_]+ (INTEGER|TEXT)" pkg/repository/*.go | grep "CREATE TABLE" -A 20
+
+# 2. Search for each column in WHERE/SELECT clauses
+# If a column is written but never queried, it needs a comment
+
+# 3. Check struct fields for TODO comments
+grep -B 2 -A 2 "NextFetch\|FetchInterval\|Scheduled" pkg/repository/*.go
+```
+
+**Bad example - no explanation:**
+```go
+type Feed struct {
+    ID              int64
+    URL             string
+    NextFetch       time.Time    // Why is this here?
+    FetchInterval   int          // Never used anywhere!
+}
+```
+
+**Good example - documented intent:**
+```go
+type Feed struct {
+    ID              int64
+    URL             string
+    NextFetch       time.Time    // TODO(v1.0): Used for intelligent scheduling (not yet implemented)
+    FetchInterval   int          // seconds - TODO(v1.0): Used for adaptive polling (not yet implemented)
+}
+```
+
+**What the TODO comment should explain:**
+- Why the field exists if not currently used
+- What version/feature will use it
+- Whether it's safe to populate it now (infrastructure for future)
+- Link to spec/plan document if applicable
+
+**Real-world example:**
+```go
+// Database schema has:
+CREATE TABLE feeds (
+    next_fetch TEXT,           -- Populated on every fetch
+    fetch_interval INTEGER     -- Set to 3600 (1 hour)
+);
+
+// But application code does:
+SELECT * FROM feeds WHERE active = 1  -- Ignores next_fetch!
+
+// Should have:
+NextFetch time.Time  // TODO(v1.0): Intelligent scheduling - see specs/v1.0.0-plan.md Phase 2
+```
+
+**Impact of not documenting:**
+- Developers don't know if field is abandoned or planned
+- May delete field thinking it's dead code
+- May implement feature differently than planned
+- QA doesn't know if it's a bug or intended
+
+**Prevention:**
+- Code review checklist: unused fields have TODO comments
+- Grep for struct fields that match unimplemented features
+- Link TODO comments to spec documents for context
+
+---
+
 ### Unused Struct Fields
 
 **Heuristic:** Find struct fields that are set but never read
@@ -1411,6 +1672,104 @@ grep -rn "t.Skip(" --include="*_test.go"
 
 ---
 
+### Integration Test Gaps Beyond Unit Tests
+
+**Heuristic:** Unit tests passing doesn't prove end-to-end functionality works
+
+**Problem:** Feature has excellent unit test coverage but may not work in production integration
+
+**What unit tests DON'T prove:**
+- Feature is actually wired into application (may be unused code)
+- Configuration is properly passed from config file to implementation
+- Feature works with real dependencies (database, HTTP, etc.)
+- Multiple components work together correctly
+
+**Real-world example from rate limiting:**
+```
+✓ pkg/ratelimit/ratelimit_test.go - 11 unit tests, 100% coverage
+  - Tests token bucket algorithm
+  - Tests concurrency safety
+  - Tests context cancellation
+
+✗ No integration test proving:
+  - Rate limiter is actually created in fetchFeeds
+  - Config options (requests_per_minute, rate_limit_burst) are read
+  - Multiple fetches to same domain are actually delayed
+  - Rate limiting works end-to-end in real usage
+```
+
+**Detection strategy:**
+```bash
+# 1. Find well-tested packages
+go test -cover ./... | grep "90\|100%"
+
+# 2. For each, check if feature is used in main application
+# Example: ratelimit package exists, but is it used?
+grep -r "ratelimit\.New\|ratelimit\.Manager" cmd/ --include="*.go"
+
+# 3. Check if integration tests exist
+ls cmd/*_integration_test.go pkg/*_integration_test.go
+grep -l "integration\|end.to.end\|e2e" *_test.go
+```
+
+**Checklist for "integrated" verification:**
+- [ ] Feature is imported and used (not just tested)
+- [ ] Config options reach the feature (not just parsed)
+- [ ] Integration test exercises full path (config → code → behavior)
+- [ ] Can demonstrate feature working in manual test
+- [ ] Metrics/logs show feature is active in production
+
+**When integration tests ARE needed:**
+- New features that touch multiple components
+- Configuration options (prove they're actually used)
+- Rate limiting, retries, timeouts (behavioral features)
+- Database migrations
+- HTTP client behavior changes
+
+**When unit tests alone are OK:**
+- Pure functions (no external dependencies)
+- Data transformations
+- Parsing/serialization
+- Utility libraries
+
+**How to write integration tests:**
+```go
+func TestRateLimitingIntegration(t *testing.T) {
+    // 1. Setup: Real config with rate limit settings
+    cfg := &config.Config{
+        Planet: config.PlanetConfig{
+            RequestsPerMinute: 10,  // Very restrictive for testing
+            RateLimitBurst:    2,
+        },
+    }
+
+    // 2. Create real components (not mocks)
+    // 3. Exercise the full path
+    // 4. Verify behavior (timing, not just success)
+    start := time.Now()
+    // Fetch 5 feeds from same domain
+    // Should take ~30 seconds with 10 req/min limit
+    elapsed := time.Since(start)
+
+    if elapsed < 20*time.Second {
+        t.Error("Rate limiting not working - requests too fast")
+    }
+}
+```
+
+**Risk assessment:**
+- **Low risk**: Feature is simple, obvious if broken (crashes immediately)
+- **Medium risk**: Feature is behavioral, may silently not work (this is rate limiting!)
+- **High risk**: Feature is security-critical (auth, validation)
+
+**Prevention:**
+- For medium/high risk features: require integration test
+- Manual testing checklist before marking feature complete
+- Observability: logs/metrics that prove feature is working
+- Smoke tests in production deployment
+
+---
+
 ## Performance
 
 ### Benchmarking
@@ -1938,12 +2297,20 @@ This guide provides systematic heuristics for auditing Go codebases. Use it as:
 
 ---
 
-**Document Version:** 2.0
+**Document Version:** 2.1
 **Created:** 2025-10-20
-**Last Updated:** 2025-10-26
+**Last Updated:** 2025-10-30
 **Validated On:** Multiple Go projects including Rogue Planet feed aggregator (4,000+ lines)
 
 ## Changelog
+
+**v2.1 (2025-10-30):**
+- Added lessons from v0.4.0 rate limiting implementation
+- New check: Version number consistency across code and docs
+- New check: Integration test gaps beyond unit tests
+- New check: Documentation synchronization after feature implementation
+- Expanded TODO comment best practices with future field documentation
+- Added spec document lifecycle management
 
 **v2.0 (2025-10-26):**
 - Added Documentation Integrity section (3 checks)

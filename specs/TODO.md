@@ -1,8 +1,8 @@
 # Rogue Planet - TODO & Roadmap
 
-## Current Status: v0.3.0 ✅
+## Current Status: v0.4.0 ✅ (Complete)
 
-All planned features for v0.3.0 have been implemented, tested, and documented.
+v0.4.0 is complete with production HTTP performance features including rate limiting, 301 redirect handling, and fine-grained timeouts.
 
 ---
 
@@ -28,7 +28,8 @@ All planned features for v0.3.0 have been implemented, tested, and documented.
 - ✅ Date normalization (multiple formats)
 - ✅ ID generation (when missing from feeds)
 - ✅ Content vs summary extraction
-- ✅ Comprehensive test suite (28 test cases)
+- ✅ Atom Torture Test suite (20 test cases, XHTML/MathML/SVG)
+- ✅ Comprehensive test suite (48 total test cases)
 
 #### Repository Package (81.8% coverage) ✅
 - ✅ SQLite database with WAL mode
@@ -85,20 +86,22 @@ All planned features for v0.3.0 have been implemented, tested, and documented.
 
 #### Documentation ✅
 - ✅ README.md with installation and usage
-- ✅ QUICKSTART.md - 5-minute setup guide
 - ✅ WORKFLOWS.md - Comprehensive workflow guide
 - ✅ CONTRIBUTING.md - Contributor guidelines
 - ✅ CHANGELOG.md - Version history
 - ✅ CLAUDE.md for development guidance
 - ✅ specs/rogue-planet-spec.md (comprehensive specification)
 - ✅ specs/testing-plan.md (testing strategy)
+- ✅ specs/research/ATOM_TORTURE_TEST_RESEARCH.md (Distler test analysis)
 - ✅ examples/ directory with sample configs
 - ✅ .gitignore
+- ⏸️ QUICKSTART.md - Deferred to v1.0 (referenced but not yet created)
+- ⏸️ THEMES.md - Deferred to v1.0 (referenced but not yet created)
 
 #### Testing ✅
 - ✅ 100+ test cases across 5 packages
 - ✅ All tests passing
-- ✅ 80%+ average test coverage
+- ✅ 88.7% library average coverage (79.9% overall including cmd/rp)
 - ✅ Security tests (XSS, SSRF, SQL injection)
 - ✅ End-to-end workflow tested
 - ✅ Real-world feed parsing (Daring Fireball Atom, Asymco RSS)
@@ -180,14 +183,21 @@ All planned features for v0.3.0 have been implemented, tested, and documented.
 
 ### Coverage by Package
 ```
-config       94.7%  ██████████████████  Excellent
-crawler      96.6%  ███████████████████ Excellent
-generator    86.0%  █████████████████   Excellent
-normalizer   79.8%  ███████████████     Good
-opml         91.8%  ██████████████████  Excellent
-repository   81.8%  ████████████████    Very Good
-Average      88.4%  █████████████████   Excellent
+Package      Coverage  Status
+────────────────────────────────────────────
+cmd/rp       26.6%  █████                   Needs Improvement
+config       93.8%  ██████████████████      Excellent
+crawler      96.6%  ███████████████████     Excellent
+generator    84.4%  ████████████████        Very Good
+normalizer   85.7%  █████████████████       Very Good
+opml         91.8%  ██████████████████      Excellent
+repository   80.1%  ████████████████        Good
+
+Overall      79.9%  ███████████████         Good
+Library Avg  88.7%  █████████████████       Excellent
 ```
+
+**Note**: Overall average includes cmd/rp (26.6%). Library average excludes CLI and shows core package quality. Priority is improving cmd/rp coverage above 60%.
 
 ### Security
 - ✅ XSS Prevention (CVE-2009-2937) - 10 test cases
@@ -198,10 +208,11 @@ Average      88.4%  █████████████████   Excell
 - ✅ URL validation (scheme, private IPs)
 
 ### Dependencies
-- `github.com/mmcdole/gofeed` - Feed parsing
+- `github.com/mmcdole/gofeed` - Feed parsing (RSS, Atom, JSON Feed)
 - `github.com/microcosm-cc/bluemonday` - HTML sanitization
-- `github.com/mattn/go-sqlite3` - SQLite driver
-- `golang.org/x/time/rate` - Rate limiting
+- `github.com/mattn/go-sqlite3` - SQLite driver (CGO)
+- `golang.org/x/net` - HTML parsing and charset detection
+- `golang.org/x/text` - Character encoding detection
 
 ---
 
@@ -211,7 +222,7 @@ All items completed:
 
 - ✅ All packages implemented
 - ✅ All tests passing
-- ✅ Coverage >75% on all packages
+- ✅ Coverage >75% on library packages (cmd/rp: 26.6%, needs improvement)
 - ✅ Security audited
 - ✅ Documentation complete
 - ✅ Examples provided
@@ -223,20 +234,24 @@ All items completed:
 
 ---
 
-## Status: 🚀 v0.3.0 - ENTRY SPAM PREVENTION COMPLETE
+## Status: ✅ v0.4.0 - PRODUCTION HTTP PERFORMANCE COMPLETE
 
 The project has evolved significantly beyond the initial release:
-- ✅ All core features implemented and tested
+- ✅ All v0.4.0 core features implemented and tested
 - ✅ OPML import/export support (v0.2.0)
 - ✅ Entry spam prevention feature (v0.3.0)
-- ✅ Documentation complete and up-to-date
-- ✅ 88.4% average test coverage (up from 80.6%)
+- ✅ Atom Torture Test validation (v0.4.0)
+- ✅ Per-domain rate limiting implemented (v0.4.0)
+- ✅ 301 permanent redirect handling (v0.4.0)
+- ✅ Fine-grained HTTP timeouts (v0.4.0)
+- ✅ Retry-After header support (v0.4.0)
+- ✅ 88.7% library test coverage
 - ✅ Security hardened with SQL injection prevention
 - ✅ Build automation in place
 
-**Current Version**: 0.3.0 (Development Release)
-**Completed Features**: Core aggregation, OPML support, Entry spam prevention
-**Next Priority**: Feed autodiscovery, 301 redirect handling, intelligent scheduling (P0 features for v1.0)
+**Current Version**: 0.4.0 (Released 2025-10-30)
+**Completed Features**: Core aggregation, OPML support, Entry spam prevention, Atom torture tests, Production HTTP performance
+**Next Priority**: Feed autodiscovery, intelligent scheduling (P0 features for v1.0)
 
 ---
 
@@ -566,34 +581,34 @@ trusted_iframe_domains = youtube.com, youtube-nocookie.com, vimeo.com, codepen.i
 
 ---
 
-#### Atom Torture Test Research and Validation
-**Problem**: Need to properly research Jacques Distler's original "Atom Torture Test" blog posts to ensure complete test coverage.
+#### Atom Torture Test Research and Validation ✅
+**Status**: ✅ **COMPLETED in v0.4.0**
 
-**Current Status**: Initial test implementation based on web search results about XHTML, MathML, and SVG handling. Direct access to the original blog posts was blocked by network restrictions.
+**Implementation**:
+- ✅ Comprehensive research document created: `specs/research/ATOM_TORTURE_TEST_RESEARCH.md`
+- ✅ Accessed and analyzed original Jacques Distler blog post (April 18, 2006)
+- ✅ Added 2 missing critical test cases:
+  1. XHTML case-sensitivity test (The Distler Test: "a **b**c **D**e f")
+  2. xml:base relative URL resolution test
+- ✅ Updated all test fixture headers with original source references
+- ✅ Updated test suite documentation with background and policy decisions
+- ✅ All 20 torture tests passing
 
-**Blog Posts**:
-- https://golem.ph.utexas.edu/~distler/blog/archives/000793.html (Atom Torture Test - April 2006)
-- https://golem.ph.utexas.edu/~distler/blog/archives/000836.html (unknown content - needs research)
+**Test Fixtures**:
+- testdata/atom-torture-xhtml.xml (7 test entries - added 2)
+- testdata/atom-torture-mathml.xml (6 test entries)
+- testdata/atom-torture-svg.xml (7 test entries)
+- pkg/normalizer/normalizer_torture_test.go (20 test functions)
 
-**Tasks**:
-1. Access and thoroughly read both blog posts
-2. Document specific test cases and failure modes described
-3. Verify current test fixtures (atom-torture-*.xml) match original tests
-4. Add any missing edge cases to test suite
-5. Update normalizer_torture_test.go based on findings
-6. Document any MathML/SVG/XHTML policy decisions
+**Key Findings**:
+- ✅ gofeed correctly uses XML parsing (case-sensitive)
+- ✅ xml:base support working correctly
+- ✅ MathML/SVG stripped for security (documented policy, correct decision)
+- ✅ Comprehensive XSS prevention validated
 
-**Current Implementation**:
-- Created testdata/atom-torture-xhtml.xml (5 test entries)
-- Created testdata/atom-torture-mathml.xml (6 test entries)
-- Created testdata/atom-torture-svg.xml (7 test entries)
-- Created pkg/normalizer/normalizer_torture_test.go (13 test functions)
-- Tests document current behavior (MathML/SVG likely stripped)
+**Reference**: https://golem.ph.utexas.edu/~distler/blog/archives/000793.html
 
-**Rationale**: These blog posts represent 20+ years of accumulated wisdom about feed aggregator edge cases. Proper implementation prevents issues that plagued Planet Venus and other aggregators.
-
-**Effort**: Low (research and documentation)
-**Priority**: P3 - Important for correctness but doesn't block core functionality
+**Completed**: 2025-10-30
 
 ---
 
@@ -700,5 +715,51 @@ MIT License - See [LICENSE](../LICENSE) file for details.
 
 ---
 
-*Last Updated: 2025-10-16*
-*Status: v0.3.0 - Entry spam prevention complete, P0 features planned for v1.0*
+---
+
+## v0.4.0 - COMPLETED ✅ (2025-10-30)
+
+### Release Summary
+
+Version 0.4.0 delivers production-ready HTTP performance features:
+
+**Completed Features**:
+- ✅ Per-domain rate limiting using token bucket algorithm
+  - Default: 60 requests/minute per domain with burst of 10
+  - Configurable via `requests_per_minute` and `rate_limit_burst`
+  - Thread-safe concurrent access with RWMutex
+- ✅ Fine-grained HTTP timeouts
+  - `http_timeout_seconds`, `dial_timeout_seconds`, `tls_handshake_timeout_seconds`, `response_header_timeout_seconds`
+  - All configurable with sensible defaults
+- ✅ 301 permanent redirect handling
+  - Automatically updates feed URLs in database on 301 responses
+  - Logs redirect for transparency
+- ✅ Retry-After header support
+  - Respects server-specified retry delays (RFC 7231)
+  - Honors HTTP 429 rate limit responses
+- ✅ Atom Torture Test research and implementation
+  - Comprehensive research document
+  - 2 new test cases added (XHTML case-sensitivity, xml:base)
+  - 20 torture tests passing
+
+**Documentation Updates**:
+- ✅ Updated CHANGELOG.md with v0.4.0 release notes
+- ✅ Updated README.md with HTTP performance features
+- ✅ Updated CLAUDE.md with rate limiter implementation notes
+- ✅ Updated examples/config.ini with all new HTTP options
+- ✅ Updated GO_AUDITING_HEURISTICS.md with lessons learned
+- ✅ Updated all outdated spec documents
+
+**Testing**:
+- ✅ 11 new unit tests for rate limiter (concurrency, context cancellation, stats)
+- ✅ All 8 packages passing tests
+- ✅ Maintained >85% library test coverage
+
+**Dependencies**:
+- ✅ Added `golang.org/x/time v0.14.0` for rate limiting
+
+---
+
+*Released: 2025-10-30*
+*Status: v0.4.0 complete - Production HTTP performance implemented*
+*Next: v1.0.0 planning - Feed autodiscovery and intelligent scheduling*

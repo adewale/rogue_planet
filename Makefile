@@ -5,6 +5,16 @@ BINARY_NAME := rp
 BIN_DIR := bin
 COVERAGE_DIR := coverage
 
+# Detect OS for platform-specific commands
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+    # macOS requires empty string argument for in-place sed
+    SED_INPLACE := sed -i ''
+else
+    # Linux and other Unix systems
+    SED_INPLACE := sed -i
+endif
+
 # Go parameters
 GOCMD := go
 GOBUILD := $(GOCMD) build
@@ -166,11 +176,6 @@ run-example: build
 	@echo "✓ Example planet created at /tmp/rogue-planet-example/"
 	@echo "  View: open /tmp/rogue-planet-example/public/index.html"
 
-## other: setup-example: Run the example setup with custom feeds
-setup-example: build
-	@echo "Running example planet setup..."
-	@./setup-example-planet.sh
-
 ## other: examples: Generate example outputs in tmp/ folder
 examples: build
 	@echo "Generating examples in tmp/ folder..."
@@ -191,7 +196,7 @@ examples: build
 	@cp examples/config.ini tmp/classic/config.ini
 	@mkdir -p tmp/classic/theme
 	@cp -r examples/themes/classic/* tmp/classic/theme/
-	@sed -i '' 's|#   template = ./themes/classic/template.html|template = $(CURDIR)/tmp/classic/theme/template.html|' tmp/classic/config.ini
+	@$(SED_INPLACE) 's|#   template = ./themes/classic/template.html|template = $(CURDIR)/tmp/classic/theme/template.html|' tmp/classic/config.ini
 	@cd tmp/classic && $(CURDIR)/$(BIN_DIR)/$(BINARY_NAME) add-feed https://blog.golang.org/feed.atom
 	@cd tmp/classic && $(CURDIR)/$(BIN_DIR)/$(BINARY_NAME) add-feed https://github.blog/feed/
 	@cd tmp/classic && $(CURDIR)/$(BIN_DIR)/$(BINARY_NAME) update
@@ -204,7 +209,7 @@ examples: build
 	@cp examples/config.ini tmp/elegant/config.ini
 	@mkdir -p tmp/elegant/theme
 	@cp -r examples/themes/elegant/* tmp/elegant/theme/
-	@sed -i '' 's|#   template = ./themes/elegant/template.html|template = $(CURDIR)/tmp/elegant/theme/template.html|' tmp/elegant/config.ini
+	@$(SED_INPLACE) 's|#   template = ./themes/elegant/template.html|template = $(CURDIR)/tmp/elegant/theme/template.html|' tmp/elegant/config.ini
 	@cd tmp/elegant && $(CURDIR)/$(BIN_DIR)/$(BINARY_NAME) add-feed https://blog.golang.org/feed.atom
 	@cd tmp/elegant && $(CURDIR)/$(BIN_DIR)/$(BINARY_NAME) add-feed https://github.blog/feed/
 	@cd tmp/elegant && $(CURDIR)/$(BIN_DIR)/$(BINARY_NAME) update
@@ -217,7 +222,7 @@ examples: build
 	@cp examples/config.ini tmp/dark/config.ini
 	@mkdir -p tmp/dark/theme
 	@cp -r examples/themes/dark/* tmp/dark/theme/
-	@sed -i '' 's|#   template = ./themes/elegant/template.html|template = $(CURDIR)/tmp/dark/theme/template.html|' tmp/dark/config.ini
+	@$(SED_INPLACE) 's|#   template = ./themes/elegant/template.html|template = $(CURDIR)/tmp/dark/theme/template.html|' tmp/dark/config.ini
 	@cd tmp/dark && $(CURDIR)/$(BIN_DIR)/$(BINARY_NAME) add-feed https://blog.golang.org/feed.atom
 	@cd tmp/dark && $(CURDIR)/$(BIN_DIR)/$(BINARY_NAME) add-feed https://github.blog/feed/
 	@cd tmp/dark && $(CURDIR)/$(BIN_DIR)/$(BINARY_NAME) update

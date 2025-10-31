@@ -46,12 +46,14 @@ type FeedCache struct {
 
 // FeedResponse contains the fetched feed data and metadata
 type FeedResponse struct {
-	Body        []byte
-	StatusCode  int
-	NotModified bool      // True if 304 Not Modified was returned
-	NewCache    FeedCache // Updated cache headers for storage
-	FinalURL    string    // URL after redirects (for 301 permanent redirects)
-	FetchTime   time.Time
+	Body              []byte
+	StatusCode        int
+	NotModified       bool      // True if 304 Not Modified was returned
+	NewCache          FeedCache // Updated cache headers for storage
+	FinalURL          string    // URL after redirects (for 301 permanent redirects)
+	PermanentRedirect bool      // True if a 301 redirect was encountered
+	FetchTime         time.Time
+	RetryAfter        time.Duration // Parsed Retry-After header for rate limiting (0 if not present)
 }
 
 // Crawler handles HTTP fetching with proper conditional request support
@@ -64,9 +66,34 @@ type Crawler struct {
 
 // New creates a new Crawler with default settings
 func New() *Crawler {
+	// Configure HTTP transport with connection pooling
+	transport := &http.Transport{
+		// Connection pooling settings
+		MaxIdleConns:        100,              // Total idle connections across all hosts
+		MaxIdleConnsPerHost: 10,               // Idle connections per host (key for feed fetching)
+		MaxConnsPerHost:     20,               // Maximum active connections per host
+		IdleConnTimeout:     90 * time.Second, // Keep idle connections for reuse
+
+		// Timeouts for connection establishment
+		DialContext: (&net.Dialer{
+			Timeout:   10 * time.Second, // TCP connection timeout
+			KeepAlive: 30 * time.Second, // TCP keep-alive
+		}).DialContext,
+
+		// TLS handshake timeout
+		TLSHandshakeTimeout: 10 * time.Second,
+
+		// Response header timeout
+		ResponseHeaderTimeout: 10 * time.Second,
+
+		// Expect Continue timeout
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
 	return &Crawler{
 		client: &http.Client{
-			Timeout: DefaultTimeout,
+			Transport: transport,
+			Timeout:   DefaultTimeout,
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				if len(via) >= MaxRedirects {
 					return fmt.Errorf("stopped after %d redirects", MaxRedirects)
@@ -94,6 +121,88 @@ func NewForTesting() *Crawler {
 	c := New()
 	c.skipSSRFCheck = true
 	return c
+}
+
+// CrawlerConfig contains configuration options for HTTP connection pooling and timeouts
+type CrawlerConfig struct {
+	UserAgent                    string
+	MaxIdleConns                 int
+	MaxIdleConnsPerHost          int
+	MaxConnsPerHost              int
+	IdleConnTimeoutSeconds       int
+	HTTPTimeoutSeconds           int // Overall HTTP request timeout (default: 30)
+	DialTimeoutSeconds           int // TCP connection timeout (default: 10)
+	TLSHandshakeTimeoutSeconds   int // TLS handshake timeout (default: 10)
+	ResponseHeaderTimeoutSeconds int // Response header timeout (default: 10)
+}
+
+// NewWithConfig creates a Crawler with custom configuration
+func NewWithConfig(cfg CrawlerConfig) *Crawler {
+	// Apply defaults for timeout values if not specified
+	httpTimeout := cfg.HTTPTimeoutSeconds
+	if httpTimeout == 0 {
+		httpTimeout = 30 // Default: 30 seconds
+	}
+
+	dialTimeout := cfg.DialTimeoutSeconds
+	if dialTimeout == 0 {
+		dialTimeout = 10 // Default: 10 seconds
+	}
+
+	tlsHandshakeTimeout := cfg.TLSHandshakeTimeoutSeconds
+	if tlsHandshakeTimeout == 0 {
+		tlsHandshakeTimeout = 10 // Default: 10 seconds
+	}
+
+	responseHeaderTimeout := cfg.ResponseHeaderTimeoutSeconds
+	if responseHeaderTimeout == 0 {
+		responseHeaderTimeout = 10 // Default: 10 seconds
+	}
+
+	// Configure HTTP transport with custom connection pooling
+	transport := &http.Transport{
+		// Connection pooling settings
+		MaxIdleConns:        cfg.MaxIdleConns,
+		MaxIdleConnsPerHost: cfg.MaxIdleConnsPerHost,
+		MaxConnsPerHost:     cfg.MaxConnsPerHost,
+		IdleConnTimeout:     time.Duration(cfg.IdleConnTimeoutSeconds) * time.Second,
+
+		// Timeouts for connection establishment
+		DialContext: (&net.Dialer{
+			Timeout:   time.Duration(dialTimeout) * time.Second,
+			KeepAlive: 30 * time.Second, // TCP keep-alive (not configurable)
+		}).DialContext,
+
+		// TLS handshake timeout
+		TLSHandshakeTimeout: time.Duration(tlsHandshakeTimeout) * time.Second,
+
+		// Response header timeout
+		ResponseHeaderTimeout: time.Duration(responseHeaderTimeout) * time.Second,
+
+		// Expect Continue timeout
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
+	userAgent := cfg.UserAgent
+	if userAgent == "" {
+		userAgent = UserAgent
+	}
+
+	return &Crawler{
+		client: &http.Client{
+			Transport: transport,
+			Timeout:   time.Duration(httpTimeout) * time.Second,
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				if len(via) >= MaxRedirects {
+					return fmt.Errorf("stopped after %d redirects", MaxRedirects)
+				}
+				return nil
+			},
+		},
+		userAgent:     userAgent,
+		maxSize:       MaxFeedSize,
+		skipSSRFCheck: false,
+	}
 }
 
 // ValidateURL checks if a URL is safe to fetch (SSRF prevention)
@@ -179,8 +288,28 @@ func (c *Crawler) Fetch(ctx context.Context, feedURL string, cache FeedCache) (*
 	// Request compression
 	req.Header.Set("Accept-Encoding", "gzip, deflate")
 
+	// Track if we encountered a 301 permanent redirect
+	var sawPermanentRedirect bool
+
+	// Create a custom client for this request that tracks 301 redirects
+	customClient := &http.Client{
+		Transport: c.client.Transport,
+		Timeout:   c.client.Timeout,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= MaxRedirects {
+				return fmt.Errorf("stopped after %d redirects", MaxRedirects)
+			}
+			// Check if this redirect is a 301 Moved Permanently
+			// req.Response contains the response that triggered this redirect
+			if req.Response != nil && req.Response.StatusCode == http.StatusMovedPermanently {
+				sawPermanentRedirect = true
+			}
+			return nil
+		},
+	}
+
 	// Execute request
-	resp, err := c.client.Do(req)
+	resp, err := customClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("fetch failed: %w", err)
 	}
@@ -201,17 +330,21 @@ func (c *Crawler) Fetch(ctx context.Context, feedURL string, cache FeedCache) (*
 				LastModified: cache.LastModified,
 				LastFetched:  fetchTime,
 			},
-			FinalURL:  finalURL,
-			FetchTime: fetchTime,
+			FinalURL:          finalURL,
+			PermanentRedirect: sawPermanentRedirect,
+			FetchTime:         fetchTime,
 		}, nil
 	}
 
 	// Handle non-200 responses
 	if resp.StatusCode != http.StatusOK {
+		retryAfter := parseRetryAfter(resp.Header.Get("Retry-After"))
 		return &FeedResponse{
-			StatusCode: resp.StatusCode,
-			FinalURL:   finalURL,
-			FetchTime:  fetchTime,
+			StatusCode:        resp.StatusCode,
+			FinalURL:          finalURL,
+			PermanentRedirect: sawPermanentRedirect,
+			FetchTime:         fetchTime,
+			RetryAfter:        retryAfter,
 		}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
@@ -254,23 +387,74 @@ func (c *Crawler) Fetch(ctx context.Context, feedURL string, cache FeedCache) (*
 	}
 
 	return &FeedResponse{
-		Body:        body,
-		StatusCode:  resp.StatusCode,
-		NotModified: false,
-		NewCache:    newCache,
-		FinalURL:    finalURL,
-		FetchTime:   fetchTime,
+		Body:              body,
+		StatusCode:        resp.StatusCode,
+		NotModified:       false,
+		NewCache:          newCache,
+		FinalURL:          finalURL,
+		PermanentRedirect: sawPermanentRedirect,
+		FetchTime:         fetchTime,
 	}, nil
 }
 
-// FetchWithRetry attempts to fetch with exponential backoff
+// parseRetryAfter parses the Retry-After header value.
+// RFC 7231: Retry-After can be either delay-seconds or HTTP-date.
+// Returns the duration to wait, or 0 if parsing fails.
+func parseRetryAfter(headerValue string) time.Duration {
+	if headerValue == "" {
+		return 0
+	}
+
+	// Try parsing as seconds (delay-seconds format)
+	if seconds := parseRetryAfterSeconds(headerValue); seconds > 0 {
+		return seconds
+	}
+
+	// Try parsing as HTTP-date (RFC 1123 format)
+	if httpDate, err := time.Parse(time.RFC1123, headerValue); err == nil {
+		delay := time.Until(httpDate)
+		if delay > 0 {
+			return delay
+		}
+	}
+
+	return 0
+}
+
+// parseRetryAfterSeconds attempts to parse Retry-After as delay-seconds
+func parseRetryAfterSeconds(value string) time.Duration {
+	value = strings.TrimSpace(value)
+	var seconds int
+	_, err := fmt.Sscanf(value, "%d", &seconds)
+	if err != nil || seconds <= 0 || seconds > 86400 { // Max 24 hours
+		return 0
+	}
+	return time.Duration(seconds) * time.Second
+}
+
+// FetchWithRetry attempts to fetch with exponential backoff.
+// Respects Retry-After header on 429 (Too Many Requests) and 503 (Service Unavailable) responses.
 func (c *Crawler) FetchWithRetry(ctx context.Context, feedURL string, cache FeedCache, maxRetries int) (*FeedResponse, error) {
 	var lastErr error
+	var lastResp *FeedResponse
 
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		if attempt > 0 {
-			// Exponential backoff: 1s, 2s, 4s, 8s...
-			backoff := time.Duration(1<<uint(attempt-1)) * time.Second
+			// Calculate backoff duration
+			var backoff time.Duration
+
+			// Prefer Retry-After header if present (for 429/503 responses)
+			if lastResp != nil && lastResp.RetryAfter > 0 {
+				backoff = lastResp.RetryAfter
+				// Cap at 5 minutes to prevent indefinite waiting
+				if backoff > 5*time.Minute {
+					backoff = 5 * time.Minute
+				}
+			} else {
+				// Exponential backoff: 1s, 2s, 4s, 8s...
+				backoff = time.Duration(1<<uint(attempt-1)) * time.Second
+			}
+
 			select {
 			case <-time.After(backoff):
 			case <-ctx.Done():
@@ -284,6 +468,7 @@ func (c *Crawler) FetchWithRetry(ctx context.Context, feedURL string, cache Feed
 		}
 
 		lastErr = err
+		lastResp = resp
 
 		// Don't retry on certain errors
 		if errors.Is(err, ErrInvalidURL) ||

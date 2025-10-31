@@ -1,4 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Atom Torture Test Suite: XHTML Content
+
+  Original source: Jacques Distler's "Atom Torture Test" (April 18, 2006)
+  URL: https://golem.ph.utexas.edu/~distler/blog/archives/000793.html
+
+  These tests validate proper handling of:
+  1. XHTML content (type="xhtml") with XML parsing rules (case-sensitive)
+  2. HTML content (type="html") with entity encoding
+  3. Plain text content (type="text") with no markup
+  4. XML namespace handling
+  5. Security (XSS prevention)
+
+  Rogue Planet Policy:
+  - XHTML is sanitized with bluemonday.UGCPolicy()
+  - All event handlers and scripts removed
+  - Structure preserved where safe
+
+  For more details, see: specs/research/ATOM_TORTURE_TEST_RESEARCH.md
+-->
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>Atom Torture Test: XHTML Content</title>
   <link href="https://example.com/"/>
@@ -75,6 +95,45 @@
           <p>A quoted paragraph.</p>
         </blockquote>
         <p>An image: <img src="https://example.com/test.jpg" alt="Test image"/></p>
+      </div>
+    </content>
+  </entry>
+
+  <!-- Test 6: XHTML case-sensitivity (The Distler Test) -->
+  <!-- This is THE definitive test of XML vs HTML parsing -->
+  <!-- Reference: https://golem.ph.utexas.edu/~distler/blog/archives/000793.html -->
+  <entry>
+    <title>XHTML Case Sensitivity - The Distler Test</title>
+    <link href="https://example.com/distler-test"/>
+    <id>https://example.com/distler-test</id>
+    <updated>2006-04-18T12:00:00Z</updated>
+    <content type="xhtml">
+      <div xmlns="http://www.w3.org/1999/xhtml">
+        <p>This is the definitive XHTML parsing test from Jacques Distler:</p>
+        <p>a <b>b</b>c <D>D</D>e f</p>
+        <p>Expected result: "a <strong>b</strong>c De f" (only lowercase 'b' is bold)</p>
+        <p>Explanation: XML is case-sensitive. The &lt;b&gt; tag is valid HTML and should render bold.
+        The &lt;D&gt; tag is NOT a recognized HTML element, so it should be treated as text, not markup.</p>
+        <p>If you see bold 'D', the parser is using HTML tag-soup mode (case-insensitive), not proper XML parsing.</p>
+      </div>
+    </content>
+  </entry>
+
+  <!-- Test 7: xml:base relative URL resolution -->
+  <!-- Atom 1.0 supports xml:base for entry-specific base URLs -->
+  <!-- Reference: https://www.w3.org/TR/xmlbase/ -->
+  <entry xml:base="https://example.com/blog/2006/04/">
+    <title>xml:base Relative URL Test</title>
+    <link href="https://example.com/blog/2006/04/post.html"/>
+    <id>https://example.com/blog/2006/04/post</id>
+    <updated>2006-04-18T13:00:00Z</updated>
+    <content type="xhtml">
+      <div xmlns="http://www.w3.org/1999/xhtml">
+        <p>This entry has xml:base="https://example.com/blog/2006/04/"</p>
+        <p>The following relative URL should resolve to the base:</p>
+        <p><a href="image.jpg">Link to image.jpg</a></p>
+        <p>Expected: link should resolve to https://example.com/blog/2006/04/image.jpg</p>
+        <p>This tests whether the feed parser properly handles xml:base attributes for relative URL resolution.</p>
       </div>
     </content>
   </entry>

@@ -16,6 +16,7 @@ import (
 	"github.com/adewale/rogue_planet/pkg/generator"
 	"github.com/adewale/rogue_planet/pkg/normalizer"
 	"github.com/adewale/rogue_planet/pkg/opml"
+	"github.com/adewale/rogue_planet/pkg/ratelimit"
 	"github.com/adewale/rogue_planet/pkg/repository"
 )
 
@@ -796,9 +797,24 @@ func fetchFeeds(cfg *config.Config) error {
 
 	globalLogger.Info("Fetching %d feeds with concurrency=%d", len(feeds), cfg.Planet.ConcurrentFetch)
 
-	// Create crawler with custom user agent
-	c := crawler.NewWithUserAgent(cfg.Planet.UserAgent)
+	// Create crawler with custom configuration
+	c := crawler.NewWithConfig(crawler.CrawlerConfig{
+		UserAgent:                    cfg.Planet.UserAgent,
+		MaxIdleConns:                 cfg.Planet.MaxIdleConns,
+		MaxIdleConnsPerHost:          cfg.Planet.MaxIdleConnsPerHost,
+		MaxConnsPerHost:              cfg.Planet.MaxConnsPerHost,
+		IdleConnTimeoutSeconds:       cfg.Planet.IdleConnTimeoutSeconds,
+		HTTPTimeoutSeconds:           cfg.Planet.HTTPTimeoutSeconds,
+		DialTimeoutSeconds:           cfg.Planet.DialTimeoutSeconds,
+		TLSHandshakeTimeoutSeconds:   cfg.Planet.TLSHandshakeTimeoutSeconds,
+		ResponseHeaderTimeoutSeconds: cfg.Planet.ResponseHeaderTimeoutSeconds,
+	})
 	n := normalizer.New()
+	maxRetries := cfg.Planet.MaxRetries
+
+	// Create rate limiter for per-domain rate limiting
+	rateLimiter := ratelimit.New(cfg.Planet.RequestsPerMinute, cfg.Planet.RateLimitBurst)
+	globalLogger.Debug("Rate limiter configured: %d requests/min, burst=%d", cfg.Planet.RequestsPerMinute, cfg.Planet.RateLimitBurst)
 
 	// Use semaphore pattern for concurrency control
 	concurrency := cfg.Planet.ConcurrentFetch
@@ -834,9 +850,16 @@ func fetchFeeds(cfg *config.Config) error {
 				LastFetched:  f.LastFetched,
 			}
 
-			// Fetch feed
+			// Apply rate limiting before fetching
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			resp, err := c.Fetch(ctx, f.URL, cache)
+			if err := rateLimiter.Wait(ctx, f.URL); err != nil {
+				globalLogger.Error("Rate limiter error for %s: %v", f.URL, err)
+				cancel()
+				return
+			}
+
+			// Fetch feed with retry logic (exponential backoff)
+			resp, err := c.FetchWithRetry(ctx, f.URL, cache, maxRetries)
 			cancel()
 
 			if err != nil {
@@ -847,6 +870,18 @@ func fetchFeeds(cfg *config.Config) error {
 				}
 				mu.Unlock()
 				return
+			}
+
+			// Handle 301 permanent redirect - update feed URL in database
+			if resp.PermanentRedirect && resp.FinalURL != f.URL {
+				globalLogger.Info("Feed %s permanently redirected to %s (301)", f.URL, resp.FinalURL)
+				mu.Lock()
+				if updateErr := repo.UpdateFeedURL(f.ID, resp.FinalURL); updateErr != nil {
+					globalLogger.Error("Failed to update feed URL for %s: %v", f.URL, updateErr)
+				} else {
+					globalLogger.Info("Updated feed URL from %s to %s", f.URL, resp.FinalURL)
+				}
+				mu.Unlock()
 			}
 
 			// Handle 304 Not Modified

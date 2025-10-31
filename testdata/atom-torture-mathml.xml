@@ -1,4 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Atom Torture Test Suite: MathML Content
+
+  Original source: Jacques Distler's "Atom Torture Test" (April 18, 2006)
+  URL: https://golem.ph.utexas.edu/~distler/blog/archives/000793.html
+
+  These tests validate proper handling of:
+  1. MathML mathematical markup within XHTML content
+  2. Inline and block-level equations
+  3. Complex mathematical structures (fractions, radicals, summations)
+  4. Security (XSS prevention via MathML event handlers)
+
+  Rogue Planet Policy:
+  - MathML tags are stripped for security (prevents XSS, avoids rendering complexity)
+  - Surrounding text is preserved
+  - For academic blogs needing MathML, use MathJax post-processing
+
+  For more details, see: specs/research/ATOM_TORTURE_TEST_RESEARCH.md
+-->
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>Atom Torture Test: MathML Content</title>
   <link href="https://example.com/"/>

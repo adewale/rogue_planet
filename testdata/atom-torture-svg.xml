@@ -1,4 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Atom Torture Test Suite: SVG Content
+
+  Original source: Jacques Distler's "Atom Torture Test" (April 18, 2006)
+  URL: https://golem.ph.utexas.edu/~distler/blog/archives/000793.html
+
+  These tests validate proper handling of:
+  1. Inline SVG vector graphics within XHTML content
+  2. SVG with object/img fallback patterns
+  3. Complex SVG features (paths, gradients, foreignObject)
+  4. Security (XSS prevention via SVG event handlers and scripts)
+
+  Rogue Planet Policy:
+  - SVG elements may be stripped or limited depending on bluemonday policy
+  - Object tags completely removed (prevents Flash/Java/plugin exploits)
+  - Nested img fallbacks also removed (unavoidable with object removal)
+  - Recommendation: Use <img src="file.svg"> instead of object pattern
+
+  For more details, see: specs/research/ATOM_TORTURE_TEST_RESEARCH.md
+-->
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>Atom Torture Test: SVG Content</title>
   <link href="https://example.com/"/>

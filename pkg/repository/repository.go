@@ -31,9 +31,9 @@ type Feed struct {
 	LastModified    string
 	FetchError      string
 	FetchErrorCount int
-	NextFetch       time.Time
+	NextFetch       time.Time // TODO(v1.0): Used for intelligent scheduling (not yet implemented)
 	Active          bool
-	FetchInterval   int // seconds
+	FetchInterval   int // seconds - TODO(v1.0): Used for adaptive polling (not yet implemented)
 }
 
 // Entry represents a feed entry in the database
@@ -215,6 +215,22 @@ func (r *Repository) UpdateFeedError(id int64, errorMsg string) error {
 
 	if err != nil {
 		return fmt.Errorf("update feed error: %w", err)
+	}
+
+	return nil
+}
+
+// UpdateFeedURL updates the URL of a feed (typically after a 301 permanent redirect).
+// This also resets the ETag and Last-Modified headers since they're associated with the old URL.
+func (r *Repository) UpdateFeedURL(id int64, newURL string) error {
+	_, err := r.db.Exec(`
+		UPDATE feeds
+		SET url = ?, etag = NULL, last_modified = NULL
+		WHERE id = ?
+	`, newURL, id)
+
+	if err != nil {
+		return fmt.Errorf("update feed URL: %w", err)
 	}
 
 	return nil

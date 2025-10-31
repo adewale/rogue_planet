@@ -656,3 +656,127 @@ func TestSetDatabase(t *testing.T) {
 		})
 	}
 }
+
+// TestConnectionPoolingConfig tests HTTP connection pooling and retry configuration
+func TestConnectionPoolingConfig(t *testing.T) {
+	t.Run("defaults", func(t *testing.T) {
+		config := Default()
+
+		if config.Planet.MaxRetries != 3 {
+			t.Errorf("Default MaxRetries = %d, want 3", config.Planet.MaxRetries)
+		}
+		if config.Planet.MaxIdleConns != 100 {
+			t.Errorf("Default MaxIdleConns = %d, want 100", config.Planet.MaxIdleConns)
+		}
+		if config.Planet.MaxIdleConnsPerHost != 10 {
+			t.Errorf("Default MaxIdleConnsPerHost = %d, want 10", config.Planet.MaxIdleConnsPerHost)
+		}
+		if config.Planet.MaxConnsPerHost != 20 {
+			t.Errorf("Default MaxConnsPerHost = %d, want 20", config.Planet.MaxConnsPerHost)
+		}
+		if config.Planet.IdleConnTimeoutSeconds != 90 {
+			t.Errorf("Default IdleConnTimeoutSeconds = %d, want 90", config.Planet.IdleConnTimeoutSeconds)
+		}
+	})
+
+	t.Run("custom values", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, "config.ini")
+
+		configContent := `[planet]
+name = Test Planet
+link = https://example.com
+max_retries = 5
+max_idle_conns = 200
+max_idle_conns_per_host = 20
+max_conns_per_host = 50
+idle_conn_timeout_seconds = 120
+`
+
+		err := os.WriteFile(configPath, []byte(configContent), 0644)
+		if err != nil {
+			t.Fatalf("Failed to write config file: %v", err)
+		}
+
+		config, err := LoadFromFile(configPath)
+		if err != nil {
+			t.Fatalf("LoadFromFile() error = %v", err)
+		}
+
+		if config.Planet.MaxRetries != 5 {
+			t.Errorf("MaxRetries = %d, want 5", config.Planet.MaxRetries)
+		}
+		if config.Planet.MaxIdleConns != 200 {
+			t.Errorf("MaxIdleConns = %d, want 200", config.Planet.MaxIdleConns)
+		}
+		if config.Planet.MaxIdleConnsPerHost != 20 {
+			t.Errorf("MaxIdleConnsPerHost = %d, want 20", config.Planet.MaxIdleConnsPerHost)
+		}
+		if config.Planet.MaxConnsPerHost != 50 {
+			t.Errorf("MaxConnsPerHost = %d, want 50", config.Planet.MaxConnsPerHost)
+		}
+		if config.Planet.IdleConnTimeoutSeconds != 120 {
+			t.Errorf("IdleConnTimeoutSeconds = %d, want 120", config.Planet.IdleConnTimeoutSeconds)
+		}
+	})
+
+	t.Run("invalid max_retries", func(t *testing.T) {
+		config := Default()
+		err := config.setPlanet("max_retries", "11")
+		if err == nil {
+			t.Error("Expected error for max_retries > 10")
+		}
+		err = config.setPlanet("max_retries", "-1")
+		if err == nil {
+			t.Error("Expected error for max_retries < 0")
+		}
+	})
+
+	t.Run("invalid max_idle_conns", func(t *testing.T) {
+		config := Default()
+		err := config.setPlanet("max_idle_conns", "5")
+		if err == nil {
+			t.Error("Expected error for max_idle_conns < 10")
+		}
+		err = config.setPlanet("max_idle_conns", "1001")
+		if err == nil {
+			t.Error("Expected error for max_idle_conns > 1000")
+		}
+	})
+
+	t.Run("invalid max_idle_conns_per_host", func(t *testing.T) {
+		config := Default()
+		err := config.setPlanet("max_idle_conns_per_host", "0")
+		if err == nil {
+			t.Error("Expected error for max_idle_conns_per_host < 1")
+		}
+		err = config.setPlanet("max_idle_conns_per_host", "101")
+		if err == nil {
+			t.Error("Expected error for max_idle_conns_per_host > 100")
+		}
+	})
+
+	t.Run("invalid max_conns_per_host", func(t *testing.T) {
+		config := Default()
+		err := config.setPlanet("max_conns_per_host", "0")
+		if err == nil {
+			t.Error("Expected error for max_conns_per_host < 1")
+		}
+		err = config.setPlanet("max_conns_per_host", "201")
+		if err == nil {
+			t.Error("Expected error for max_conns_per_host > 200")
+		}
+	})
+
+	t.Run("invalid idle_conn_timeout_seconds", func(t *testing.T) {
+		config := Default()
+		err := config.setPlanet("idle_conn_timeout_seconds", "5")
+		if err == nil {
+			t.Error("Expected error for idle_conn_timeout_seconds < 10")
+		}
+		err = config.setPlanet("idle_conn_timeout_seconds", "601")
+		if err == nil {
+			t.Error("Expected error for idle_conn_timeout_seconds > 600")
+		}
+	})
+}
