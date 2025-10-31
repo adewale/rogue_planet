@@ -44,9 +44,9 @@ type PlanetConfig struct {
 	IdleConnTimeoutSeconds int // Idle connection timeout in seconds (default: 90)
 
 	// HTTP timeout settings
-	HTTPTimeoutSeconds        int // Overall HTTP request timeout (default: 30)
-	DialTimeoutSeconds        int // TCP connection timeout (default: 10)
-	TLSHandshakeTimeoutSeconds int // TLS handshake timeout (default: 10)
+	HTTPTimeoutSeconds           int // Overall HTTP request timeout (default: 30)
+	DialTimeoutSeconds           int // TCP connection timeout (default: 10)
+	TLSHandshakeTimeoutSeconds   int // TLS handshake timeout (default: 10)
 	ResponseHeaderTimeoutSeconds int // Response header timeout (default: 10)
 
 	// Rate limiting settings (per domain)
@@ -84,9 +84,9 @@ func Default() *Config {
 			IdleConnTimeoutSeconds: 90,
 
 			// HTTP timeout defaults
-			HTTPTimeoutSeconds:        30,
-			DialTimeoutSeconds:        10,
-			TLSHandshakeTimeoutSeconds: 10,
+			HTTPTimeoutSeconds:           30,
+			DialTimeoutSeconds:           10,
+			TLSHandshakeTimeoutSeconds:   10,
 			ResponseHeaderTimeoutSeconds: 10,
 
 			// Rate limiting defaults

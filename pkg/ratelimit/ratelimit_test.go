@@ -18,7 +18,8 @@ func TestNew(t *testing.T) {
 	}
 
 	// Check that limit is correctly converted from requests/minute to requests/second
-	expectedLimit := 60.0 / 60.0 // 1 request/second
+	requestsPerMinute := 60.0
+	expectedLimit := requestsPerMinute / 60.0 // 1 request/second
 	if float64(m.limit) != expectedLimit {
 		t.Errorf("limit = %f, want %f", m.limit, expectedLimit)
 	}
@@ -298,11 +299,14 @@ func TestConcurrentAccess(t *testing.T) {
 
 	// Run concurrent goroutines that all access the same domain
 	done := make(chan bool)
+	errors := make(chan error, concurrency*iterations)
 	for i := 0; i < concurrency; i++ {
 		go func() {
 			for j := 0; j < iterations; j++ {
 				m.Allow(url)
-				m.Wait(context.Background(), url)
+				if err := m.Wait(context.Background(), url); err != nil {
+					errors <- err
+				}
 			}
 			done <- true
 		}()
@@ -311,6 +315,12 @@ func TestConcurrentAccess(t *testing.T) {
 	// Wait for all goroutines to complete
 	for i := 0; i < concurrency; i++ {
 		<-done
+	}
+
+	// Check if any errors occurred
+	close(errors)
+	for err := range errors {
+		t.Errorf("Wait() error during concurrent access: %v", err)
 	}
 
 	// Should have created only one limiter for the domain

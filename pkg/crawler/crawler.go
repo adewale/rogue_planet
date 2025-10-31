@@ -46,14 +46,14 @@ type FeedCache struct {
 
 // FeedResponse contains the fetched feed data and metadata
 type FeedResponse struct {
-	Body             []byte
-	StatusCode       int
-	NotModified      bool          // True if 304 Not Modified was returned
-	NewCache         FeedCache     // Updated cache headers for storage
-	FinalURL         string        // URL after redirects (for 301 permanent redirects)
-	PermanentRedirect bool         // True if a 301 redirect was encountered
-	FetchTime        time.Time
-	RetryAfter       time.Duration // Parsed Retry-After header for rate limiting (0 if not present)
+	Body              []byte
+	StatusCode        int
+	NotModified       bool      // True if 304 Not Modified was returned
+	NewCache          FeedCache // Updated cache headers for storage
+	FinalURL          string    // URL after redirects (for 301 permanent redirects)
+	PermanentRedirect bool      // True if a 301 redirect was encountered
+	FetchTime         time.Time
+	RetryAfter        time.Duration // Parsed Retry-After header for rate limiting (0 if not present)
 }
 
 // Crawler handles HTTP fetching with proper conditional request support
@@ -125,14 +125,14 @@ func NewForTesting() *Crawler {
 
 // CrawlerConfig contains configuration options for HTTP connection pooling and timeouts
 type CrawlerConfig struct {
-	UserAgent                 string
-	MaxIdleConns              int
-	MaxIdleConnsPerHost       int
-	MaxConnsPerHost           int
-	IdleConnTimeoutSeconds    int
-	HTTPTimeoutSeconds        int // Overall HTTP request timeout (default: 30)
-	DialTimeoutSeconds        int // TCP connection timeout (default: 10)
-	TLSHandshakeTimeoutSeconds int // TLS handshake timeout (default: 10)
+	UserAgent                    string
+	MaxIdleConns                 int
+	MaxIdleConnsPerHost          int
+	MaxConnsPerHost              int
+	IdleConnTimeoutSeconds       int
+	HTTPTimeoutSeconds           int // Overall HTTP request timeout (default: 30)
+	DialTimeoutSeconds           int // TCP connection timeout (default: 10)
+	TLSHandshakeTimeoutSeconds   int // TLS handshake timeout (default: 10)
 	ResponseHeaderTimeoutSeconds int // Response header timeout (default: 10)
 }
 
@@ -330,9 +330,9 @@ func (c *Crawler) Fetch(ctx context.Context, feedURL string, cache FeedCache) (*
 				LastModified: cache.LastModified,
 				LastFetched:  fetchTime,
 			},
-			FinalURL:         finalURL,
+			FinalURL:          finalURL,
 			PermanentRedirect: sawPermanentRedirect,
-			FetchTime:        fetchTime,
+			FetchTime:         fetchTime,
 		}, nil
 	}
 
@@ -340,11 +340,11 @@ func (c *Crawler) Fetch(ctx context.Context, feedURL string, cache FeedCache) (*
 	if resp.StatusCode != http.StatusOK {
 		retryAfter := parseRetryAfter(resp.Header.Get("Retry-After"))
 		return &FeedResponse{
-			StatusCode:       resp.StatusCode,
-			FinalURL:         finalURL,
+			StatusCode:        resp.StatusCode,
+			FinalURL:          finalURL,
 			PermanentRedirect: sawPermanentRedirect,
-			FetchTime:        fetchTime,
-			RetryAfter:       retryAfter,
+			FetchTime:         fetchTime,
+			RetryAfter:        retryAfter,
 		}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
@@ -387,13 +387,13 @@ func (c *Crawler) Fetch(ctx context.Context, feedURL string, cache FeedCache) (*
 	}
 
 	return &FeedResponse{
-		Body:             body,
-		StatusCode:       resp.StatusCode,
-		NotModified:      false,
-		NewCache:         newCache,
-		FinalURL:         finalURL,
+		Body:              body,
+		StatusCode:        resp.StatusCode,
+		NotModified:       false,
+		NewCache:          newCache,
+		FinalURL:          finalURL,
 		PermanentRedirect: sawPermanentRedirect,
-		FetchTime:        fetchTime,
+		FetchTime:         fetchTime,
 	}, nil
 }
 

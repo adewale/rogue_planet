@@ -799,14 +799,14 @@ func fetchFeeds(cfg *config.Config) error {
 
 	// Create crawler with custom configuration
 	c := crawler.NewWithConfig(crawler.CrawlerConfig{
-		UserAgent:              cfg.Planet.UserAgent,
-		MaxIdleConns:           cfg.Planet.MaxIdleConns,
-		MaxIdleConnsPerHost:    cfg.Planet.MaxIdleConnsPerHost,
-		MaxConnsPerHost:        cfg.Planet.MaxConnsPerHost,
-		IdleConnTimeoutSeconds: cfg.Planet.IdleConnTimeoutSeconds,
-		HTTPTimeoutSeconds:        cfg.Planet.HTTPTimeoutSeconds,
-		DialTimeoutSeconds:        cfg.Planet.DialTimeoutSeconds,
-		TLSHandshakeTimeoutSeconds: cfg.Planet.TLSHandshakeTimeoutSeconds,
+		UserAgent:                    cfg.Planet.UserAgent,
+		MaxIdleConns:                 cfg.Planet.MaxIdleConns,
+		MaxIdleConnsPerHost:          cfg.Planet.MaxIdleConnsPerHost,
+		MaxConnsPerHost:              cfg.Planet.MaxConnsPerHost,
+		IdleConnTimeoutSeconds:       cfg.Planet.IdleConnTimeoutSeconds,
+		HTTPTimeoutSeconds:           cfg.Planet.HTTPTimeoutSeconds,
+		DialTimeoutSeconds:           cfg.Planet.DialTimeoutSeconds,
+		TLSHandshakeTimeoutSeconds:   cfg.Planet.TLSHandshakeTimeoutSeconds,
 		ResponseHeaderTimeoutSeconds: cfg.Planet.ResponseHeaderTimeoutSeconds,
 	})
 	n := normalizer.New()
