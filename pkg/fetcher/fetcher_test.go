@@ -3,6 +3,7 @@ package fetcher
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -124,6 +125,7 @@ func (m *mockRepository) Close() error {
 }
 
 type mockLogger struct {
+	mu         sync.Mutex
 	debugCalls []string
 	infoCalls  []string
 	warnCalls  []string
@@ -131,18 +133,26 @@ type mockLogger struct {
 }
 
 func (m *mockLogger) Debug(format string, args ...interface{}) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.debugCalls = append(m.debugCalls, format)
 }
 
 func (m *mockLogger) Info(format string, args ...interface{}) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.infoCalls = append(m.infoCalls, format)
 }
 
 func (m *mockLogger) Warn(format string, args ...interface{}) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.warnCalls = append(m.warnCalls, format)
 }
 
 func (m *mockLogger) Error(format string, args ...interface{}) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.errorCalls = append(m.errorCalls, format)
 }
 
@@ -187,7 +197,7 @@ func TestFetchFeed_Success(t *testing.T) {
 	mr := &mockRepository{}
 	ml := &mockLogger{}
 
-	f := New(mc, mn, mr, ml, 3)
+	f := New(mc, mn, mr, nil, ml, 3)
 
 	feed := repository.Feed{
 		ID:  1,
@@ -233,7 +243,7 @@ func TestFetchFeed_FetchError(t *testing.T) {
 	mr := &mockRepository{}
 	ml := &mockLogger{}
 
-	f := New(mc, mn, mr, ml, 3)
+	f := New(mc, mn, mr, nil, ml, 3)
 
 	feed := repository.Feed{
 		ID:  1,
@@ -289,7 +299,7 @@ func TestFetchFeed_301Redirect(t *testing.T) {
 	mr := &mockRepository{}
 	ml := &mockLogger{}
 
-	f := New(mc, mn, mr, ml, 3)
+	f := New(mc, mn, mr, nil, ml, 3)
 
 	feed := repository.Feed{
 		ID:  1,
@@ -335,7 +345,7 @@ func TestFetchFeed_304NotModified(t *testing.T) {
 	mr := &mockRepository{}
 	ml := &mockLogger{}
 
-	f := New(mc, mn, mr, ml, 3)
+	f := New(mc, mn, mr, nil, ml, 3)
 
 	feed := repository.Feed{
 		ID:  1,
@@ -388,7 +398,7 @@ func TestFetchFeed_ParseError(t *testing.T) {
 	mr := &mockRepository{}
 	ml := &mockLogger{}
 
-	f := New(mc, mn, mr, ml, 3)
+	f := New(mc, mn, mr, nil, ml, 3)
 
 	feed := repository.Feed{
 		ID:  1,
@@ -453,7 +463,7 @@ func TestFetchFeed_EntryStorageError(t *testing.T) {
 
 	ml := &mockLogger{}
 
-	f := New(mc, mn, mr, ml, 3)
+	f := New(mc, mn, mr, nil, ml, 3)
 
 	feed := repository.Feed{
 		ID:  1,

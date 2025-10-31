@@ -812,9 +812,6 @@ func fetchFeeds(cfg *config.Config) error {
 	})
 	n := normalizer.New()
 
-	// Create fetcher with dependencies
-	feedFetcher := fetcher.New(c, n, repo, globalLogger, cfg.Planet.MaxRetries)
-
 	// Create rate limiter for per-domain rate limiting
 	rateLimiter := ratelimit.New(cfg.Planet.RequestsPerMinute, cfg.Planet.RateLimitBurst)
 	globalLogger.Debug("Rate limiter configured: %d requests/min, burst=%d", cfg.Planet.RequestsPerMinute, cfg.Planet.RateLimitBurst)
@@ -831,6 +828,9 @@ func fetchFeeds(cfg *config.Config) error {
 	sem := make(chan struct{}, concurrency)
 	var wg sync.WaitGroup
 	var mu sync.Mutex // Protects repo writes
+
+	// Create fetcher with dependencies (passes mutex for database protection)
+	feedFetcher := fetcher.New(c, n, repo, &mu, globalLogger, cfg.Planet.MaxRetries)
 
 	// Fetch feeds concurrently
 	for i, feed := range feeds {
@@ -852,10 +852,8 @@ func fetchFeeds(cfg *config.Config) error {
 				return
 			}
 
-			// Fetch and process feed (mutex protects database writes)
-			mu.Lock()
+			// Fetch and process feed (fetcher handles mutex internally for database writes)
 			result := feedFetcher.FetchFeed(ctx, f)
-			mu.Unlock()
 			cancel()
 
 			// Report results
