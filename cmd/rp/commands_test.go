@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/adewale/rogue_planet/pkg/logging"
 	"github.com/adewale/rogue_planet/pkg/repository"
 )
 
@@ -863,7 +864,7 @@ path = ` + dbPath + `
 				ConfigPath: configPath,
 				Verbose:    false,
 				Output:     &buf,
-				Logger:     NewLogger(),
+				Logger:     logging.New("info"),
 			}
 
 			err := cmdUpdate(opts)
@@ -929,7 +930,7 @@ path = ` + dbPath + `
 				ConfigPath: configPath,
 				Verbose:    false,
 				Output:     &buf,
-				Logger:     NewLogger(),
+				Logger:     logging.New("info"),
 			}
 
 			err := cmdFetch(opts)
@@ -1117,7 +1118,7 @@ path = ` + dbPath + `
 		ConfigPath: configPath,
 		Verbose:    false,
 		Output:     &outputBuf,
-		Logger:     NewLogger(),
+		Logger:     logging.New("info"),
 	}
 
 	err = cmdFetch(opts)

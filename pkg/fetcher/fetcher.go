@@ -9,17 +9,10 @@ import (
 	"sync"
 
 	"github.com/adewale/rogue_planet/pkg/crawler"
+	"github.com/adewale/rogue_planet/pkg/logging"
 	"github.com/adewale/rogue_planet/pkg/normalizer"
 	"github.com/adewale/rogue_planet/pkg/repository"
 )
-
-// Logger interface for structured logging
-type Logger interface {
-	Debug(format string, args ...interface{})
-	Info(format string, args ...interface{})
-	Warn(format string, args ...interface{})
-	Error(format string, args ...interface{})
-}
 
 // Fetcher handles the business logic for fetching and processing a single feed.
 // It coordinates between the crawler (HTTP fetching), normalizer (parsing),
@@ -32,7 +25,7 @@ type Fetcher struct {
 	normalizer normalizer.FeedNormalizer
 	repo       repository.FeedRepository
 	repoMutex  sync.Locker // Protects repository operations only
-	logger     Logger
+	logger     logging.Logger
 	maxRetries int
 }
 
@@ -46,7 +39,7 @@ func New(
 	n normalizer.FeedNormalizer,
 	r repository.FeedRepository,
 	repoMutex sync.Locker,
-	logger Logger,
+	logger logging.Logger,
 	maxRetries int,
 ) *Fetcher {
 	return &Fetcher{

@@ -19,67 +19,12 @@ import (
 	"github.com/adewale/rogue_planet/pkg/crawler"
 	"github.com/adewale/rogue_planet/pkg/fetcher"
 	"github.com/adewale/rogue_planet/pkg/generator"
+	"github.com/adewale/rogue_planet/pkg/logging"
 	"github.com/adewale/rogue_planet/pkg/normalizer"
 	"github.com/adewale/rogue_planet/pkg/opml"
 	"github.com/adewale/rogue_planet/pkg/ratelimit"
 	"github.com/adewale/rogue_planet/pkg/repository"
 )
-
-// Logger wraps standard logger with level support
-type Logger struct {
-	level int
-}
-
-const (
-	LogLevelError = 0
-	LogLevelWarn  = 1
-	LogLevelInfo  = 2
-	LogLevelDebug = 3
-)
-
-// NewLogger creates a new Logger with default INFO level
-func NewLogger() *Logger {
-	return &Logger{level: LogLevelInfo}
-}
-
-func (l *Logger) SetLevel(level string) {
-	switch level {
-	case "error":
-		l.level = LogLevelError
-	case "warn", "warning":
-		l.level = LogLevelWarn
-	case "info":
-		l.level = LogLevelInfo
-	case "debug":
-		l.level = LogLevelDebug
-	default:
-		l.level = LogLevelInfo
-	}
-}
-
-func (l *Logger) Error(format string, v ...interface{}) {
-	if l.level >= LogLevelError {
-		log.Printf("ERROR: "+format, v...)
-	}
-}
-
-func (l *Logger) Warn(format string, v ...interface{}) {
-	if l.level >= LogLevelWarn {
-		log.Printf("WARN: "+format, v...)
-	}
-}
-
-func (l *Logger) Info(format string, v ...interface{}) {
-	if l.level >= LogLevelInfo {
-		log.Printf("INFO: "+format, v...)
-	}
-}
-
-func (l *Logger) Debug(format string, v ...interface{}) {
-	if l.level >= LogLevelDebug {
-		log.Printf("DEBUG: "+format, v...)
-	}
-}
 
 // ErrUserCancelled indicates the user cancelled an operation
 type ErrUserCancelled struct {
@@ -132,14 +77,14 @@ type UpdateOptions struct {
 	ConfigPath string
 	Verbose    bool
 	Output     io.Writer
-	Logger     *Logger
+	Logger     logging.Logger
 }
 
 type FetchOptions struct {
 	ConfigPath string
 	Verbose    bool
 	Output     io.Writer
-	Logger     *Logger
+	Logger     logging.Logger
 }
 
 type GenerateOptions struct {
@@ -853,9 +798,11 @@ func importFeedsFromURLs(repo *repository.Repository, feedURLs []string, output 
 	return addedCount
 }
 
-func fetchFeeds(cfg *config.Config, logger *Logger) error {
-	// Set log level from config
-	logger.SetLevel(cfg.Planet.LogLevel)
+func fetchFeeds(cfg *config.Config, logger logging.Logger) error {
+	// Set log level from config if logger supports it
+	if stdLogger, ok := logger.(*logging.StandardLogger); ok {
+		stdLogger.SetLevel(cfg.Planet.LogLevel)
+	}
 
 	repo, err := repository.New(cfg.Database.Path)
 	if err != nil {

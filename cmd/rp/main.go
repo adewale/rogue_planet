@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+
+	"github.com/adewale/rogue_planet/pkg/logging"
 )
 
 const version = "0.4.0"
@@ -259,7 +261,7 @@ func runUpdate() error {
 		ConfigPath: *configPath,
 		Verbose:    *verbose,
 		Output:     os.Stdout,
-		Logger:     NewLogger(),
+		Logger:     logging.New("info"),
 	}
 
 	return cmdUpdate(opts)
@@ -277,7 +279,7 @@ func runFetch() error {
 		ConfigPath: *configPath,
 		Verbose:    *verbose,
 		Output:     os.Stdout,
-		Logger:     NewLogger(),
+		Logger:     logging.New("info"),
 	}
 
 	return cmdFetch(opts)
