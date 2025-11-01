@@ -1,5 +1,5 @@
 # Binaries
-rp
+/rp
 bin/
 *.exe
 *.dll

@@ -1,11 +1,8 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
-
-	"github.com/adewale/rogue_planet/pkg/logging"
 )
 
 const version = "0.4.0"
@@ -130,86 +127,44 @@ Examples:
 }
 
 func runInit() error {
-	fs := flag.NewFlagSet("init", flag.ExitOnError)
-	feedsFile := fs.String("f", "", "Import feeds from file")
-	if err := fs.Parse(os.Args[2:]); err != nil {
-		return fmt.Errorf("parsing flags: %w", err)
+	opts, err := parseInitFlags(os.Args[2:])
+	if err != nil {
+		return err
 	}
-
-	opts := InitOptions{
-		FeedsFile:  *feedsFile,
-		ConfigPath: "config.ini",
-		Output:     os.Stdout,
-	}
-
+	opts.Output = os.Stdout
 	return cmdInit(opts)
 }
 
 func runAddFeed() error {
-	fs := flag.NewFlagSet("add-feed", flag.ExitOnError)
-	configPath := fs.String("config", "./config.ini", "Path to config file")
-	if err := fs.Parse(os.Args[2:]); err != nil {
-		return fmt.Errorf("parsing flags: %w", err)
-	}
-
-	if fs.NArg() < 1 {
+	opts, err := parseAddFeedFlags(os.Args[2:])
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "Usage: rp add-feed <url>")
-		return fmt.Errorf("missing feed URL argument")
+		return err
 	}
-
-	opts := AddFeedOptions{
-		URL:        fs.Arg(0),
-		ConfigPath: *configPath,
-		Output:     os.Stdout,
-	}
-
+	opts.Output = os.Stdout
 	return cmdAddFeed(opts)
 }
 
 func runAddAll() error {
-	fs := flag.NewFlagSet("add-all", flag.ExitOnError)
-	configPath := fs.String("config", "./config.ini", "Path to config file")
-	feedsFile := fs.String("f", "", "Path to feeds file")
-	if err := fs.Parse(os.Args[2:]); err != nil {
-		return fmt.Errorf("parsing flags: %w", err)
-	}
-
-	if *feedsFile == "" {
+	opts, err := parseAddAllFlags(os.Args[2:])
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "Usage: rp add-all -f <feeds-file>")
-		return fmt.Errorf("missing feeds file argument")
+		return err
 	}
-
-	opts := AddAllOptions{
-		FeedsFile:  *feedsFile,
-		ConfigPath: *configPath,
-		Output:     os.Stdout,
-	}
-
+	opts.Output = os.Stdout
 	return cmdAddAll(opts)
 }
 
 func runRemoveFeed() error {
-	fs := flag.NewFlagSet("remove-feed", flag.ExitOnError)
-	configPath := fs.String("config", "./config.ini", "Path to config file")
-	force := fs.Bool("force", false, "Skip confirmation prompt")
-	if err := fs.Parse(os.Args[2:]); err != nil {
-		return fmt.Errorf("parsing flags: %w", err)
-	}
-
-	if fs.NArg() < 1 {
+	opts, err := parseRemoveFeedFlags(os.Args[2:])
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "Usage: rp remove-feed <url> [--force]")
-		return fmt.Errorf("missing feed URL argument")
+		return err
 	}
+	opts.Output = os.Stdout
+	opts.Input = os.Stdin
 
-	opts := RemoveFeedOptions{
-		URL:        fs.Arg(0),
-		ConfigPath: *configPath,
-		Output:     os.Stdout,
-		Input:      os.Stdin,
-		Force:      *force,
-	}
-
-	err := cmdRemoveFeed(opts)
+	err = cmdRemoveFeed(opts)
 	// Check if this is a user cancellation
 	if _, ok := err.(*ErrUserCancelled); ok {
 		// "Cancelled." already printed by cmdRemoveFeed
@@ -220,158 +175,83 @@ func runRemoveFeed() error {
 }
 
 func runListFeeds() error {
-	fs := flag.NewFlagSet("list-feeds", flag.ExitOnError)
-	configPath := fs.String("config", "./config.ini", "Path to config file")
-	if err := fs.Parse(os.Args[2:]); err != nil {
-		return fmt.Errorf("parsing flags: %w", err)
+	opts, err := parseListFeedsFlags(os.Args[2:])
+	if err != nil {
+		return err
 	}
-
-	opts := ListFeedsOptions{
-		ConfigPath: *configPath,
-		Output:     os.Stdout,
-	}
-
+	opts.Output = os.Stdout
 	return cmdListFeeds(opts)
 }
 
 func runStatus() error {
-	fs := flag.NewFlagSet("status", flag.ExitOnError)
-	configPath := fs.String("config", "./config.ini", "Path to config file")
-	if err := fs.Parse(os.Args[2:]); err != nil {
-		return fmt.Errorf("parsing flags: %w", err)
+	opts, err := parseStatusFlags(os.Args[2:])
+	if err != nil {
+		return err
 	}
-
-	opts := StatusOptions{
-		ConfigPath: *configPath,
-		Output:     os.Stdout,
-	}
-
+	opts.Output = os.Stdout
 	return cmdStatus(opts)
 }
 
 func runUpdate() error {
-	fs := flag.NewFlagSet("update", flag.ExitOnError)
-	configPath := fs.String("config", "./config.ini", "Path to config file")
-	verbose := fs.Bool("verbose", false, "Enable verbose logging")
-	if err := fs.Parse(os.Args[2:]); err != nil {
-		return fmt.Errorf("parsing flags: %w", err)
+	opts, err := parseUpdateFlags(os.Args[2:])
+	if err != nil {
+		return err
 	}
-
-	opts := UpdateOptions{
-		ConfigPath: *configPath,
-		Verbose:    *verbose,
-		Output:     os.Stdout,
-		Logger:     logging.New("info"),
-	}
-
+	opts.Output = os.Stdout
 	return cmdUpdate(opts)
 }
 
 func runFetch() error {
-	fs := flag.NewFlagSet("fetch", flag.ExitOnError)
-	configPath := fs.String("config", "./config.ini", "Path to config file")
-	verbose := fs.Bool("verbose", false, "Enable verbose logging")
-	if err := fs.Parse(os.Args[2:]); err != nil {
-		return fmt.Errorf("parsing flags: %w", err)
+	opts, err := parseFetchFlags(os.Args[2:])
+	if err != nil {
+		return err
 	}
-
-	opts := FetchOptions{
-		ConfigPath: *configPath,
-		Verbose:    *verbose,
-		Output:     os.Stdout,
-		Logger:     logging.New("info"),
-	}
-
+	opts.Output = os.Stdout
 	return cmdFetch(opts)
 }
 
 func runGenerate() error {
-	fs := flag.NewFlagSet("generate", flag.ExitOnError)
-	configPath := fs.String("config", "./config.ini", "Path to config file")
-	days := fs.Int("days", 0, "Number of days to include (overrides config)")
-	if err := fs.Parse(os.Args[2:]); err != nil {
-		return fmt.Errorf("parsing flags: %w", err)
+	opts, err := parseGenerateFlags(os.Args[2:])
+	if err != nil {
+		return err
 	}
-
-	opts := GenerateOptions{
-		ConfigPath: *configPath,
-		Days:       *days,
-		Output:     os.Stdout,
-	}
-
+	opts.Output = os.Stdout
 	return cmdGenerate(opts)
 }
 
 func runPrune() error {
-	fs := flag.NewFlagSet("prune", flag.ExitOnError)
-	configPath := fs.String("config", "./config.ini", "Path to config file")
-	days := fs.Int("days", 90, "Remove entries older than N days")
-	dryRun := fs.Bool("dry-run", false, "Show what would be deleted without deleting")
-	if err := fs.Parse(os.Args[2:]); err != nil {
-		return fmt.Errorf("parsing flags: %w", err)
+	opts, err := parsePruneFlags(os.Args[2:])
+	if err != nil {
+		return err
 	}
-
-	opts := PruneOptions{
-		ConfigPath: *configPath,
-		Days:       *days,
-		DryRun:     *dryRun,
-		Output:     os.Stdout,
-	}
-
+	opts.Output = os.Stdout
 	return cmdPrune(opts)
 }
 
 func runVerify() error {
-	fs := flag.NewFlagSet("verify", flag.ExitOnError)
-	configPath := fs.String("config", "./config.ini", "Path to config file")
-	if err := fs.Parse(os.Args[2:]); err != nil {
-		return fmt.Errorf("parsing flags: %w", err)
+	opts, err := parseVerifyFlags(os.Args[2:])
+	if err != nil {
+		return err
 	}
-
-	opts := VerifyOptions{
-		ConfigPath: *configPath,
-		Output:     os.Stdout,
-	}
-
+	opts.Output = os.Stdout
 	return cmdVerify(opts)
 }
 
 func runImportOPML() error {
-	fs := flag.NewFlagSet("import-opml", flag.ExitOnError)
-	configPath := fs.String("config", "./config.ini", "Path to config file")
-	dryRun := fs.Bool("dry-run", false, "Preview feeds without importing")
-	if err := fs.Parse(os.Args[2:]); err != nil {
-		return fmt.Errorf("parsing flags: %w", err)
-	}
-
-	if fs.NArg() < 1 {
+	opts, err := parseImportOPMLFlags(os.Args[2:])
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "Usage: rp import-opml <opml-file> [--dry-run]")
-		return fmt.Errorf("missing OPML file argument")
+		return err
 	}
-
-	opts := ImportOPMLOptions{
-		OPMLFile:   fs.Arg(0),
-		ConfigPath: *configPath,
-		DryRun:     *dryRun,
-		Output:     os.Stdout,
-	}
-
+	opts.Output = os.Stdout
 	return cmdImportOPML(opts)
 }
 
 func runExportOPML() error {
-	fs := flag.NewFlagSet("export-opml", flag.ExitOnError)
-	configPath := fs.String("config", "./config.ini", "Path to config file")
-	output := fs.String("output", "", "Output file (default: stdout)")
-	if err := fs.Parse(os.Args[2:]); err != nil {
-		return fmt.Errorf("parsing flags: %w", err)
+	opts, err := parseExportOPMLFlags(os.Args[2:])
+	if err != nil {
+		return err
 	}
-
-	opts := ExportOPMLOptions{
-		ConfigPath: *configPath,
-		OutputFile: *output,
-		Output:     os.Stdout,
-	}
-
+	opts.Output = os.Stdout
 	return cmdExportOPML(opts)
 }
