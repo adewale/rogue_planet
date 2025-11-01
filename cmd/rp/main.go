@@ -208,13 +208,11 @@ func runRemoveFeed() error {
 	}
 
 	err := cmdRemoveFeed(opts)
-	if err != nil {
-		// Check if this is a user cancellation
-		if _, ok := err.(*ErrUserCancelled); ok {
-			// "Cancelled." already printed by cmdRemoveFeed
-			// Exit with code 1 without printing error message
-			os.Exit(1)
-		}
+	// Check if this is a user cancellation
+	if _, ok := err.(*ErrUserCancelled); ok {
+		// "Cancelled." already printed by cmdRemoveFeed
+		// Exit with code 1 without printing error message
+		os.Exit(1)
 	}
 	return err
 }

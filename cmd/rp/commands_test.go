@@ -480,7 +480,11 @@ path = %s
 
 		// Write input to pipe
 		go func() {
-			w.Write([]byte("y\n"))
+			if _, err := w.Write([]byte("y\n")); err != nil {
+				// If write fails, close and return - test will fail when it doesn't get input
+				w.Close()
+				return
+			}
 			w.Close()
 		}()
 

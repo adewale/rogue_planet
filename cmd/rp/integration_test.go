@@ -34,7 +34,9 @@ func TestFullWorkflow(t *testing.T) {
 		// Simulate: rp init
 		os.Args = []string{"rp", "init"}
 		// We can't easily test main() directly, so we'll call runInit()
-		runInit()
+		if err := runInit(); err != nil {
+			t.Fatalf("runInit() failed: %v", err)
+		}
 
 		// Verify files were created
 		if _, err := os.Stat("config.ini"); os.IsNotExist(err) {
@@ -58,20 +60,26 @@ func TestFullWorkflow(t *testing.T) {
 
 		for _, feedURL := range testFeeds {
 			os.Args = []string{"rp", "add-feed", feedURL}
-			runAddFeed()
+			if err := runAddFeed(); err != nil {
+				t.Fatalf("runAddFeed() failed: %v", err)
+			}
 		}
 
 		// Verify feeds were added
 		os.Args = []string{"rp", "list-feeds"}
 		// runListFeeds() prints to stdout, we'd need to capture it
 		// For now, just verify no panic
-		runListFeeds()
+		if err := runListFeeds(); err != nil {
+			t.Fatalf("runListFeeds() failed: %v", err)
+		}
 	})
 
 	// Test 3: Check status
 	t.Run("status", func(t *testing.T) {
 		os.Args = []string{"rp", "status"}
-		runStatus()
+		if err := runStatus(); err != nil {
+			t.Fatalf("runStatus() failed: %v", err)
+		}
 		// Should show 2 feeds, 0 entries
 	})
 }
@@ -107,7 +115,9 @@ https://example.com/feed3.xml
 
 	// Initialize with feeds file
 	os.Args = []string{"rp", "init", "-f", feedsPath}
-	runInit()
+	if err := runInit(); err != nil {
+		t.Fatalf("runInit() failed: %v", err)
+	}
 
 	// Verify files were created
 	if _, err := os.Stat("config.ini"); os.IsNotExist(err) {
