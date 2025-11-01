@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/adewale/rogue_planet/pkg/timeprovider"
 )
 
 func TestNew(t *testing.T) {
@@ -219,26 +221,195 @@ func TestNewWithTemplate(t *testing.T) {
 }
 
 func TestRelativeTime(t *testing.T) {
+	// Fixed current time for deterministic testing
+	currentTime := time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
+
 	tests := []struct {
-		name     string
-		time     time.Time
-		expected string
+		name        string
+		publishedAt time.Time
+		expected    string
 	}{
-		{"just now", time.Now(), "just now"},
-		{"1 minute ago", time.Now().Add(-1 * time.Minute), "1 minute ago"},
-		{"5 minutes ago", time.Now().Add(-5 * time.Minute), "5 minutes ago"},
-		{"1 hour ago", time.Now().Add(-1 * time.Hour), "1 hour ago"},
-		{"3 hours ago", time.Now().Add(-3 * time.Hour), "3 hours ago"},
-		{"yesterday", time.Now().Add(-25 * time.Hour), "yesterday"},
-		{"2 days ago", time.Now().Add(-48 * time.Hour), "2 days ago"},
-		{"1 week ago", time.Now().Add(-7 * 24 * time.Hour), "1 week ago"},
-		{"2 weeks ago", time.Now().Add(-14 * 24 * time.Hour), "2 weeks ago"},
-		{"1 month ago", time.Now().Add(-35 * 24 * time.Hour), "1 month ago"},
+		// "just now" - less than 1 minute
+		{
+			name:        "just now - 0 seconds",
+			publishedAt: currentTime,
+			expected:    "just now",
+		},
+		{
+			name:        "just now - 30 seconds",
+			publishedAt: currentTime.Add(-30 * time.Second),
+			expected:    "just now",
+		},
+		{
+			name:        "just now - 59 seconds (boundary)",
+			publishedAt: currentTime.Add(-59 * time.Second),
+			expected:    "just now",
+		},
+
+		// Minutes - 1 to 59 minutes
+		{
+			name:        "1 minute ago - 60 seconds exact (boundary)",
+			publishedAt: currentTime.Add(-60 * time.Second),
+			expected:    "1 minute ago",
+		},
+		{
+			name:        "1 minute ago - 90 seconds",
+			publishedAt: currentTime.Add(-90 * time.Second),
+			expected:    "1 minute ago",
+		},
+		{
+			name:        "5 minutes ago",
+			publishedAt: currentTime.Add(-5 * time.Minute),
+			expected:    "5 minutes ago",
+		},
+		{
+			name:        "30 minutes ago",
+			publishedAt: currentTime.Add(-30 * time.Minute),
+			expected:    "30 minutes ago",
+		},
+		{
+			name:        "59 minutes ago (boundary)",
+			publishedAt: currentTime.Add(-59 * time.Minute),
+			expected:    "59 minutes ago",
+		},
+
+		// Hours - 1 to 23 hours
+		{
+			name:        "1 hour ago - 60 minutes exact (boundary)",
+			publishedAt: currentTime.Add(-60 * time.Minute),
+			expected:    "1 hour ago",
+		},
+		{
+			name:        "3 hours ago",
+			publishedAt: currentTime.Add(-3 * time.Hour),
+			expected:    "3 hours ago",
+		},
+		{
+			name:        "12 hours ago",
+			publishedAt: currentTime.Add(-12 * time.Hour),
+			expected:    "12 hours ago",
+		},
+		{
+			name:        "23 hours ago (boundary)",
+			publishedAt: currentTime.Add(-23 * time.Hour),
+			expected:    "23 hours ago",
+		},
+
+		// Yesterday - 24 to 47 hours
+		{
+			name:        "yesterday - 24 hours exact (boundary)",
+			publishedAt: currentTime.Add(-24 * time.Hour),
+			expected:    "yesterday",
+		},
+		{
+			name:        "yesterday - 25 hours",
+			publishedAt: currentTime.Add(-25 * time.Hour),
+			expected:    "yesterday",
+		},
+		{
+			name:        "yesterday - 47 hours (boundary)",
+			publishedAt: currentTime.Add(-47 * time.Hour),
+			expected:    "yesterday",
+		},
+
+		// Days - 2 to 6 days
+		{
+			name:        "2 days ago - 48 hours exact (boundary)",
+			publishedAt: currentTime.Add(-48 * time.Hour),
+			expected:    "2 days ago",
+		},
+		{
+			name:        "3 days ago",
+			publishedAt: currentTime.Add(-72 * time.Hour),
+			expected:    "3 days ago",
+		},
+		{
+			name:        "6 days ago (boundary)",
+			publishedAt: currentTime.Add(-6 * 24 * time.Hour),
+			expected:    "6 days ago",
+		},
+
+		// Weeks - 7 to 29 days
+		{
+			name:        "1 week ago - 7 days exact (boundary)",
+			publishedAt: currentTime.Add(-7 * 24 * time.Hour),
+			expected:    "1 week ago",
+		},
+		{
+			name:        "10 days ago",
+			publishedAt: currentTime.Add(-10 * 24 * time.Hour),
+			expected:    "1 week ago",
+		},
+		{
+			name:        "2 weeks ago - 14 days exact",
+			publishedAt: currentTime.Add(-14 * 24 * time.Hour),
+			expected:    "2 weeks ago",
+		},
+		{
+			name:        "3 weeks ago - 21 days",
+			publishedAt: currentTime.Add(-21 * 24 * time.Hour),
+			expected:    "3 weeks ago",
+		},
+		{
+			name:        "4 weeks ago - 29 days (boundary)",
+			publishedAt: currentTime.Add(-29 * 24 * time.Hour),
+			expected:    "4 weeks ago",
+		},
+
+		// Months - 30 to 364 days
+		{
+			name:        "1 month ago - 30 days exact (boundary)",
+			publishedAt: currentTime.Add(-30 * 24 * time.Hour),
+			expected:    "1 month ago",
+		},
+		{
+			name:        "1 month ago - 35 days",
+			publishedAt: currentTime.Add(-35 * 24 * time.Hour),
+			expected:    "1 month ago",
+		},
+		{
+			name:        "2 months ago - 60 days",
+			publishedAt: currentTime.Add(-60 * 24 * time.Hour),
+			expected:    "2 months ago",
+		},
+		{
+			name:        "6 months ago - 180 days",
+			publishedAt: currentTime.Add(-180 * 24 * time.Hour),
+			expected:    "6 months ago",
+		},
+		{
+			name:        "12 months ago - 364 days (boundary)",
+			publishedAt: currentTime.Add(-364 * 24 * time.Hour),
+			expected:    "12 months ago",
+		},
+
+		// Years - 365+ days
+		{
+			name:        "1 year ago - 365 days exact (boundary)",
+			publishedAt: currentTime.Add(-365 * 24 * time.Hour),
+			expected:    "1 year ago",
+		},
+		{
+			name:        "1 year ago - 400 days",
+			publishedAt: currentTime.Add(-400 * 24 * time.Hour),
+			expected:    "1 year ago",
+		},
+		{
+			name:        "2 years ago - 730 days",
+			publishedAt: currentTime.Add(-730 * 24 * time.Hour),
+			expected:    "2 years ago",
+		},
+		{
+			name:        "5 years ago - 1825 days",
+			publishedAt: currentTime.Add(-1825 * 24 * time.Hour),
+			expected:    "5 years ago",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := relativeTime(tt.time)
+			clock := timeprovider.NewFakeClock(currentTime)
+			result := relativeTime(tt.publishedAt, clock)
 			if result != tt.expected {
 				t.Errorf("relativeTime() = %q, want %q", result, tt.expected)
 			}
@@ -507,19 +678,40 @@ func TestTemplateFuncs(t *testing.T) {
 }
 
 func TestRelativeTimeEdgeCases(t *testing.T) {
+	// Fixed current time for deterministic testing
+	currentTime := time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
+
 	tests := []struct {
-		name     string
-		time     time.Time
-		expected string
+		name        string
+		publishedAt time.Time
+		expected    string
 	}{
-		{"3 months ago", time.Now().Add(-90 * 24 * time.Hour), "3 months ago"},
-		{"1 year ago", time.Now().Add(-400 * 24 * time.Hour), "1 year ago"},
-		{"2 years ago", time.Now().Add(-800 * 24 * time.Hour), "2 years ago"},
+		{
+			name:        "3 months ago - 90 days",
+			publishedAt: currentTime.Add(-90 * 24 * time.Hour),
+			expected:    "3 months ago",
+		},
+		{
+			name:        "1 year ago - 400 days",
+			publishedAt: currentTime.Add(-400 * 24 * time.Hour),
+			expected:    "1 year ago",
+		},
+		{
+			name:        "2 years ago - 800 days",
+			publishedAt: currentTime.Add(-800 * 24 * time.Hour),
+			expected:    "2 years ago",
+		},
+		{
+			name:        "future time (negative duration)",
+			publishedAt: currentTime.Add(1 * time.Hour),
+			expected:    "just now", // Future times handled gracefully
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := relativeTime(tt.time)
+			clock := timeprovider.NewFakeClock(currentTime)
+			result := relativeTime(tt.publishedAt, clock)
 			if result != tt.expected {
 				t.Errorf("relativeTime() = %q, want %q", result, tt.expected)
 			}

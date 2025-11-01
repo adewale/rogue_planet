@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/adewale/rogue_planet/pkg/timeprovider"
 )
 
 // Test parsing valid OPML 2.0
@@ -450,7 +452,11 @@ func TestGenerate_Metadata(t *testing.T) {
 		OwnerEmail: "john@example.com",
 	}
 
-	opml, err := Generate(feeds, metadata)
+	// Use FakeClock for deterministic testing
+	fixedTime := time.Date(2025, 1, 15, 14, 30, 0, 0, time.UTC)
+	clock := timeprovider.NewFakeClock(fixedTime)
+
+	opml, err := GenerateWithTimeProvider(feeds, metadata, clock)
 	if err != nil {
 		t.Fatalf("Generate failed: %v", err)
 	}
@@ -467,9 +473,15 @@ func TestGenerate_Metadata(t *testing.T) {
 		t.Errorf("Expected email 'john@example.com', got %s", opml.Head.OwnerEmail)
 	}
 
-	// DateCreated should be set
-	if opml.Head.DateCreated == "" {
-		t.Error("Expected DateCreated to be set")
+	// DateCreated should match our exact fixed time
+	expectedDate := FormatRFC822(fixedTime)
+	if opml.Head.DateCreated != expectedDate {
+		t.Errorf("Expected DateCreated %q, got %q", expectedDate, opml.Head.DateCreated)
+	}
+
+	// Verify the exact timestamp format
+	if opml.Head.DateCreated != "Wed, 15 Jan 2025 14:30:00 +0000" {
+		t.Errorf("Expected DateCreated 'Wed, 15 Jan 2025 14:30:00 +0000', got %q", opml.Head.DateCreated)
 	}
 }
 

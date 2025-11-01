@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/adewale/rogue_planet/pkg/timeprovider"
 )
 
 // OPML represents the root OPML structure
@@ -116,8 +118,14 @@ func (o *OPML) extractOutlines(outlines []Outline, feeds *[]Feed) {
 	}
 }
 
-// Generate creates OPML from feed list
+// Generate creates OPML from feed list using the current system time
 func Generate(feeds []Feed, metadata Metadata) (*OPML, error) {
+	return GenerateWithTimeProvider(feeds, metadata, timeprovider.WallClock{})
+}
+
+// GenerateWithTimeProvider creates OPML from feed list with a custom TimeProvider.
+// This is primarily for testing with FakeClock.
+func GenerateWithTimeProvider(feeds []Feed, metadata Metadata, tp timeprovider.TimeProvider) (*OPML, error) {
 	outlines := make([]Outline, 0, len(feeds))
 
 	for _, feed := range feeds {
@@ -140,7 +148,7 @@ func Generate(feeds []Feed, metadata Metadata) (*OPML, error) {
 		Version: "2.0",
 		Head: Head{
 			Title:       metadata.Title,
-			DateCreated: FormatRFC822(time.Now()),
+			DateCreated: FormatRFC822(tp.Now()),
 			OwnerName:   metadata.OwnerName,
 			OwnerEmail:  metadata.OwnerEmail,
 		},

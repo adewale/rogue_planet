@@ -12,6 +12,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/adewale/rogue_planet/pkg/timeprovider"
 )
 
 // TemplateData contains all data needed for template rendering
@@ -64,42 +66,65 @@ type DateGroup struct {
 type Generator struct {
 	template     *template.Template
 	templatePath string // Path to template file (if custom template)
+	timeProvider timeprovider.TimeProvider
 }
 
-// New creates a new Generator with the default template
+// New creates a new Generator with the default template and real system time
 func New() (*Generator, error) {
-	tmpl, err := template.New("default").Funcs(templateFuncs()).Parse(defaultTemplate)
+	g := &Generator{
+		timeProvider: timeprovider.WallClock{},
+	}
+
+	tmpl, err := template.New("default").Funcs(g.templateFuncs()).Parse(defaultTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("parse default template: %w", err)
 	}
 
-	return &Generator{
-		template: tmpl,
-	}, nil
+	g.template = tmpl
+	return g, nil
 }
 
-// NewWithTemplate creates a Generator with a custom template
+// NewWithTimeProvider creates a new Generator with the default template and custom TimeProvider.
+// This is primarily for testing with FakeClock.
+func NewWithTimeProvider(tp timeprovider.TimeProvider) (*Generator, error) {
+	g := &Generator{
+		timeProvider: tp,
+	}
+
+	tmpl, err := template.New("default").Funcs(g.templateFuncs()).Parse(defaultTemplate)
+	if err != nil {
+		return nil, fmt.Errorf("parse default template: %w", err)
+	}
+
+	g.template = tmpl
+	return g, nil
+}
+
+// NewWithTemplate creates a Generator with a custom template and real system time
 func NewWithTemplate(templatePath string) (*Generator, error) {
-	tmpl, err := template.New(filepath.Base(templatePath)).Funcs(templateFuncs()).ParseFiles(templatePath)
+	g := &Generator{
+		templatePath: templatePath,
+		timeProvider: timeprovider.WallClock{},
+	}
+
+	tmpl, err := template.New(filepath.Base(templatePath)).Funcs(g.templateFuncs()).ParseFiles(templatePath)
 	if err != nil {
 		return nil, fmt.Errorf("parse template: %w", err)
 	}
 
-	return &Generator{
-		template:     tmpl,
-		templatePath: templatePath,
-	}, nil
+	g.template = tmpl
+	return g, nil
 }
 
 // Generate generates HTML and writes it to the specified writer
 func (g *Generator) Generate(w io.Writer, data TemplateData) error {
 	// Add version info
 	data.Generator = "Rogue Planet v0.1"
-	data.Updated = time.Now()
+	data.Updated = g.timeProvider.Now()
 
-	// Calculate relative dates
+	// Calculate relative dates using the time provider
 	for i := range data.Entries {
-		data.Entries[i].PublishedRelative = relativeTime(data.Entries[i].Published)
+		data.Entries[i].PublishedRelative = relativeTime(data.Entries[i].Published, g.timeProvider)
 	}
 
 	// Group by date if requested
@@ -263,8 +288,8 @@ func copyFile(src, dst string) (err error) {
 	return nil
 }
 
-// templateFuncs returns custom template functions
-func templateFuncs() template.FuncMap {
+// templateFuncs returns custom template functions with access to the Generator's timeProvider
+func (g *Generator) templateFuncs() template.FuncMap {
 	return template.FuncMap{
 		"formatDate": func(t time.Time) string {
 			return t.Format("January 2, 2006 at 3:04 PM")
@@ -275,13 +300,15 @@ func templateFuncs() template.FuncMap {
 		"formatDateISO": func(t time.Time) string {
 			return t.Format(time.RFC3339)
 		},
-		"relativeTime": relativeTime,
+		"relativeTime": func(t time.Time) string {
+			return relativeTime(t, g.timeProvider)
+		},
 	}
 }
 
 // relativeTime returns a human-readable relative time string
-func relativeTime(t time.Time) string {
-	diff := time.Since(t)
+func relativeTime(t time.Time, tp timeprovider.TimeProvider) string {
+	diff := tp.Since(t)
 
 	switch {
 	case diff < time.Minute:
