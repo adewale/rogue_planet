@@ -129,7 +129,7 @@ func (g *Generator) Generate(w io.Writer, data TemplateData) error {
 
 	// Group by date if requested
 	if data.GroupByDate {
-		data.DateGroups = groupEntriesByDate(data.Entries)
+		data.DateGroups = groupEntriesByDate(data.Entries, g.timeProvider)
 	}
 
 	// Execute template
@@ -352,7 +352,7 @@ func relativeTime(t time.Time, tp timeprovider.TimeProvider) string {
 }
 
 // groupEntriesByDate groups entries by their published date
-func groupEntriesByDate(entries []EntryData) []DateGroup {
+func groupEntriesByDate(entries []EntryData, tp timeprovider.TimeProvider) []DateGroup {
 	groups := make(map[string][]EntryData)
 	dateOrder := []string{}
 
@@ -369,7 +369,7 @@ func groupEntriesByDate(entries []EntryData) []DateGroup {
 		date, _ := time.Parse("2006-01-02", dateKey)
 		result = append(result, DateGroup{
 			Date:    date,
-			DateStr: formatDateGroup(date),
+			DateStr: formatDateGroup(date, tp),
 			Entries: groups[dateKey],
 		})
 	}
@@ -378,8 +378,8 @@ func groupEntriesByDate(entries []EntryData) []DateGroup {
 }
 
 // formatDateGroup formats a date for group headers
-func formatDateGroup(t time.Time) string {
-	now := time.Now()
+func formatDateGroup(t time.Time, tp timeprovider.TimeProvider) string {
+	now := tp.Now()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	yesterday := today.AddDate(0, 0, -1)
 	targetDate := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())

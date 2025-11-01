@@ -418,7 +418,11 @@ func TestRelativeTime(t *testing.T) {
 }
 
 func TestGroupEntriesByDate(t *testing.T) {
-	now := time.Now()
+	// Use fixed time for deterministic testing
+	currentTime := time.Date(2025, 1, 15, 14, 30, 0, 0, time.UTC)
+	clock := timeprovider.NewFakeClock(currentTime)
+
+	now := currentTime
 	yesterday := now.Add(-24 * time.Hour)
 
 	entries := []EntryData{
@@ -427,7 +431,7 @@ func TestGroupEntriesByDate(t *testing.T) {
 		{Title: "Entry 3", Published: yesterday},
 	}
 
-	groups := groupEntriesByDate(entries)
+	groups := groupEntriesByDate(entries, clock)
 
 	if len(groups) != 2 {
 		t.Fatalf("Expected 2 groups, got %d", len(groups))
@@ -445,29 +449,48 @@ func TestGroupEntriesByDate(t *testing.T) {
 }
 
 func TestFormatDateGroup(t *testing.T) {
-	now := time.Now()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	yesterday := today.Add(-24 * time.Hour)
-	lastWeek := today.Add(-5 * 24 * time.Hour)
-	longAgo := today.Add(-30 * 24 * time.Hour)
+	// Use fixed time for deterministic testing
+	// Wednesday, January 15, 2025 at 14:30 UTC
+	currentTime := time.Date(2025, 1, 15, 14, 30, 0, 0, time.UTC)
+	clock := timeprovider.NewFakeClock(currentTime)
+
+	today := time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)
+	yesterday := time.Date(2025, 1, 14, 0, 0, 0, 0, time.UTC)
+	lastWeek := time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC)    // 5 days ago (Friday)
+	longAgo := time.Date(2024, 12, 16, 0, 0, 0, 0, time.UTC)    // 30 days ago
 
 	tests := []struct {
 		name     string
-		time     time.Time
-		contains string
+		date     time.Time
+		expected string
 	}{
-		{"today", today, "Today"},
-		{"yesterday", yesterday, "Yesterday"},
-		{"last week", lastWeek, now.Weekday().String()[:3]}, // Contains day name
-		{"long ago", longAgo, "2"},                          // Contains year
+		{
+			name:     "today",
+			date:     today,
+			expected: "Today",
+		},
+		{
+			name:     "yesterday",
+			date:     yesterday,
+			expected: "Yesterday",
+		},
+		{
+			name:     "last week (within 7 days)",
+			date:     lastWeek,
+			expected: "Friday, January 10",
+		},
+		{
+			name:     "long ago (more than 7 days)",
+			date:     longAgo,
+			expected: "Monday, December 16, 2024",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatDateGroup(tt.time)
-			// Just check it returns something reasonable
-			if len(result) == 0 {
-				t.Error("formatDateGroup should return non-empty string")
+			result := formatDateGroup(tt.date, clock)
+			if result != tt.expected {
+				t.Errorf("formatDateGroup() = %q, want %q", result, tt.expected)
 			}
 		})
 	}
