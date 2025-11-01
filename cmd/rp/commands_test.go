@@ -2,10 +2,12 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/adewale/rogue_planet/pkg/repository"
 )
@@ -69,32 +71,440 @@ func TestCmdAddAll(t *testing.T) {
 }
 
 func TestCmdRemoveFeed(t *testing.T) {
-	tests := []struct {
-		name       string
-		opts       RemoveFeedOptions
-		wantErr    bool
-		wantOutput string
-	}{
-		{
-			name: "missing URL",
-			opts: RemoveFeedOptions{
-				URL:        "",
-				ConfigPath: "./config.ini",
-				Output:     &bytes.Buffer{},
-			},
-			wantErr:    true,
-			wantOutput: "",
-		},
-	}
+	t.Run("missing URL", func(t *testing.T) {
+		var buf bytes.Buffer
+		opts := RemoveFeedOptions{
+			URL:        "",
+			ConfigPath: "./config.ini",
+			Output:     &buf,
+			Force:      true,
+		}
+		err := cmdRemoveFeed(opts)
+		if err == nil {
+			t.Error("cmdRemoveFeed() expected error for missing URL, got nil")
+		}
+	})
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := cmdRemoveFeed(tt.opts)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("cmdRemoveFeed() error = %v, wantErr %v", err, tt.wantErr)
+	t.Run("remove feed with --force", func(t *testing.T) {
+		// Setup test environment
+		tmpDir := t.TempDir()
+
+		// Create database directory
+		dataDir := filepath.Join(tmpDir, "data")
+		if err := os.MkdirAll(dataDir, 0755); err != nil {
+			t.Fatalf("Failed to create data directory: %v", err)
+		}
+
+		// Create database and add feed
+		dbPath := filepath.Join(dataDir, "planet.db")
+
+		// Create config file with database path
+		configPath := filepath.Join(tmpDir, "config.ini")
+		configContent := fmt.Sprintf(`[planet]
+name = Test Planet
+
+[database]
+path = %s
+`, dbPath)
+		if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+			t.Fatalf("Failed to create config: %v", err)
+		}
+		repo, err := repository.New(dbPath)
+		if err != nil {
+			t.Fatalf("Failed to create repository: %v", err)
+		}
+
+		feedURL := "https://example.com/feed"
+		feedID, err := repo.AddFeed(feedURL, "Test Feed")
+		if err != nil {
+			t.Fatalf("Failed to add feed: %v", err)
+		}
+
+		// Add some entries
+		now := time.Now()
+		for i := 0; i < 3; i++ {
+			entry := &repository.Entry{
+				FeedID:      feedID,
+				EntryID:     fmt.Sprintf("entry%d", i),
+				Title:       fmt.Sprintf("Entry %d", i),
+				Link:        fmt.Sprintf("https://example.com/entry%d", i),
+				Published:   now,
+				Updated:     now,
+				FirstSeen:   now,
+				Content:     "Test content",
+				ContentType: "html",
 			}
-		})
-	}
+			if err := repo.UpsertEntry(entry); err != nil {
+				t.Fatalf("Failed to add entry: %v", err)
+			}
+		}
+		repo.Close()
+
+		// Remove feed with --force flag
+		var buf bytes.Buffer
+		opts := RemoveFeedOptions{
+			URL:        feedURL,
+			ConfigPath: configPath,
+			Output:     &buf,
+			Force:      true,
+		}
+
+		if err := cmdRemoveFeed(opts); err != nil {
+			t.Fatalf("cmdRemoveFeed() error = %v", err)
+		}
+
+		// Check output includes entry count
+		output := buf.String()
+		if !strings.Contains(output, "3 entries deleted") {
+			t.Errorf("Output should mention 3 entries deleted, got: %s", output)
+		}
+		if !strings.Contains(output, feedURL) {
+			t.Errorf("Output should mention feed URL, got: %s", output)
+		}
+
+		// Verify feed was removed from database
+		repo, err = repository.New(dbPath)
+		if err != nil {
+			t.Fatalf("Failed to reopen repository: %v", err)
+		}
+		defer repo.Close()
+
+		_, err = repo.GetFeedByURL(feedURL)
+		if err != repository.ErrFeedNotFound {
+			t.Errorf("Feed should be removed, got error: %v", err)
+		}
+
+		// Verify entries were cascade deleted
+		count, err := repo.GetEntryCountForFeed(feedID)
+		if err != nil {
+			t.Fatalf("GetEntryCountForFeed() error = %v", err)
+		}
+		if count != 0 {
+			t.Errorf("Entries should be cascade deleted, got count: %d", count)
+		}
+	})
+
+	t.Run("feed not found", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		dataDir := filepath.Join(tmpDir, "data")
+		if err := os.MkdirAll(dataDir, 0755); err != nil {
+			t.Fatalf("Failed to create data directory: %v", err)
+		}
+
+		dbPath := filepath.Join(dataDir, "planet.db")
+
+		configPath := filepath.Join(tmpDir, "config.ini")
+		configContent := fmt.Sprintf(`[planet]
+name = Test Planet
+
+[database]
+path = %s
+`, dbPath)
+		if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+			t.Fatalf("Failed to create config: %v", err)
+		}
+		repo, err := repository.New(dbPath)
+		if err != nil {
+			t.Fatalf("Failed to create repository: %v", err)
+		}
+		repo.Close()
+
+		var buf bytes.Buffer
+		opts := RemoveFeedOptions{
+			URL:        "https://nonexistent.com/feed",
+			ConfigPath: configPath,
+			Output:     &buf,
+			Force:      true,
+		}
+
+		err = cmdRemoveFeed(opts)
+		if err == nil {
+			t.Error("cmdRemoveFeed() expected error for non-existent feed, got nil")
+		}
+		if !strings.Contains(err.Error(), "feed not found") {
+			t.Errorf("Error should mention 'feed not found', got: %v", err)
+		}
+	})
+
+	// Test #5: Interactive Confirmation Test
+	t.Run("interactive confirmation - accept with y", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		dataDir := filepath.Join(tmpDir, "data")
+		if err := os.MkdirAll(dataDir, 0755); err != nil {
+			t.Fatalf("Failed to create data directory: %v", err)
+		}
+
+		dbPath := filepath.Join(dataDir, "planet.db")
+		configPath := filepath.Join(tmpDir, "config.ini")
+		configContent := fmt.Sprintf(`[planet]
+name = Test Planet
+
+[database]
+path = %s
+`, dbPath)
+		if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+			t.Fatalf("Failed to create config: %v", err)
+		}
+
+		repo, err := repository.New(dbPath)
+		if err != nil {
+			t.Fatalf("Failed to create repository: %v", err)
+		}
+
+		feedURL := "https://example.com/feed"
+		feedID, err := repo.AddFeed(feedURL, "Test Feed")
+		if err != nil {
+			t.Fatalf("Failed to add feed: %v", err)
+		}
+
+		// Add an entry
+		now := time.Now()
+		entry := &repository.Entry{
+			FeedID:      feedID,
+			EntryID:     "entry1",
+			Title:       "Entry 1",
+			Link:        "https://example.com/entry1",
+			Published:   now,
+			Updated:     now,
+			FirstSeen:   now,
+			Content:     "Test content",
+			ContentType: "html",
+		}
+		if err := repo.UpsertEntry(entry); err != nil {
+			t.Fatalf("Failed to add entry: %v", err)
+		}
+		repo.Close()
+
+		// Mock stdin with "y\n"
+		input := strings.NewReader("y\n")
+		var buf bytes.Buffer
+
+		opts := RemoveFeedOptions{
+			URL:        feedURL,
+			ConfigPath: configPath,
+			Output:     &buf,
+			Input:      input,
+			Force:      false,
+		}
+
+		if err := cmdRemoveFeed(opts); err != nil {
+			t.Fatalf("cmdRemoveFeed() should succeed with 'y' input, got error: %v", err)
+		}
+
+		output := buf.String()
+		if !strings.Contains(output, "Feed: https://example.com/feed") {
+			t.Errorf("Output should show feed URL, got: %s", output)
+		}
+		if !strings.Contains(output, "Remove this feed and all 1 entries? (y/N):") {
+			t.Errorf("Output should show confirmation prompt, got: %s", output)
+		}
+		if !strings.Contains(output, "✓ Removed feed") {
+			t.Errorf("Output should show success message, got: %s", output)
+		}
+
+		// Verify feed was removed
+		repo, err = repository.New(dbPath)
+		if err != nil {
+			t.Fatalf("Failed to reopen repository: %v", err)
+		}
+		defer repo.Close()
+
+		_, err = repo.GetFeedByURL(feedURL)
+		if err != repository.ErrFeedNotFound {
+			t.Errorf("Feed should be removed, got error: %v", err)
+		}
+	})
+
+	t.Run("interactive confirmation - cancel with n", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		dataDir := filepath.Join(tmpDir, "data")
+		if err := os.MkdirAll(dataDir, 0755); err != nil {
+			t.Fatalf("Failed to create data directory: %v", err)
+		}
+
+		dbPath := filepath.Join(dataDir, "planet.db")
+		configPath := filepath.Join(tmpDir, "config.ini")
+		configContent := fmt.Sprintf(`[planet]
+name = Test Planet
+
+[database]
+path = %s
+`, dbPath)
+		if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+			t.Fatalf("Failed to create config: %v", err)
+		}
+
+		repo, err := repository.New(dbPath)
+		if err != nil {
+			t.Fatalf("Failed to create repository: %v", err)
+		}
+
+		feedURL := "https://example.com/feed"
+		_, err = repo.AddFeed(feedURL, "Test Feed")
+		if err != nil {
+			t.Fatalf("Failed to add feed: %v", err)
+		}
+		repo.Close()
+
+		// Mock stdin with "n\n"
+		input := strings.NewReader("n\n")
+		var buf bytes.Buffer
+
+		opts := RemoveFeedOptions{
+			URL:        feedURL,
+			ConfigPath: configPath,
+			Output:     &buf,
+			Input:      input,
+			Force:      false,
+		}
+
+		err = cmdRemoveFeed(opts)
+		if err == nil {
+			t.Error("cmdRemoveFeed() should return error when user cancels")
+		}
+
+		// Check that error is ErrUserCancelled
+		if _, ok := err.(*ErrUserCancelled); !ok {
+			t.Errorf("Error should be *ErrUserCancelled, got: %T", err)
+		}
+
+		output := buf.String()
+		if !strings.Contains(output, "Cancelled.") {
+			t.Errorf("Output should show 'Cancelled.', got: %s", output)
+		}
+
+		// Verify feed was NOT removed
+		repo, err = repository.New(dbPath)
+		if err != nil {
+			t.Fatalf("Failed to reopen repository: %v", err)
+		}
+		defer repo.Close()
+
+		feed, err := repo.GetFeedByURL(feedURL)
+		if err != nil {
+			t.Errorf("Feed should still exist after cancellation, got error: %v", err)
+		}
+		if feed == nil {
+			t.Error("Feed should still exist after cancellation")
+		}
+	})
+
+	t.Run("interactive confirmation - accept with yes", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		dataDir := filepath.Join(tmpDir, "data")
+		if err := os.MkdirAll(dataDir, 0755); err != nil {
+			t.Fatalf("Failed to create data directory: %v", err)
+		}
+
+		dbPath := filepath.Join(dataDir, "planet.db")
+		configPath := filepath.Join(tmpDir, "config.ini")
+		configContent := fmt.Sprintf(`[planet]
+name = Test Planet
+
+[database]
+path = %s
+`, dbPath)
+		if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+			t.Fatalf("Failed to create config: %v", err)
+		}
+
+		repo, err := repository.New(dbPath)
+		if err != nil {
+			t.Fatalf("Failed to create repository: %v", err)
+		}
+
+		feedURL := "https://example.com/feed"
+		_, err = repo.AddFeed(feedURL, "Test Feed")
+		if err != nil {
+			t.Fatalf("Failed to add feed: %v", err)
+		}
+		repo.Close()
+
+		// Mock stdin with "yes\n"
+		input := strings.NewReader("yes\n")
+		var buf bytes.Buffer
+
+		opts := RemoveFeedOptions{
+			URL:        feedURL,
+			ConfigPath: configPath,
+			Output:     &buf,
+			Input:      input,
+			Force:      false,
+		}
+
+		if err := cmdRemoveFeed(opts); err != nil {
+			t.Fatalf("cmdRemoveFeed() should succeed with 'yes' input, got error: %v", err)
+		}
+	})
+
+	// Test #7: Non-Interactive Error Test
+	t.Run("non-interactive without --force", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		dataDir := filepath.Join(tmpDir, "data")
+		if err := os.MkdirAll(dataDir, 0755); err != nil {
+			t.Fatalf("Failed to create data directory: %v", err)
+		}
+
+		dbPath := filepath.Join(dataDir, "planet.db")
+		configPath := filepath.Join(tmpDir, "config.ini")
+		configContent := fmt.Sprintf(`[planet]
+name = Test Planet
+
+[database]
+path = %s
+`, dbPath)
+		if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+			t.Fatalf("Failed to create config: %v", err)
+		}
+
+		repo, err := repository.New(dbPath)
+		if err != nil {
+			t.Fatalf("Failed to create repository: %v", err)
+		}
+
+		feedURL := "https://example.com/feed"
+		_, err = repo.AddFeed(feedURL, "Test Feed")
+		if err != nil {
+			t.Fatalf("Failed to add feed: %v", err)
+		}
+		repo.Close()
+
+		// Create a pipe to simulate piped input (non-terminal os.File)
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatalf("Failed to create pipe: %v", err)
+		}
+		defer r.Close()
+
+		// Write input to pipe
+		go func() {
+			w.Write([]byte("y\n"))
+			w.Close()
+		}()
+
+		var buf bytes.Buffer
+
+		opts := RemoveFeedOptions{
+			URL:        feedURL,
+			ConfigPath: configPath,
+			Output:     &buf,
+			Input:      r, // This is an os.File but not a terminal (it's a pipe)
+			Force:      false,
+		}
+
+		err = cmdRemoveFeed(opts)
+		if err == nil {
+			t.Error("cmdRemoveFeed() should return error in non-interactive mode without --force")
+		}
+
+		if !strings.Contains(err.Error(), "cannot prompt for confirmation in non-interactive mode") {
+			t.Errorf("Error should mention non-interactive mode, got: %v", err)
+		}
+		if !strings.Contains(err.Error(), "Use --force to skip confirmation") {
+			t.Errorf("Error should mention --force flag, got: %v", err)
+		}
+	})
 }
 
 func TestCmdInit(t *testing.T) {

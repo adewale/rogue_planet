@@ -608,6 +608,21 @@ func (r *Repository) CountRecentEntries(days int) (int64, error) {
 	return count, nil
 }
 
+// GetEntryCountForFeed returns the number of entries for a specific feed
+func (r *Repository) GetEntryCountForFeed(feedID int64) (int64, error) {
+	var count int64
+	err := r.db.QueryRow(`
+		SELECT COUNT(*)
+		FROM entries
+		WHERE feed_id = ?
+	`, feedID).Scan(&count)
+
+	if err != nil {
+		return 0, fmt.Errorf("count entries for feed: %w", err)
+	}
+	return count, nil
+}
+
 // PruneOldEntries deletes entries older than N days
 func (r *Repository) PruneOldEntries(days int) (int64, error) {
 	cutoff := time.Now().AddDate(0, 0, -days)

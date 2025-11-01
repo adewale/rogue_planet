@@ -911,3 +911,214 @@ func TestGetRecentEntriesFilterAndSortByFirstSeen(t *testing.T) {
 		}
 	}
 }
+
+func TestGetEntryCountForFeed(t *testing.T) {
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	// Add a feed
+	feedID, err := repo.AddFeed("https://example.com/feed", "Test Feed")
+	if err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
+
+	// Add another feed
+	feed2ID, err := repo.AddFeed("https://example.com/feed2", "Test Feed 2")
+	if err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
+
+	// Initially should be 0 entries
+	count, err := repo.GetEntryCountForFeed(feedID)
+	if err != nil {
+		t.Fatalf("GetEntryCountForFeed() error = %v", err)
+	}
+	if count != 0 {
+		t.Errorf("GetEntryCountForFeed() = %d, want 0", count)
+	}
+
+	// Add 3 entries to first feed
+	now := time.Now()
+	for i := 0; i < 3; i++ {
+		entry := &Entry{
+			FeedID:      feedID,
+			EntryID:     fmt.Sprintf("entry%d", i),
+			Title:       fmt.Sprintf("Entry %d", i),
+			Link:        fmt.Sprintf("https://example.com/entry%d", i),
+			Published:   now,
+			Updated:     now,
+			FirstSeen:   now,
+			Content:     "Test content",
+			ContentType: "html",
+		}
+		if err := repo.UpsertEntry(entry); err != nil {
+			t.Fatalf("UpsertEntry() error = %v", err)
+		}
+	}
+
+	// Add 2 entries to second feed
+	for i := 0; i < 2; i++ {
+		entry := &Entry{
+			FeedID:      feed2ID,
+			EntryID:     fmt.Sprintf("entry%d", i),
+			Title:       fmt.Sprintf("Entry %d", i),
+			Link:        fmt.Sprintf("https://example.com/entry%d", i),
+			Published:   now,
+			Updated:     now,
+			FirstSeen:   now,
+			Content:     "Test content",
+			ContentType: "html",
+		}
+		if err := repo.UpsertEntry(entry); err != nil {
+			t.Fatalf("UpsertEntry() error = %v", err)
+		}
+	}
+
+	// Should have 3 entries for first feed
+	count, err = repo.GetEntryCountForFeed(feedID)
+	if err != nil {
+		t.Fatalf("GetEntryCountForFeed() error = %v", err)
+	}
+	if count != 3 {
+		t.Errorf("GetEntryCountForFeed() = %d, want 3", count)
+	}
+
+	// Should have 2 entries for second feed
+	count, err = repo.GetEntryCountForFeed(feed2ID)
+	if err != nil {
+		t.Fatalf("GetEntryCountForFeed() error = %v", err)
+	}
+	if count != 2 {
+		t.Errorf("GetEntryCountForFeed() = %d, want 2", count)
+	}
+
+	// Non-existent feed should return 0
+	count, err = repo.GetEntryCountForFeed(999)
+	if err != nil {
+		t.Fatalf("GetEntryCountForFeed() error = %v", err)
+	}
+	if count != 0 {
+		t.Errorf("GetEntryCountForFeed(999) = %d, want 0", count)
+	}
+}
+
+func TestUpdateFeedURL(t *testing.T) {
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	// Add a feed with ETag and Last-Modified
+	feedID, err := repo.AddFeed("https://example.com/feed", "Test Feed")
+	if err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
+
+	// Set cache headers
+	if err := repo.UpdateFeedCache(feedID, "\"abc123\"", "Mon, 01 Jan 2024 00:00:00 GMT", time.Now()); err != nil {
+		t.Fatalf("UpdateFeedCache() error = %v", err)
+	}
+
+	// Verify cache headers are set
+	feed, err := repo.GetFeedByURL("https://example.com/feed")
+	if err != nil {
+		t.Fatalf("GetFeedByURL() error = %v", err)
+	}
+	if feed.ETag != "\"abc123\"" {
+		t.Errorf("ETag = %q, want \"abc123\"", feed.ETag)
+	}
+	if feed.LastModified != "Mon, 01 Jan 2024 00:00:00 GMT" {
+		t.Errorf("LastModified = %q, want \"Mon, 01 Jan 2024 00:00:00 GMT\"", feed.LastModified)
+	}
+
+	// Update URL (simulating 301 redirect)
+	newURL := "https://example.com/new-feed"
+	if err := repo.UpdateFeedURL(feedID, newURL); err != nil {
+		t.Fatalf("UpdateFeedURL() error = %v", err)
+	}
+
+	// Old URL should not exist
+	_, err = repo.GetFeedByURL("https://example.com/feed")
+	if err != ErrFeedNotFound {
+		t.Errorf("GetFeedByURL(old URL) error = %v, want ErrFeedNotFound", err)
+	}
+
+	// New URL should exist
+	updatedFeed, err := repo.GetFeedByURL(newURL)
+	if err != nil {
+		t.Fatalf("GetFeedByURL(new URL) error = %v", err)
+	}
+	if updatedFeed.URL != newURL {
+		t.Errorf("Feed URL = %q, want %q", updatedFeed.URL, newURL)
+	}
+
+	// Cache headers should be cleared (as per spec)
+	if updatedFeed.ETag != "" {
+		t.Errorf("ETag = %q, want empty (should be cleared after URL update)", updatedFeed.ETag)
+	}
+	if updatedFeed.LastModified != "" {
+		t.Errorf("LastModified = %q, want empty (should be cleared after URL update)", updatedFeed.LastModified)
+	}
+
+	// Feed ID should remain the same
+	if updatedFeed.ID != feedID {
+		t.Errorf("Feed ID = %d, want %d", updatedFeed.ID, feedID)
+	}
+}
+
+func TestRemoveFeedCascadeDelete(t *testing.T) {
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	// Add a feed
+	feedID, err := repo.AddFeed("https://example.com/feed", "Test Feed")
+	if err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
+
+	// Add entries
+	now := time.Now()
+	for i := 0; i < 5; i++ {
+		entry := &Entry{
+			FeedID:      feedID,
+			EntryID:     fmt.Sprintf("entry%d", i),
+			Title:       fmt.Sprintf("Entry %d", i),
+			Link:        fmt.Sprintf("https://example.com/entry%d", i),
+			Published:   now,
+			Updated:     now,
+			FirstSeen:   now,
+			Content:     "Test content",
+			ContentType: "html",
+		}
+		if err := repo.UpsertEntry(entry); err != nil {
+			t.Fatalf("UpsertEntry() error = %v", err)
+		}
+	}
+
+	// Verify entries exist
+	count, err := repo.GetEntryCountForFeed(feedID)
+	if err != nil {
+		t.Fatalf("GetEntryCountForFeed() error = %v", err)
+	}
+	if count != 5 {
+		t.Errorf("GetEntryCountForFeed() = %d, want 5", count)
+	}
+
+	// Remove feed
+	if err := repo.RemoveFeed(feedID); err != nil {
+		t.Fatalf("RemoveFeed() error = %v", err)
+	}
+
+	// Feed should be gone
+	_, err = repo.GetFeedByURL("https://example.com/feed")
+	if err != ErrFeedNotFound {
+		t.Errorf("GetFeedByURL() after delete: got error %v, want ErrFeedNotFound", err)
+	}
+
+	// Entries should be cascade deleted
+	count, err = repo.GetEntryCountForFeed(feedID)
+	if err != nil {
+		t.Fatalf("GetEntryCountForFeed() after feed delete: error = %v", err)
+	}
+	if count != 0 {
+		t.Errorf("GetEntryCountForFeed() after feed delete = %d, want 0 (cascade delete failed)", count)
+	}
+}

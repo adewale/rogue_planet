@@ -74,7 +74,7 @@ Commands:
   init [-f FILE]    Initialize a new planet in the current directory
   add-feed <url>    Add a feed to the planet
   add-all -f FILE   Add multiple feeds from a file
-  remove-feed <url> Remove a feed from the planet
+  remove-feed <url> Remove a feed from the planet (interactive confirmation)
   list-feeds        List all configured feeds
   status            Show planet status (feed and entry counts)
   update            Fetch all feeds and regenerate site
@@ -93,6 +93,9 @@ Init Flags:
 Add-All Flags:
   -f FILE           Path to feeds file (one URL per line)
 
+Remove-Feed Flags:
+  --force           Skip confirmation prompt (for scripting)
+
 Import-OPML Flags:
   --dry-run         Preview feeds without importing
 
@@ -110,6 +113,8 @@ Examples:
   rp add-feed https://blog.golang.org/feed.atom
   rp add-feed https://username.micro.blog/feed.json
   rp add-all -f feeds.txt
+  rp remove-feed https://example.com/feed.xml
+  rp remove-feed https://example.com/feed.xml --force
   rp list-feeds
   rp status
   rp update
@@ -184,12 +189,13 @@ func runAddAll() error {
 func runRemoveFeed() error {
 	fs := flag.NewFlagSet("remove-feed", flag.ExitOnError)
 	configPath := fs.String("config", "./config.ini", "Path to config file")
+	force := fs.Bool("force", false, "Skip confirmation prompt")
 	if err := fs.Parse(os.Args[2:]); err != nil {
 		return fmt.Errorf("parsing flags: %w", err)
 	}
 
 	if fs.NArg() < 1 {
-		fmt.Fprintln(os.Stderr, "Usage: rp remove-feed <url>")
+		fmt.Fprintln(os.Stderr, "Usage: rp remove-feed <url> [--force]")
 		return fmt.Errorf("missing feed URL argument")
 	}
 
@@ -197,9 +203,20 @@ func runRemoveFeed() error {
 		URL:        fs.Arg(0),
 		ConfigPath: *configPath,
 		Output:     os.Stdout,
+		Input:      os.Stdin,
+		Force:      *force,
 	}
 
-	return cmdRemoveFeed(opts)
+	err := cmdRemoveFeed(opts)
+	if err != nil {
+		// Check if this is a user cancellation
+		if _, ok := err.(*ErrUserCancelled); ok {
+			// "Cancelled." already printed by cmdRemoveFeed
+			// Exit with code 1 without printing error message
+			os.Exit(1)
+		}
+	}
+	return err
 }
 
 func runListFeeds() error {
