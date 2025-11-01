@@ -9,6 +9,7 @@ import (
 )
 
 func TestNewWithUserAgent(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name              string
 		userAgent         string
@@ -67,6 +68,7 @@ func TestNewWithUserAgent(t *testing.T) {
 }
 
 func TestNewWithUserAgent_PreservesOtherSettings(t *testing.T) {
+	t.Parallel()
 	c := NewWithUserAgent("CustomBot/1.0")
 
 	// Verify other settings are preserved

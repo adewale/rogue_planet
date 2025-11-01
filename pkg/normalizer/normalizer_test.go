@@ -9,6 +9,7 @@ import (
 )
 
 func TestParse(t *testing.T) {
+	t.Parallel()
 	t.Run("RSS 2.0 feed", func(t *testing.T) {
 		feedData := `<?xml version="1.0"?>
 <rss version="2.0">
@@ -122,6 +123,7 @@ func TestParse(t *testing.T) {
 }
 
 func TestSanitizeHTML(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name        string
 		input       string
@@ -203,6 +205,7 @@ func TestSanitizeHTML(t *testing.T) {
 }
 
 func TestIDGeneration(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	t.Run("uses existing GUID", func(t *testing.T) {
@@ -264,6 +267,7 @@ func TestIDGeneration(t *testing.T) {
 }
 
 func TestURLResolution(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	tests := []struct {

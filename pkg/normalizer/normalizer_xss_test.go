@@ -7,6 +7,7 @@ import (
 
 // Comprehensive XSS prevention tests
 func TestSanitizeHTML_XSS_Prevention(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	tests := []struct {
@@ -124,6 +125,7 @@ func TestSanitizeHTML_XSS_Prevention(t *testing.T) {
 
 // Test safe HTML is preserved
 func TestSanitizeHTML_SafeContent(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	tests := []struct {
@@ -204,6 +206,7 @@ func TestSanitizeHTML_SafeContent(t *testing.T) {
 
 // Test URL scheme validation
 func TestSanitizeHTML_URLSchemes(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	tests := []struct {
@@ -267,6 +270,7 @@ func TestSanitizeHTML_URLSchemes(t *testing.T) {
 
 // Test various XSS vectors from OWASP and real-world attacks
 func TestSanitizeHTML_RealWorld_XSS_Vectors(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	vectors := []struct {
@@ -311,6 +315,7 @@ func TestSanitizeHTML_RealWorld_XSS_Vectors(t *testing.T) {
 
 // Test HTML entity handling
 func TestSanitizeHTML_HTMLEntities(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	tests := []struct {
@@ -353,6 +358,7 @@ func TestSanitizeHTML_HTMLEntities(t *testing.T) {
 
 // Test that unclosed tags are handled
 func TestSanitizeHTML_MalformedHTML(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	tests := []struct {
@@ -396,6 +402,7 @@ func TestSanitizeHTML_MalformedHTML(t *testing.T) {
 
 // Test content length and special characters
 func TestSanitizeHTML_EdgeCases(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	tests := []struct {

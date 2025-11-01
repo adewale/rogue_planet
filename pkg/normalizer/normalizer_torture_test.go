@@ -47,6 +47,7 @@ import (
 
 // TestAtomContentType_XHTML tests handling of Atom content type="xhtml"
 func TestAtomContentType_XHTML(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	feedData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "atom-torture-xhtml.xml"))
@@ -91,6 +92,7 @@ func TestAtomContentType_XHTML(t *testing.T) {
 
 // TestAtomContentType_HTML tests handling of Atom content type="html"
 func TestAtomContentType_HTML(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	feedData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "atom-torture-xhtml.xml"))
@@ -127,6 +129,7 @@ func TestAtomContentType_HTML(t *testing.T) {
 
 // TestAtomContentType_Text tests handling of Atom content type="text"
 func TestAtomContentType_Text(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	feedData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "atom-torture-xhtml.xml"))
@@ -167,6 +170,7 @@ func TestAtomContentType_Text(t *testing.T) {
 
 // TestXHTML_ComplexStructure tests XHTML with lists, links, and code
 func TestXHTML_ComplexStructure(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	feedData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "atom-torture-xhtml.xml"))
@@ -210,6 +214,7 @@ func TestXHTML_ComplexStructure(t *testing.T) {
 
 // TestMathML_BasicEquations tests basic MathML rendering
 func TestMathML_BasicEquations(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	feedData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "atom-torture-mathml.xml"))
@@ -261,6 +266,7 @@ func TestMathML_BasicEquations(t *testing.T) {
 
 // TestMathML_Sanitization tests that MathML cannot be used for XSS
 func TestMathML_Sanitization(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	feedData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "atom-torture-mathml.xml"))
@@ -302,6 +308,7 @@ func TestMathML_Sanitization(t *testing.T) {
 
 // TestMathML_ComplexFormulas tests complex MathML structures
 func TestMathML_ComplexFormulas(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	feedData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "atom-torture-mathml.xml"))
@@ -345,6 +352,7 @@ func TestMathML_ComplexFormulas(t *testing.T) {
 
 // TestSVG_Inline tests inline SVG handling
 func TestSVG_Inline(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	feedData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "atom-torture-svg.xml"))
@@ -392,6 +400,7 @@ func TestSVG_Inline(t *testing.T) {
 
 // TestSVG_WithFallback tests SVG with fallback image handling
 func TestSVG_WithFallback(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	feedData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "atom-torture-svg.xml"))
@@ -446,6 +455,7 @@ func TestSVG_WithFallback(t *testing.T) {
 
 // TestSVG_Security tests that SVG cannot be used for XSS
 func TestSVG_Security(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	feedData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "atom-torture-svg.xml"))
@@ -487,6 +497,7 @@ func TestSVG_Security(t *testing.T) {
 
 // TestSVG_InImgTag tests SVG referenced in img src attribute
 func TestSVG_InImgTag(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	feedData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "atom-torture-svg.xml"))
@@ -525,6 +536,7 @@ func TestSVG_InImgTag(t *testing.T) {
 
 // TestXHTML_MixedContent tests XHTML with various HTML elements
 func TestXHTML_MixedContent(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	feedData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "atom-torture-xhtml.xml"))
@@ -566,6 +578,7 @@ func TestXHTML_MixedContent(t *testing.T) {
 
 // TestContentTypeDetection verifies that ContentType field is set correctly
 func TestContentTypeDetection(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	feedData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "atom-torture-xhtml.xml"))
@@ -603,6 +616,7 @@ func TestContentTypeDetection(t *testing.T) {
 
 // TestNamespaceHandling verifies proper XML namespace handling
 func TestNamespaceHandling(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	// Test all three torture test feeds
@@ -648,6 +662,7 @@ func TestNamespaceHandling(t *testing.T) {
 // This is THE definitive test of proper XML parsing vs HTML tag-soup parsing.
 // Reference: https://golem.ph.utexas.edu/~distler/blog/archives/000793.html
 func TestXHTML_CaseSensitivity(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	feedData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "atom-torture-xhtml.xml"))
@@ -726,6 +741,7 @@ func TestXHTML_CaseSensitivity(t *testing.T) {
 // Reference: https://golem.ph.utexas.edu/~distler/blog/archives/000793.html
 // Reference: https://www.w3.org/TR/xmlbase/
 func TestXMLBase_RelativeURLResolution(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	feedData, err := os.ReadFile(filepath.Join("..", "..", "testdata", "atom-torture-xhtml.xml"))

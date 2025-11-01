@@ -9,6 +9,7 @@ import (
 // TestParseRealWorldFeeds tests parsing of actual saved feed snapshots
 // to ensure compatibility with real-world feed formats
 func TestParseRealWorldFeeds(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	tests := []struct {
@@ -103,6 +104,7 @@ func TestParseRealWorldFeeds(t *testing.T) {
 
 // TestEndToEndWithRealFeeds tests the complete workflow with real feed snapshots
 func TestEndToEndWithRealFeeds(t *testing.T) {
+	t.Parallel()
 	// This test verifies we can:
 	// 1. Parse real-world feeds
 	// 2. Store entries in database
@@ -208,6 +210,7 @@ func containsIgnoreCase(s, substr string) bool {
 
 // TestParseJSONFeed10 tests parsing of JSON Feed version 1.0
 func TestParseJSONFeed10(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	// Read JSON Feed 1.0 test fixture
@@ -295,6 +298,7 @@ func TestParseJSONFeed10(t *testing.T) {
 
 // TestParseJSONFeed11 tests parsing of JSON Feed version 1.1
 func TestParseJSONFeed11(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	// Read JSON Feed 1.1 test fixture
@@ -365,6 +369,7 @@ func TestParseJSONFeed11(t *testing.T) {
 
 // TestParseJSONFeedEdgeCases tests edge cases and error handling
 func TestParseJSONFeedEdgeCases(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	// Read edge cases test fixture
@@ -487,6 +492,7 @@ func TestParseJSONFeedEdgeCases(t *testing.T) {
 
 // TestJSONFeedSecuritySanitization specifically tests XSS prevention
 func TestJSONFeedSecuritySanitization(t *testing.T) {
+	t.Parallel()
 	n := New()
 
 	// Create a minimal JSON Feed with dangerous content

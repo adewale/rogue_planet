@@ -132,6 +132,7 @@ https://example.com/feed3.xml
 
 // TestHTMLGeneration tests the complete pipeline from HTTP fetch to HTML generation
 func TestHTMLGeneration(t *testing.T) {
+	t.Parallel()
 	t.Skip("TODO: Complete implementation - needs test crawler support")
 
 	// This test validates the full end-to-end workflow but uses direct function
@@ -254,6 +255,7 @@ func TestHTMLGeneration(t *testing.T) {
 // Tests that remove-feed works correctly after a feed URL has been updated due to a 301 redirect
 // This test simulates the scenario where UpdateFeedURL is called (as would happen during a 301 redirect)
 func TestRemoveFeedAfterRedirect(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 
 	// Create database directory

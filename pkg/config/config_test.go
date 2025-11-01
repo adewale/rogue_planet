@@ -8,6 +8,7 @@ import (
 )
 
 func TestDefault(t *testing.T) {
+	t.Parallel()
 	config := Default()
 
 	if config.Planet.Name != "My Planet" {
@@ -28,6 +29,7 @@ func TestDefault(t *testing.T) {
 }
 
 func TestLoadFromFile(t *testing.T) {
+	t.Parallel()
 	t.Run("valid config", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		configPath := filepath.Join(tmpDir, "config.ini")
@@ -162,6 +164,7 @@ days = not_a_number
 }
 
 func TestLoadFeedsFile(t *testing.T) {
+	t.Parallel()
 	t.Run("valid feeds file", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		feedsPath := filepath.Join(tmpDir, "feeds.txt")
@@ -235,6 +238,7 @@ https://example.com/feed4.xml
 }
 
 func TestValidate(t *testing.T) {
+	t.Parallel()
 	t.Run("valid config", func(t *testing.T) {
 		config := Default()
 		config.Planet.Name = "Test Planet"
@@ -346,6 +350,7 @@ func TestValidate(t *testing.T) {
 }
 
 func TestSetPlanet(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		key       string
@@ -600,6 +605,7 @@ func TestSetPlanet(t *testing.T) {
 
 // TestAllConfigFieldsFromExample tests that all fields in examples/config.ini are parsed correctly
 func TestAllConfigFieldsFromExample(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "config.ini")
 
@@ -666,6 +672,7 @@ path = ./data/planet.db
 
 // TestSetDatabase tests database configuration parsing
 func TestSetDatabase(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		key       string
@@ -709,6 +716,7 @@ func TestSetDatabase(t *testing.T) {
 
 // TestConnectionPoolingConfig tests HTTP connection pooling and retry configuration
 func TestConnectionPoolingConfig(t *testing.T) {
+	t.Parallel()
 	t.Run("defaults", func(t *testing.T) {
 		config := Default()
 

@@ -159,6 +159,7 @@ func (m *mockLogger) Error(format string, args ...interface{}) {
 // Tests
 
 func TestFetchFeed_Success(t *testing.T) {
+	t.Parallel()
 	// Setup
 	mc := &mockCrawler{
 		resp: &crawler.FeedResponse{
@@ -234,6 +235,7 @@ func TestFetchFeed_Success(t *testing.T) {
 }
 
 func TestFetchFeed_FetchError(t *testing.T) {
+	t.Parallel()
 	// Setup
 	mc := &mockCrawler{
 		err: errors.New("network error"),
@@ -272,6 +274,7 @@ func TestFetchFeed_FetchError(t *testing.T) {
 }
 
 func TestFetchFeed_301Redirect(t *testing.T) {
+	t.Parallel()
 	// Setup
 	mc := &mockCrawler{
 		resp: &crawler.FeedResponse{
@@ -328,6 +331,7 @@ func TestFetchFeed_301Redirect(t *testing.T) {
 }
 
 func TestFetchFeed_304NotModified(t *testing.T) {
+	t.Parallel()
 	// Setup
 	mc := &mockCrawler{
 		resp: &crawler.FeedResponse{
@@ -382,6 +386,7 @@ func TestFetchFeed_304NotModified(t *testing.T) {
 }
 
 func TestFetchFeed_ParseError(t *testing.T) {
+	t.Parallel()
 	// Setup
 	mc := &mockCrawler{
 		resp: &crawler.FeedResponse{
@@ -431,6 +436,7 @@ func TestFetchFeed_ParseError(t *testing.T) {
 }
 
 func TestFetchFeed_EntryStorageError(t *testing.T) {
+	t.Parallel()
 	// Setup - some entries fail to store
 	mc := &mockCrawler{
 		resp: &crawler.FeedResponse{

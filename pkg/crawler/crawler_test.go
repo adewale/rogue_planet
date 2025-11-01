@@ -10,6 +10,7 @@ import (
 )
 
 func TestValidateURL(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		url     string
@@ -41,6 +42,7 @@ func TestValidateURL(t *testing.T) {
 }
 
 func TestFetch(t *testing.T) {
+	t.Parallel()
 	t.Run("successful fetch", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Verify User-Agent
@@ -222,6 +224,7 @@ func TestFetch(t *testing.T) {
 }
 
 func TestFetchWithRetry(t *testing.T) {
+	t.Parallel()
 	t.Run("succeeds on second attempt", func(t *testing.T) {
 		attempts := 0
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -265,6 +268,7 @@ func TestFetchWithRetry(t *testing.T) {
 }
 
 func TestFetchInvalidContentType(t *testing.T) {
+	t.Parallel()
 	t.Run("HTML instead of feed", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/html")
@@ -319,6 +323,7 @@ func TestFetchInvalidContentType(t *testing.T) {
 
 // TestConnectionPooling verifies that the crawler is configured with proper connection pooling
 func TestConnectionPooling(t *testing.T) {
+	t.Parallel()
 	crawler := New()
 
 	// Verify client exists and has a transport
@@ -412,6 +417,7 @@ func TestConnectionPooling(t *testing.T) {
 
 // TestConnectionReuseIntegration tests that connections are actually reused
 func TestConnectionReuseIntegration(t *testing.T) {
+	t.Parallel()
 	connectionCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		connectionCount++
@@ -448,6 +454,7 @@ func TestConnectionReuseIntegration(t *testing.T) {
 }
 
 func TestParseRetryAfter(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		header   string
@@ -519,6 +526,7 @@ func TestParseRetryAfter(t *testing.T) {
 }
 
 func TestFetchWithRetry_RespectsRetryAfter(t *testing.T) {
+	t.Parallel()
 	attemptCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		attemptCount++
@@ -566,6 +574,7 @@ func TestFetchWithRetry_RespectsRetryAfter(t *testing.T) {
 }
 
 func TestFetch_CapturesRetryAfter(t *testing.T) {
+	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Retry-After", "60")
 		w.WriteHeader(http.StatusTooManyRequests)
@@ -594,6 +603,7 @@ func TestFetch_CapturesRetryAfter(t *testing.T) {
 }
 
 func TestFetch_Tracks301PermanentRedirect(t *testing.T) {
+	t.Parallel()
 	// Create a server that redirects with 301
 	redirectCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -638,6 +648,7 @@ func TestFetch_Tracks301PermanentRedirect(t *testing.T) {
 }
 
 func TestFetch_Distinguishes301From302(t *testing.T) {
+	t.Parallel()
 	// Test that 302 redirects are NOT marked as permanent
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/temp-redirect" {

@@ -13,6 +13,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
+	t.Parallel()
 	gen, err := New()
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
@@ -24,6 +25,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestGenerate(t *testing.T) {
+	t.Parallel()
 	gen, _ := New()
 
 	data := TemplateData{
@@ -85,6 +87,7 @@ func TestGenerate(t *testing.T) {
 }
 
 func TestGenerateGroupByDate(t *testing.T) {
+	t.Parallel()
 	gen, _ := New()
 
 	now := time.Now()
@@ -133,6 +136,7 @@ func TestGenerateGroupByDate(t *testing.T) {
 }
 
 func TestGenerateToFile(t *testing.T) {
+	t.Parallel()
 	gen, _ := New()
 
 	tmpDir := t.TempDir()
@@ -174,6 +178,7 @@ func TestGenerateToFile(t *testing.T) {
 }
 
 func TestNewWithTemplate(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	templatePath := filepath.Join(tmpDir, "custom.html")
 
@@ -221,6 +226,7 @@ func TestNewWithTemplate(t *testing.T) {
 }
 
 func TestRelativeTime(t *testing.T) {
+	t.Parallel()
 	// Fixed current time for deterministic testing
 	currentTime := time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
 
@@ -418,6 +424,7 @@ func TestRelativeTime(t *testing.T) {
 }
 
 func TestGroupEntriesByDate(t *testing.T) {
+	t.Parallel()
 	// Use fixed time for deterministic testing
 	currentTime := time.Date(2025, 1, 15, 14, 30, 0, 0, time.UTC)
 	clock := timeprovider.NewFakeClock(currentTime)
@@ -449,6 +456,7 @@ func TestGroupEntriesByDate(t *testing.T) {
 }
 
 func TestFormatDateGroup(t *testing.T) {
+	t.Parallel()
 	// Use fixed time for deterministic testing
 	// Wednesday, January 15, 2025 at 14:30 UTC
 	currentTime := time.Date(2025, 1, 15, 14, 30, 0, 0, time.UTC)
@@ -497,6 +505,7 @@ func TestFormatDateGroup(t *testing.T) {
 }
 
 func TestHTMLSanitization(t *testing.T) {
+	t.Parallel()
 	gen, _ := New()
 
 	// Content should already be sanitized by normalizer
@@ -530,6 +539,7 @@ func TestHTMLSanitization(t *testing.T) {
 }
 
 func TestCSPHeader(t *testing.T) {
+	t.Parallel()
 	gen, _ := New()
 
 	data := TemplateData{
@@ -565,6 +575,7 @@ func TestCSPHeader(t *testing.T) {
 }
 
 func TestResponsiveDesign(t *testing.T) {
+	t.Parallel()
 	gen, _ := New()
 
 	data := TemplateData{
@@ -591,6 +602,7 @@ func TestResponsiveDesign(t *testing.T) {
 }
 
 func TestGenerateWithFeeds(t *testing.T) {
+	t.Parallel()
 	gen, _ := New()
 
 	data := TemplateData{
@@ -645,6 +657,7 @@ func TestGenerateWithFeeds(t *testing.T) {
 }
 
 func TestGenerateWithOwnerInfo(t *testing.T) {
+	t.Parallel()
 	gen, _ := New()
 
 	data := TemplateData{
@@ -668,6 +681,7 @@ func TestGenerateWithOwnerInfo(t *testing.T) {
 }
 
 func TestTemplateFuncs(t *testing.T) {
+	t.Parallel()
 	gen, _ := New()
 
 	testTime := time.Date(2025, 10, 12, 15, 30, 0, 0, time.UTC)
@@ -701,6 +715,7 @@ func TestTemplateFuncs(t *testing.T) {
 }
 
 func TestRelativeTimeEdgeCases(t *testing.T) {
+	t.Parallel()
 	// Fixed current time for deterministic testing
 	currentTime := time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
 
@@ -743,6 +758,7 @@ func TestRelativeTimeEdgeCases(t *testing.T) {
 }
 
 func TestNewWithTemplateError(t *testing.T) {
+	t.Parallel()
 	_, err := NewWithTemplate("/nonexistent/template.html")
 	if err == nil {
 		t.Error("NewWithTemplate() should error for non-existent file")
@@ -750,6 +766,7 @@ func TestNewWithTemplateError(t *testing.T) {
 }
 
 func TestNewWithTemplateBadSyntax(t *testing.T) {
+	t.Parallel()
 	t.Run("unclosed template action", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		templatePath := filepath.Join(tmpDir, "bad.html")
@@ -820,6 +837,7 @@ func TestNewWithTemplateBadSyntax(t *testing.T) {
 }
 
 func TestCopyStaticAssets(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	templateDir := filepath.Join(tmpDir, "templates")
 	staticSrc := filepath.Join(templateDir, "static")
@@ -883,6 +901,7 @@ func TestCopyStaticAssets(t *testing.T) {
 }
 
 func TestCopyStaticAssetsNoStaticDir(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	templateDir := filepath.Join(tmpDir, "templates")
 	outputDir := filepath.Join(tmpDir, "output")
@@ -909,6 +928,7 @@ func TestCopyStaticAssetsNoStaticDir(t *testing.T) {
 }
 
 func TestCopyStaticAssetsDefaultTemplate(t *testing.T) {
+	t.Parallel()
 	gen, _ := New()
 
 	tmpDir := t.TempDir()
@@ -921,6 +941,7 @@ func TestCopyStaticAssetsDefaultTemplate(t *testing.T) {
 }
 
 func TestGenerateToFileWithStaticAssets(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	templateDir := filepath.Join(tmpDir, "templates")
 	staticSrc := filepath.Join(templateDir, "static")
@@ -967,6 +988,7 @@ func TestGenerateToFileWithStaticAssets(t *testing.T) {
 }
 
 func TestGenerateWithSubtitle(t *testing.T) {
+	t.Parallel()
 	gen, _ := New()
 
 	data := TemplateData{

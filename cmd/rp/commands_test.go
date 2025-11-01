@@ -14,6 +14,7 @@ import (
 )
 
 func TestCmdAddFeed(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		opts       AddFeedOptions
@@ -43,6 +44,7 @@ func TestCmdAddFeed(t *testing.T) {
 }
 
 func TestCmdAddAll(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		opts       AddAllOptions
@@ -72,6 +74,7 @@ func TestCmdAddAll(t *testing.T) {
 }
 
 func TestCmdRemoveFeed(t *testing.T) {
+	t.Parallel()
 	t.Run("missing URL", func(t *testing.T) {
 		var buf bytes.Buffer
 		opts := RemoveFeedOptions{
@@ -602,6 +605,7 @@ func TestCmdInitWithFeedsFile(t *testing.T) {
 }
 
 func TestCmdPrune(t *testing.T) {
+	t.Parallel()
 	var buf bytes.Buffer
 	opts := PruneOptions{
 		ConfigPath: "/nonexistent/config.ini",
@@ -635,6 +639,7 @@ func TestCmdPrune(t *testing.T) {
 // removed as they don't match the actual behavior (auto-creation with defaults).
 
 func TestCmdVerify(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		setup      func(t *testing.T) (configPath string, cleanup func())
@@ -810,6 +815,7 @@ path = ` + dbPath + `
 }
 
 func TestCmdUpdate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		setup   func(t *testing.T) (configPath string, cleanup func())
@@ -875,6 +881,7 @@ path = ` + dbPath + `
 }
 
 func TestCmdFetch(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		setup   func(t *testing.T) (configPath string, cleanup func())
@@ -940,6 +947,7 @@ path = ` + dbPath + `
 }
 
 func TestCmdGenerate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		setup   func(t *testing.T) (configPath string, cleanup func())

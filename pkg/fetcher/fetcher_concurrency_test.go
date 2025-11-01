@@ -52,6 +52,7 @@ func (m *mockSlowCrawler) FetchWithRetry(ctx context.Context, feedURL string, ca
 // TestFetchFeed_Concurrency verifies that multiple feeds are processed concurrently
 // and not serialized by incorrect mutex placement.
 func TestFetchFeed_Concurrency(t *testing.T) {
+	t.Parallel()
 	const (
 		numFeeds      = 6
 		concurrency   = 3
@@ -137,6 +138,7 @@ func TestFetchFeed_Concurrency(t *testing.T) {
 // TestFetchFeed_MutexProtectsDatabase verifies that the mutex correctly protects
 // database operations while allowing concurrent HTTP fetching and parsing.
 func TestFetchFeed_MutexProtectsDatabase(t *testing.T) {
+	t.Parallel()
 	const numFeeds = 10
 
 	var concurrentFetches int32

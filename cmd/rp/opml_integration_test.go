@@ -352,6 +352,7 @@ func TestOPMLImportDuplicateDetection(t *testing.T) {
 }
 
 func TestOPMLRFC822DateHandling(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 
 	// Test various RFC 822 date formats

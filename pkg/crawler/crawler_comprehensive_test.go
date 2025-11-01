@@ -13,6 +13,7 @@ import (
 
 // Comprehensive tests for SSRF prevention - all edge cases
 func TestValidateURL_Comprehensive(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		url     string
@@ -76,6 +77,7 @@ func TestValidateURL_Comprehensive(t *testing.T) {
 
 // Test HTTP conditional requests with all ETag formats
 func TestFetch_ConditionalRequests_ETagFormats(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name            string
 		etag            string
@@ -115,6 +117,7 @@ func TestFetch_ConditionalRequests_ETagFormats(t *testing.T) {
 
 // Test conditional requests with only ETag, only Last-Modified, and both
 func TestFetch_ConditionalRequests_Combinations(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name          string
 		cache         FeedCache
@@ -192,6 +195,7 @@ func TestFetch_ConditionalRequests_Combinations(t *testing.T) {
 
 // Test gzip decompression
 func TestFetch_GzipDecompression(t *testing.T) {
+	t.Parallel()
 	originalContent := []byte("<?xml version=\"1.0\"?><rss version=\"2.0\"><channel><title>Test</title></channel></rss>")
 
 	t.Run("gzip encoded response", func(t *testing.T) {
@@ -246,6 +250,7 @@ func TestFetch_GzipDecompression(t *testing.T) {
 
 // Test various HTTP status codes
 func TestFetch_HTTPStatusCodes(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		statusCode int
@@ -290,6 +295,7 @@ func TestFetch_HTTPStatusCodes(t *testing.T) {
 
 // Test size limits
 func TestFetch_SizeLimits(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		size    int
@@ -328,6 +334,7 @@ func TestFetch_SizeLimits(t *testing.T) {
 
 // Test redirect handling
 func TestFetch_Redirects(t *testing.T) {
+	t.Parallel()
 	t.Run("3 redirects - success", func(t *testing.T) {
 		redirectCount := 0
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -397,6 +404,7 @@ func TestFetch_Redirects(t *testing.T) {
 
 // Test FetchWithRetry comprehensive scenarios
 func TestFetchWithRetry_Comprehensive(t *testing.T) {
+	t.Parallel()
 	t.Run("success on first try - no retries", func(t *testing.T) {
 		attempts := 0
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -548,6 +556,7 @@ func TestFetchWithRetry_Comprehensive(t *testing.T) {
 
 // Test constructor variants
 func TestConstructors(t *testing.T) {
+	t.Parallel()
 	t.Run("New() creates default crawler", func(t *testing.T) {
 		crawler := New()
 		if crawler == nil {
@@ -589,6 +598,7 @@ func TestConstructors(t *testing.T) {
 
 // Test cache update on successful response
 func TestFetch_CacheUpdate(t *testing.T) {
+	t.Parallel()
 	t.Run("cache updated on 200 response", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("ETag", `"new-etag"`)
@@ -655,6 +665,7 @@ func TestFetch_CacheUpdate(t *testing.T) {
 
 // Test User-Agent header
 func TestFetch_UserAgent(t *testing.T) {
+	t.Parallel()
 	t.Run("default user agent", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ua := r.Header.Get("User-Agent")

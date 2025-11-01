@@ -17,6 +17,7 @@ import (
 
 // TestLiveFetchRealWorldFeeds tests fetching and parsing from actual live URLs
 func TestLiveFetchRealWorldFeeds(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("Skipping live network test in short mode")
 	}
@@ -125,6 +126,7 @@ func TestLiveFetchRealWorldFeeds(t *testing.T) {
 
 // TestLiveFetchConditionalRequest tests that conditional requests work with real servers
 func TestLiveFetchConditionalRequest(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("Skipping live network test in short mode")
 	}
@@ -171,6 +173,7 @@ func TestLiveFetchConditionalRequest(t *testing.T) {
 
 // TestLiveEndToEndPipeline tests the complete pipeline with live fetching
 func TestLiveEndToEndPipeline(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("Skipping live network test in short mode")
 	}

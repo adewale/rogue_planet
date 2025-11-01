@@ -24,6 +24,7 @@ func setupTestDB(t *testing.T) (*Repository, string) {
 }
 
 func TestNew(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -40,6 +41,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestAddFeed(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -68,6 +70,7 @@ func TestAddFeed(t *testing.T) {
 }
 
 func TestAddDuplicateFeed(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -84,6 +87,7 @@ func TestAddDuplicateFeed(t *testing.T) {
 }
 
 func TestUpdateFeed(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -107,6 +111,7 @@ func TestUpdateFeed(t *testing.T) {
 }
 
 func TestUpdateFeedCache(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -130,6 +135,7 @@ func TestUpdateFeedCache(t *testing.T) {
 }
 
 func TestGetFeeds(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -151,6 +157,7 @@ func TestGetFeeds(t *testing.T) {
 }
 
 func TestGetFeedByURL(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -175,6 +182,7 @@ func TestGetFeedByURL(t *testing.T) {
 }
 
 func TestRemoveFeed(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -193,6 +201,7 @@ func TestRemoveFeed(t *testing.T) {
 }
 
 func TestUpsertEntry(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -240,6 +249,7 @@ func TestUpsertEntry(t *testing.T) {
 }
 
 func TestUniqueConstraintHandling(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -316,6 +326,7 @@ func TestUniqueConstraintHandling(t *testing.T) {
 }
 
 func TestGetRecentEntries(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -363,6 +374,7 @@ func TestGetRecentEntries(t *testing.T) {
 }
 
 func TestPruneOldEntries(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -420,6 +432,7 @@ func TestPruneOldEntries(t *testing.T) {
 }
 
 func TestRemoveFeedCascade(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -455,6 +468,7 @@ func TestRemoveFeedCascade(t *testing.T) {
 }
 
 func TestDatabasePersistence(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "persist.db")
 
@@ -489,6 +503,7 @@ func TestDatabasePersistence(t *testing.T) {
 }
 
 func TestGetRecentEntriesFallback(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "test.db")
 
@@ -546,6 +561,7 @@ func TestGetRecentEntriesFallback(t *testing.T) {
 }
 
 func TestGetRecentEntriesWithinWindow(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "test.db")
 
@@ -615,6 +631,7 @@ func TestGetRecentEntriesWithinWindow(t *testing.T) {
 }
 
 func TestUpdateFeedError(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -647,6 +664,7 @@ func TestUpdateFeedError(t *testing.T) {
 }
 
 func TestCountEntries(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -685,6 +703,7 @@ func TestCountEntries(t *testing.T) {
 }
 
 func TestCountRecentEntries(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -742,6 +761,7 @@ func TestCountRecentEntries(t *testing.T) {
 }
 
 func TestNewErrors(t *testing.T) {
+	t.Parallel()
 	// Test with invalid path
 	_, err := New("/invalid/path/to/nonexistent/dir/test.db")
 	if err == nil {
@@ -750,6 +770,7 @@ func TestNewErrors(t *testing.T) {
 }
 
 func TestGetRecentEntriesFilterByFirstSeen(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -817,6 +838,7 @@ func TestGetRecentEntriesFilterByFirstSeen(t *testing.T) {
 }
 
 func TestGetRecentEntriesSortByFirstSeen(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -867,6 +889,7 @@ func TestGetRecentEntriesSortByFirstSeen(t *testing.T) {
 }
 
 func TestGetRecentEntriesFilterAndSortByFirstSeen(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -913,6 +936,7 @@ func TestGetRecentEntriesFilterAndSortByFirstSeen(t *testing.T) {
 }
 
 func TestGetEntryCountForFeed(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -1003,6 +1027,7 @@ func TestGetEntryCountForFeed(t *testing.T) {
 }
 
 func TestUpdateFeedURL(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
@@ -1065,6 +1090,7 @@ func TestUpdateFeedURL(t *testing.T) {
 }
 
 func TestRemoveFeedCascadeDelete(t *testing.T) {
+	t.Parallel()
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 

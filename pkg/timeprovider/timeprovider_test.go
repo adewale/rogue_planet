@@ -7,6 +7,7 @@ import (
 )
 
 func TestWallClock_Now(t *testing.T) {
+	t.Parallel()
 	clock := WallClock{}
 
 	before := time.Now()
@@ -20,6 +21,7 @@ func TestWallClock_Now(t *testing.T) {
 }
 
 func TestWallClock_Since(t *testing.T) {
+	t.Parallel()
 	clock := WallClock{}
 
 	start := time.Now()
@@ -38,6 +40,7 @@ func TestWallClock_Since(t *testing.T) {
 }
 
 func TestFakeClock_Now(t *testing.T) {
+	t.Parallel()
 	fixedTime := time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
 	clock := NewFakeClock(fixedTime)
 
@@ -54,6 +57,7 @@ func TestFakeClock_Now(t *testing.T) {
 }
 
 func TestFakeClock_Since(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		current  time.Time
@@ -99,6 +103,7 @@ func TestFakeClock_Since(t *testing.T) {
 }
 
 func TestFakeClock_SetTime(t *testing.T) {
+	t.Parallel()
 	initialTime := time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
 	clock := NewFakeClock(initialTime)
 
@@ -118,6 +123,7 @@ func TestFakeClock_SetTime(t *testing.T) {
 }
 
 func TestFakeClock_Advance(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		initial  time.Time
@@ -170,6 +176,7 @@ func TestFakeClock_Advance(t *testing.T) {
 }
 
 func TestFakeClock_MultipleAdvances(t *testing.T) {
+	t.Parallel()
 	initialTime := time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
 	clock := NewFakeClock(initialTime)
 
@@ -185,6 +192,7 @@ func TestFakeClock_MultipleAdvances(t *testing.T) {
 }
 
 func TestFakeClock_ConcurrentAccess(t *testing.T) {
+	t.Parallel()
 	clock := NewFakeClock(time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC))
 
 	var wg sync.WaitGroup
@@ -232,6 +240,7 @@ func TestFakeClock_ConcurrentAccess(t *testing.T) {
 }
 
 func TestFakeClock_UsageExample(t *testing.T) {
+	t.Parallel()
 	// Example: Test a function that checks if an event is "recent" (within last hour)
 	isRecent := func(eventTime time.Time, tp TimeProvider) bool {
 		return tp.Since(eventTime) < 1*time.Hour

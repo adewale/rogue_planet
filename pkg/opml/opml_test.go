@@ -12,6 +12,7 @@ import (
 
 // Test parsing valid OPML 2.0
 func TestParse_OPML20(t *testing.T) {
+	t.Parallel()
 	opmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
   <head>
@@ -53,6 +54,7 @@ func TestParse_OPML20(t *testing.T) {
 
 // Test parsing OPML 1.0 with 'url' attribute
 func TestParse_OPML10_UrlAttribute(t *testing.T) {
+	t.Parallel()
 	opmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="1.0">
   <head>
@@ -80,6 +82,7 @@ func TestParse_OPML10_UrlAttribute(t *testing.T) {
 
 // Test handling both text and title attributes
 func TestParse_TextAndTitle(t *testing.T) {
+	t.Parallel()
 	opmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
   <body>
@@ -111,6 +114,7 @@ func TestParse_TextAndTitle(t *testing.T) {
 
 // Test nested outlines (categories)
 func TestParse_NestedOutlines(t *testing.T) {
+	t.Parallel()
 	opmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
   <body>
@@ -162,6 +166,7 @@ func TestParse_NestedOutlines(t *testing.T) {
 
 // Test RFC 822 date parsing
 func TestParseRFC822(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		input    string
@@ -203,6 +208,7 @@ func TestParseRFC822(t *testing.T) {
 
 // Test RFC 822 date formatting
 func TestFormatRFC822(t *testing.T) {
+	t.Parallel()
 	testTime := time.Date(2025, 10, 12, 10, 0, 0, 0, time.FixedZone("MST", -7*3600))
 	formatted := FormatRFC822(testTime)
 
@@ -224,6 +230,7 @@ func TestFormatRFC822(t *testing.T) {
 
 // Test round-trip: Generate → Parse → Extract
 func TestRoundTrip(t *testing.T) {
+	t.Parallel()
 	originalFeeds := []Feed{
 		{Title: "Feed 1", FeedURL: "https://example.com/1", WebURL: "https://example.com"},
 		{Title: "Feed 2", FeedURL: "https://example.com/2"},
@@ -272,6 +279,7 @@ func TestRoundTrip(t *testing.T) {
 
 // Test generating OPML with both text and title
 func TestGenerate_TextAndTitle(t *testing.T) {
+	t.Parallel()
 	feeds := []Feed{
 		{Title: "My Feed", FeedURL: "https://example.com/feed"},
 	}
@@ -296,6 +304,7 @@ func TestGenerate_TextAndTitle(t *testing.T) {
 
 // Test empty OPML
 func TestParse_Empty(t *testing.T) {
+	t.Parallel()
 	opmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
   <head><title>Empty</title></head>
@@ -315,6 +324,7 @@ func TestParse_Empty(t *testing.T) {
 
 // Test malformed XML
 func TestParse_Malformed(t *testing.T) {
+	t.Parallel()
 	opmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
   <head><title>Malformed</head>
@@ -329,6 +339,7 @@ func TestParse_Malformed(t *testing.T) {
 
 // Test special characters in feed titles
 func TestParse_SpecialCharacters(t *testing.T) {
+	t.Parallel()
 	opmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
   <body>
@@ -358,6 +369,7 @@ func TestParse_SpecialCharacters(t *testing.T) {
 
 // Test ParseFile
 func TestParseFile(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	filePath := filepath.Join(dir, "test.opml")
 
@@ -385,6 +397,7 @@ func TestParseFile(t *testing.T) {
 
 // Test Write method
 func TestWrite(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	filePath := filepath.Join(dir, "output.opml")
 
@@ -419,6 +432,7 @@ func TestWrite(t *testing.T) {
 
 // Test XML declaration in output
 func TestMarshal_XMLDeclaration(t *testing.T) {
+	t.Parallel()
 	feeds := []Feed{{Title: "Test", FeedURL: "https://example.com/feed"}}
 	opml, _ := Generate(feeds, Metadata{Title: "Test"})
 
@@ -435,6 +449,7 @@ func TestMarshal_XMLDeclaration(t *testing.T) {
 
 // Test OPML version in output
 func TestGenerate_Version(t *testing.T) {
+	t.Parallel()
 	feeds := []Feed{{Title: "Test", FeedURL: "https://example.com/feed"}}
 	opml, _ := Generate(feeds, Metadata{Title: "Test"})
 
@@ -445,6 +460,7 @@ func TestGenerate_Version(t *testing.T) {
 
 // Test metadata in generated OPML
 func TestGenerate_Metadata(t *testing.T) {
+	t.Parallel()
 	feeds := []Feed{{Title: "Test", FeedURL: "https://example.com/feed"}}
 	metadata := Metadata{
 		Title:      "My Feed List",
@@ -487,6 +503,7 @@ func TestGenerate_Metadata(t *testing.T) {
 
 // Test feed without title uses URL
 func TestGenerate_NoTitle(t *testing.T) {
+	t.Parallel()
 	feeds := []Feed{{FeedURL: "https://example.com/feed"}}
 	opml, _ := Generate(feeds, Metadata{Title: "Test"})
 
@@ -502,6 +519,7 @@ func TestGenerate_NoTitle(t *testing.T) {
 
 // Test htmlUrl preservation
 func TestExtractFeeds_HTMLUrl(t *testing.T) {
+	t.Parallel()
 	opmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
   <body>
@@ -526,6 +544,7 @@ func TestExtractFeeds_HTMLUrl(t *testing.T) {
 
 // Test mixed xmlUrl and url attributes
 func TestExtractFeeds_MixedURLAttributes(t *testing.T) {
+	t.Parallel()
 	opmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
   <body>
@@ -563,6 +582,7 @@ func TestExtractFeeds_MixedURLAttributes(t *testing.T) {
 
 // Test feed type preservation
 func TestGenerate_FeedType(t *testing.T) {
+	t.Parallel()
 	feeds := []Feed{{Title: "Test", FeedURL: "https://example.com/feed"}}
 	opml, _ := Generate(feeds, Metadata{Title: "Test"})
 
@@ -573,6 +593,7 @@ func TestGenerate_FeedType(t *testing.T) {
 
 // Test CDATA handling
 func TestParse_CDATA(t *testing.T) {
+	t.Parallel()
 	opmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
   <body>

@@ -7,6 +7,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
+	t.Parallel()
 	m := New(60, 10) // 60 requests/minute, burst of 10
 
 	if m == nil {
@@ -30,6 +31,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestExtractDomain(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		url     string
@@ -78,6 +80,7 @@ func TestExtractDomain(t *testing.T) {
 }
 
 func TestGetLimiter(t *testing.T) {
+	t.Parallel()
 	m := New(60, 10)
 
 	// First call should create a new limiter
@@ -116,6 +119,7 @@ func TestGetLimiter(t *testing.T) {
 }
 
 func TestAllow(t *testing.T) {
+	t.Parallel()
 	// Create limiter with 60 req/min (1 req/sec), burst of 5
 	m := New(60, 5)
 
@@ -140,6 +144,7 @@ func TestAllow(t *testing.T) {
 }
 
 func TestWait(t *testing.T) {
+	t.Parallel()
 	// Create limiter with high rate for faster test
 	m := New(600, 5) // 10 req/sec, burst of 5
 
@@ -174,6 +179,7 @@ func TestWait(t *testing.T) {
 }
 
 func TestWaitWithCancelledContext(t *testing.T) {
+	t.Parallel()
 	m := New(60, 10)
 
 	// Create an already-cancelled context
@@ -192,6 +198,7 @@ func TestWaitWithCancelledContext(t *testing.T) {
 }
 
 func TestStats(t *testing.T) {
+	t.Parallel()
 	m := New(60, 10)
 
 	// Initially no limiters
@@ -229,6 +236,7 @@ func TestStats(t *testing.T) {
 }
 
 func TestResetAll(t *testing.T) {
+	t.Parallel()
 	m := New(60, 10)
 
 	// Create some limiters
@@ -253,6 +261,7 @@ func TestResetAll(t *testing.T) {
 }
 
 func TestSetLimit(t *testing.T) {
+	t.Parallel()
 	m := New(60, 10)
 
 	// Create a limiter
@@ -277,6 +286,7 @@ func TestSetLimit(t *testing.T) {
 }
 
 func TestInvalidURL(t *testing.T) {
+	t.Parallel()
 	m := New(60, 10)
 
 	// Invalid URLs should fail gracefully (allow the request)
@@ -291,6 +301,7 @@ func TestInvalidURL(t *testing.T) {
 }
 
 func TestConcurrentAccess(t *testing.T) {
+	t.Parallel()
 	m := New(600, 10) // High rate for testing
 
 	url := "https://example.com/feed.xml"

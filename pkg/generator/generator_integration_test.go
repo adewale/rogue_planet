@@ -19,6 +19,7 @@ import (
 
 // TestEndToEndHTMLGeneration tests the full pipeline from fetching to HTML generation
 func TestEndToEndHTMLGeneration(t *testing.T) {
+	t.Parallel()
 	// Setup temporary directory
 	tmpDir := t.TempDir()
 
@@ -183,6 +184,7 @@ func TestEndToEndHTMLGeneration(t *testing.T) {
 
 // TestHTMLGenerationWithNoEntries tests generating HTML when there are no entries
 func TestHTMLGenerationWithNoEntries(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 
 	gen, err := New()
@@ -284,6 +286,7 @@ func hasLink(n *html.Node, href string) bool {
 
 // TestGeneratedHTMLStructure verifies the HTML structure is correct
 func TestGeneratedHTMLStructure(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
 
 	gen, err := New()
