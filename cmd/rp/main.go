@@ -259,6 +259,7 @@ func runUpdate() error {
 		ConfigPath: *configPath,
 		Verbose:    *verbose,
 		Output:     os.Stdout,
+		Logger:     NewLogger(),
 	}
 
 	return cmdUpdate(opts)
@@ -276,6 +277,7 @@ func runFetch() error {
 		ConfigPath: *configPath,
 		Verbose:    *verbose,
 		Output:     os.Stdout,
+		Logger:     NewLogger(),
 	}
 
 	return cmdFetch(opts)

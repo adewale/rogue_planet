@@ -857,6 +857,7 @@ path = ` + dbPath + `
 				ConfigPath: configPath,
 				Verbose:    false,
 				Output:     &buf,
+				Logger:     NewLogger(),
 			}
 
 			err := cmdUpdate(opts)
@@ -921,6 +922,7 @@ path = ` + dbPath + `
 				ConfigPath: configPath,
 				Verbose:    false,
 				Output:     &buf,
+				Logger:     NewLogger(),
 			}
 
 			err := cmdFetch(opts)
@@ -1107,6 +1109,7 @@ path = ` + dbPath + `
 		ConfigPath: configPath,
 		Verbose:    false,
 		Output:     &outputBuf,
+		Logger:     NewLogger(),
 	}
 
 	err = cmdFetch(opts)

@@ -37,7 +37,10 @@ const (
 	LogLevelDebug = 3
 )
 
-var globalLogger = &Logger{level: LogLevelInfo}
+// NewLogger creates a new Logger with default INFO level
+func NewLogger() *Logger {
+	return &Logger{level: LogLevelInfo}
+}
 
 func (l *Logger) SetLevel(level string) {
 	switch level {
@@ -129,12 +132,14 @@ type UpdateOptions struct {
 	ConfigPath string
 	Verbose    bool
 	Output     io.Writer
+	Logger     *Logger
 }
 
 type FetchOptions struct {
 	ConfigPath string
 	Verbose    bool
 	Output     io.Writer
+	Logger     *Logger
 }
 
 type GenerateOptions struct {
@@ -471,7 +476,7 @@ func cmdUpdate(opts UpdateOptions) error {
 
 	// Fetch feeds
 	fmt.Fprintln(opts.Output, "Fetching feeds...")
-	if err := fetchFeeds(cfg); err != nil {
+	if err := fetchFeeds(cfg, opts.Logger); err != nil {
 		return fmt.Errorf("failed to fetch feeds: %w", err)
 	}
 
@@ -494,7 +499,7 @@ func cmdFetch(opts FetchOptions) error {
 	}
 
 	fmt.Fprintln(opts.Output, "Fetching feeds...")
-	if err := fetchFeeds(cfg); err != nil {
+	if err := fetchFeeds(cfg, opts.Logger); err != nil {
 		return fmt.Errorf("failed to fetch feeds: %w", err)
 	}
 
@@ -848,9 +853,9 @@ func importFeedsFromURLs(repo *repository.Repository, feedURLs []string, output 
 	return addedCount
 }
 
-func fetchFeeds(cfg *config.Config) error {
+func fetchFeeds(cfg *config.Config, logger *Logger) error {
 	// Set log level from config
-	globalLogger.SetLevel(cfg.Planet.LogLevel)
+	logger.SetLevel(cfg.Planet.LogLevel)
 
 	repo, err := repository.New(cfg.Database.Path)
 	if err != nil {
@@ -869,7 +874,7 @@ func fetchFeeds(cfg *config.Config) error {
 		return nil
 	}
 
-	globalLogger.Info("Fetching %d feeds with concurrency=%d", len(feeds), cfg.Planet.ConcurrentFetch)
+	logger.Info("Fetching %d feeds with concurrency=%d", len(feeds), cfg.Planet.ConcurrentFetch)
 
 	// Create crawler with custom configuration
 	c := crawler.NewWithConfig(crawler.CrawlerConfig{
@@ -887,7 +892,7 @@ func fetchFeeds(cfg *config.Config) error {
 
 	// Create rate limiter for per-domain rate limiting
 	rateLimiter := ratelimit.New(cfg.Planet.RequestsPerMinute, cfg.Planet.RateLimitBurst)
-	globalLogger.Debug("Rate limiter configured: %d requests/min, burst=%d", cfg.Planet.RequestsPerMinute, cfg.Planet.RateLimitBurst)
+	logger.Debug("Rate limiter configured: %d requests/min, burst=%d", cfg.Planet.RequestsPerMinute, cfg.Planet.RateLimitBurst)
 
 	// Set up signal handling for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
@@ -903,7 +908,7 @@ func fetchFeeds(cfg *config.Config) error {
 			// Channel closed, normal shutdown
 			return
 		}
-		globalLogger.Info("Received signal %v, cancelling fetches...", sig)
+		logger.Info("Received signal %v, cancelling fetches...", sig)
 		cancel()
 	}()
 
@@ -921,7 +926,7 @@ func fetchFeeds(cfg *config.Config) error {
 	var mu sync.Mutex // Protects repo writes
 
 	// Create fetcher with dependencies (passes mutex for database protection)
-	feedFetcher := fetcher.New(c, n, repo, &mu, globalLogger, cfg.Planet.MaxRetries)
+	feedFetcher := fetcher.New(c, n, repo, &mu, logger, cfg.Planet.MaxRetries)
 
 	// Fetch feeds concurrently
 	for i, feed := range feeds {
@@ -934,14 +939,14 @@ func fetchFeeds(cfg *config.Config) error {
 			case sem <- struct{}{}:
 				defer func() { <-sem }()
 			case <-ctx.Done():
-				globalLogger.Debug("Skipping %s (cancelled)", f.URL)
+				logger.Debug("Skipping %s (cancelled)", f.URL)
 				return
 			}
 
 			// Check if already cancelled before starting
 			select {
 			case <-ctx.Done():
-				globalLogger.Debug("Skipping %s (cancelled)", f.URL)
+				logger.Debug("Skipping %s (cancelled)", f.URL)
 				return
 			default:
 			}
@@ -954,9 +959,9 @@ func fetchFeeds(cfg *config.Config) error {
 
 			if err := rateLimiter.Wait(fetchCtx, f.URL); err != nil {
 				if err == context.Canceled {
-					globalLogger.Debug("Fetch cancelled for %s", f.URL)
+					logger.Debug("Fetch cancelled for %s", f.URL)
 				} else {
-					globalLogger.Error("Rate limiter error for %s: %v", f.URL, err)
+					logger.Error("Rate limiter error for %s: %v", f.URL, err)
 				}
 				return
 			}
@@ -989,10 +994,10 @@ func fetchFeeds(cfg *config.Config) error {
 	// Check if we were cancelled
 	select {
 	case <-ctx.Done():
-		globalLogger.Info("Fetch operation cancelled")
+		logger.Info("Fetch operation cancelled")
 		return fmt.Errorf("operation cancelled by user")
 	default:
-		globalLogger.Info("Completed fetching all feeds")
+		logger.Info("Completed fetching all feeds")
 	}
 
 	return nil
