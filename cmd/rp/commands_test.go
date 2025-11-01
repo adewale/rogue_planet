@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -1040,5 +1041,86 @@ path = ` + dbPath + `
 				t.Errorf("cmdGenerate() output should contain 'complete', got: %q", output)
 			}
 		})
+	}
+}
+
+// TestSignalHandlingGracefulShutdown verifies that closing the signal channel
+// during normal shutdown does not produce spurious "Received signal <nil>" log messages
+func TestSignalHandlingGracefulShutdown(t *testing.T) {
+	// Set up temporary directory and config
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.ini")
+	dbPath := filepath.Join(tmpDir, "planet.db")
+	outputDir := filepath.Join(tmpDir, "public")
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	configContent := `[planet]
+name = Test Planet
+link = https://example.com
+owner_name = Test
+owner_email = test@example.com
+output_dir = ` + outputDir + `
+days = 7
+log_level = info
+
+[database]
+path = ` + dbPath + `
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create database and add a feed (to exercise signal handling code)
+	repo, err := repository.New(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Add a feed (will fail to fetch, but that's okay - we just need to test signal handling)
+	_, err = repo.AddFeed("https://example.com/feed.xml", "Example Feed")
+	if err != nil {
+		repo.Close()
+		t.Fatal(err)
+	}
+	repo.Close()
+
+	// Capture log output
+	var logBuf bytes.Buffer
+	originalLogOutput := log.Writer()
+	originalLogFlags := log.Flags()
+	log.SetOutput(&logBuf)
+	log.SetFlags(0) // Remove timestamp for easier testing
+	defer func() {
+		log.SetOutput(originalLogOutput)
+		log.SetFlags(originalLogFlags)
+	}()
+
+	// Run cmdFetch (which calls fetchFeeds with signal handling)
+	var outputBuf bytes.Buffer
+	opts := FetchOptions{
+		ConfigPath: configPath,
+		Verbose:    false,
+		Output:     &outputBuf,
+	}
+
+	err = cmdFetch(opts)
+	if err != nil {
+		t.Fatalf("cmdFetch() error = %v", err)
+	}
+
+	// Check that log output does NOT contain the spurious signal message
+	logOutput := logBuf.String()
+	if strings.Contains(logOutput, "Received signal <nil>") {
+		t.Errorf("Log output contains spurious 'Received signal <nil>' message during normal shutdown.\nLog output:\n%s", logOutput)
+	}
+
+	// Verify expected log messages are present
+	if !strings.Contains(logOutput, "Fetching 1 feeds") {
+		t.Errorf("Log output should contain 'Fetching 1 feeds', got:\n%s", logOutput)
+	}
+	if !strings.Contains(logOutput, "Completed fetching all feeds") {
+		t.Errorf("Log output should contain 'Completed fetching all feeds', got:\n%s", logOutput)
 	}
 }

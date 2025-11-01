@@ -898,7 +898,11 @@ func fetchFeeds(cfg *config.Config) error {
 
 	// Handle signals in background
 	go func() {
-		sig := <-sigChan
+		sig, ok := <-sigChan
+		if !ok {
+			// Channel closed, normal shutdown
+			return
+		}
 		globalLogger.Info("Received signal %v, cancelling fetches...", sig)
 		cancel()
 	}()
