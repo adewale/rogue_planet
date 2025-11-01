@@ -212,6 +212,19 @@ func (c *Config) set(section, key, value string) error {
 }
 
 // setPlanet sets planet configuration values
+// setIntWithRange validates and sets an integer config value within a specified range
+func (c *Config) setIntWithRange(target *int, key, value string, min, max int) error {
+	n, err := strconv.Atoi(value)
+	if err != nil {
+		return fmt.Errorf("invalid %s value: %s", key, value)
+	}
+	if n < min || n > max {
+		return fmt.Errorf("%s must be between %d and %d", key, min, max)
+	}
+	*target = n
+	return nil
+}
+
 func (c *Config) setPlanet(key, value string) error {
 	switch key {
 	case "name":
@@ -236,14 +249,7 @@ func (c *Config) setPlanet(key, value string) error {
 	case "log_level":
 		c.Planet.LogLevel = strings.ToLower(value)
 	case "concurrent_fetches":
-		n, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("invalid concurrent_fetches value: %s", value)
-		}
-		if n < MinConcurrentFetches || n > MaxConcurrentFetches {
-			return fmt.Errorf("concurrent_fetches must be between %d and %d", MinConcurrentFetches, MaxConcurrentFetches)
-		}
-		c.Planet.ConcurrentFetch = n
+		return c.setIntWithRange(&c.Planet.ConcurrentFetch, "concurrent_fetches", value, MinConcurrentFetches, MaxConcurrentFetches)
 	case "user_agent":
 		c.Planet.UserAgent = value
 	case "group_by_date":
@@ -266,104 +272,27 @@ func (c *Config) setPlanet(key, value string) error {
 		}
 		c.Planet.SortBy = value
 	case "max_retries":
-		n, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("invalid max_retries value: %s", value)
-		}
-		if n < MinMaxRetries || n > MaxMaxRetries {
-			return fmt.Errorf("max_retries must be between %d and %d", MinMaxRetries, MaxMaxRetries)
-		}
-		c.Planet.MaxRetries = n
+		return c.setIntWithRange(&c.Planet.MaxRetries, "max_retries", value, MinMaxRetries, MaxMaxRetries)
 	case "max_idle_conns":
-		n, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("invalid max_idle_conns value: %s", value)
-		}
-		if n < MinMaxIdleConns || n > MaxMaxIdleConns {
-			return fmt.Errorf("max_idle_conns must be between %d and %d", MinMaxIdleConns, MaxMaxIdleConns)
-		}
-		c.Planet.MaxIdleConns = n
+		return c.setIntWithRange(&c.Planet.MaxIdleConns, "max_idle_conns", value, MinMaxIdleConns, MaxMaxIdleConns)
 	case "max_idle_conns_per_host":
-		n, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("invalid max_idle_conns_per_host value: %s", value)
-		}
-		if n < MinMaxIdleConnsPerHost || n > MaxMaxIdleConnsPerHost {
-			return fmt.Errorf("max_idle_conns_per_host must be between %d and %d", MinMaxIdleConnsPerHost, MaxMaxIdleConnsPerHost)
-		}
-		c.Planet.MaxIdleConnsPerHost = n
+		return c.setIntWithRange(&c.Planet.MaxIdleConnsPerHost, "max_idle_conns_per_host", value, MinMaxIdleConnsPerHost, MaxMaxIdleConnsPerHost)
 	case "max_conns_per_host":
-		n, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("invalid max_conns_per_host value: %s", value)
-		}
-		if n < MinMaxConnsPerHost || n > MaxMaxConnsPerHost {
-			return fmt.Errorf("max_conns_per_host must be between %d and %d", MinMaxConnsPerHost, MaxMaxConnsPerHost)
-		}
-		c.Planet.MaxConnsPerHost = n
+		return c.setIntWithRange(&c.Planet.MaxConnsPerHost, "max_conns_per_host", value, MinMaxConnsPerHost, MaxMaxConnsPerHost)
 	case "idle_conn_timeout_seconds":
-		n, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("invalid idle_conn_timeout_seconds value: %s", value)
-		}
-		if n < MinIdleConnTimeout || n > MaxIdleConnTimeout {
-			return fmt.Errorf("idle_conn_timeout_seconds must be between %d and %d", MinIdleConnTimeout, MaxIdleConnTimeout)
-		}
-		c.Planet.IdleConnTimeoutSeconds = n
+		return c.setIntWithRange(&c.Planet.IdleConnTimeoutSeconds, "idle_conn_timeout_seconds", value, MinIdleConnTimeout, MaxIdleConnTimeout)
 	case "http_timeout_seconds":
-		n, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("invalid http_timeout_seconds value: %s", value)
-		}
-		if n < MinHTTPTimeout || n > MaxHTTPTimeout {
-			return fmt.Errorf("http_timeout_seconds must be between %d and %d", MinHTTPTimeout, MaxHTTPTimeout)
-		}
-		c.Planet.HTTPTimeoutSeconds = n
+		return c.setIntWithRange(&c.Planet.HTTPTimeoutSeconds, "http_timeout_seconds", value, MinHTTPTimeout, MaxHTTPTimeout)
 	case "dial_timeout_seconds":
-		n, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("invalid dial_timeout_seconds value: %s", value)
-		}
-		if n < MinDialTimeout || n > MaxDialTimeout {
-			return fmt.Errorf("dial_timeout_seconds must be between %d and %d", MinDialTimeout, MaxDialTimeout)
-		}
-		c.Planet.DialTimeoutSeconds = n
+		return c.setIntWithRange(&c.Planet.DialTimeoutSeconds, "dial_timeout_seconds", value, MinDialTimeout, MaxDialTimeout)
 	case "tls_handshake_timeout_seconds":
-		n, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("invalid tls_handshake_timeout_seconds value: %s", value)
-		}
-		if n < MinTLSHandshakeTimeout || n > MaxTLSHandshakeTimeout {
-			return fmt.Errorf("tls_handshake_timeout_seconds must be between %d and %d", MinTLSHandshakeTimeout, MaxTLSHandshakeTimeout)
-		}
-		c.Planet.TLSHandshakeTimeoutSeconds = n
+		return c.setIntWithRange(&c.Planet.TLSHandshakeTimeoutSeconds, "tls_handshake_timeout_seconds", value, MinTLSHandshakeTimeout, MaxTLSHandshakeTimeout)
 	case "response_header_timeout_seconds":
-		n, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("invalid response_header_timeout_seconds value: %s", value)
-		}
-		if n < MinResponseHeaderTimeout || n > MaxResponseHeaderTimeout {
-			return fmt.Errorf("response_header_timeout_seconds must be between %d and %d", MinResponseHeaderTimeout, MaxResponseHeaderTimeout)
-		}
-		c.Planet.ResponseHeaderTimeoutSeconds = n
+		return c.setIntWithRange(&c.Planet.ResponseHeaderTimeoutSeconds, "response_header_timeout_seconds", value, MinResponseHeaderTimeout, MaxResponseHeaderTimeout)
 	case "requests_per_minute":
-		n, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("invalid requests_per_minute value: %s", value)
-		}
-		if n < MinRequestsPerMinute || n > MaxRequestsPerMinute {
-			return fmt.Errorf("requests_per_minute must be between %d and %d", MinRequestsPerMinute, MaxRequestsPerMinute)
-		}
-		c.Planet.RequestsPerMinute = n
+		return c.setIntWithRange(&c.Planet.RequestsPerMinute, "requests_per_minute", value, MinRequestsPerMinute, MaxRequestsPerMinute)
 	case "rate_limit_burst":
-		n, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("invalid rate_limit_burst value: %s", value)
-		}
-		if n < MinRateLimitBurst || n > MaxRateLimitBurst {
-			return fmt.Errorf("rate_limit_burst must be between %d and %d", MinRateLimitBurst, MaxRateLimitBurst)
-		}
-		c.Planet.RateLimitBurst = n
+		return c.setIntWithRange(&c.Planet.RateLimitBurst, "rate_limit_burst", value, MinRateLimitBurst, MaxRateLimitBurst)
 	default:
 		// Unknown keys are ignored for forward compatibility
 		return nil

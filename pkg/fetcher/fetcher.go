@@ -88,14 +88,7 @@ func (f *Fetcher) FetchFeed(ctx context.Context, feed repository.Feed) FetchResu
 	// Fetch feed with retry logic (exponential backoff) - NO LOCK (concurrent HTTP)
 	resp, err := f.crawler.FetchWithRetry(ctx, feed.URL, cache, f.maxRetries)
 	if err != nil {
-		f.logger.Error("Error fetching %s: %v", feed.URL, err)
-		// Database write - WITH LOCK
-		f.lock()
-		if updateErr := f.repo.UpdateFeedError(feed.ID, err.Error()); updateErr != nil {
-			f.logger.Error("Failed to update feed error for %s: %v", feed.URL, updateErr)
-		}
-		f.unlock()
-		return FetchResult{Error: fmt.Errorf("fetch failed: %w", err)}
+		return f.handleFetchError(feed, err, "fetch")
 	}
 
 	// Handle 301 permanent redirect - update feed URL in database
@@ -126,14 +119,7 @@ func (f *Fetcher) FetchFeed(ctx context.Context, feed repository.Feed) FetchResu
 	// Parse and normalize feed - NO LOCK (concurrent parsing)
 	metadata, entries, err := f.normalizer.Parse(resp.Body, feed.URL, resp.FetchTime)
 	if err != nil {
-		f.logger.Error("Error parsing %s: %v", feed.URL, err)
-		// Database write - WITH LOCK
-		f.lock()
-		if updateErr := f.repo.UpdateFeedError(feed.ID, err.Error()); updateErr != nil {
-			f.logger.Error("Failed to update feed error for %s: %v", feed.URL, updateErr)
-		}
-		f.unlock()
-		return FetchResult{Error: fmt.Errorf("parse failed: %w", err)}
+		return f.handleFetchError(feed, err, "parse")
 	}
 
 	f.logger.Debug("Parsed %d entries from %s", len(entries), feed.URL)
@@ -192,4 +178,20 @@ func (f *Fetcher) unlock() {
 	if f.repoMutex != nil {
 		f.repoMutex.Unlock()
 	}
+}
+
+// handleFetchError logs the error, updates the database, and returns a FetchResult.
+// This method handles the common pattern of error logging + database update with locking.
+func (f *Fetcher) handleFetchError(feed repository.Feed, err error, operation string) FetchResult {
+	f.logger.Error("%s failed for %s: %v", operation, feed.URL, err)
+
+	// Database write - WITH LOCK
+	f.lock()
+	defer f.unlock()
+
+	if updateErr := f.repo.UpdateFeedError(feed.ID, err.Error()); updateErr != nil {
+		f.logger.Error("Failed to update feed error for %s: %v", feed.URL, updateErr)
+	}
+
+	return FetchResult{Error: fmt.Errorf("%s: %w", operation, err)}
 }

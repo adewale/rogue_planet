@@ -641,6 +641,31 @@ func (r *Repository) PruneOldEntries(days int) (int64, error) {
 
 // Helper functions for scanning rows
 
+// nullString returns the string value if valid, empty string otherwise
+func nullString(ns sql.NullString) string {
+	if ns.Valid {
+		return ns.String
+	}
+	return ""
+}
+
+// nullTime parses RFC3339 time from nullable string
+func nullTime(ns sql.NullString, fieldName string) (time.Time, error) {
+	if !ns.Valid {
+		return time.Time{}, nil
+	}
+	t, err := time.Parse(time.RFC3339, ns.String)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid %s timestamp %q: %w", fieldName, ns.String, err)
+	}
+	return t, nil
+}
+
+// nullBool returns the bool value if valid, false otherwise
+func nullBool(ni sql.NullInt64) bool {
+	return ni.Valid && ni.Int64 == 1
+}
+
 func scanFeed(row interface{ Scan(...interface{}) error }, feed *Feed) error {
 	var title, link, updated, lastFetched, etag, lastModified, fetchError, nextFetch sql.NullString
 	var active sql.NullInt64
@@ -657,47 +682,23 @@ func scanFeed(row interface{ Scan(...interface{}) error }, feed *Feed) error {
 		return err
 	}
 
-	// Handle NULL strings
-	if title.Valid {
-		feed.Title = title.String
-	}
-	if link.Valid {
-		feed.Link = link.String
-	}
-	if etag.Valid {
-		feed.ETag = etag.String
-	}
-	if lastModified.Valid {
-		feed.LastModified = lastModified.String
-	}
-	if fetchError.Valid {
-		feed.FetchError = fetchError.String
-	}
-	if active.Valid {
-		feed.Active = active.Int64 == 1
-	}
+	// Use helper functions for NULL handling
+	feed.Title = nullString(title)
+	feed.Link = nullString(link)
+	feed.ETag = nullString(etag)
+	feed.LastModified = nullString(lastModified)
+	feed.FetchError = nullString(fetchError)
+	feed.Active = nullBool(active)
 
-	// Parse times
-	if updated.Valid {
-		var err error
-		feed.Updated, err = time.Parse(time.RFC3339, updated.String)
-		if err != nil {
-			return fmt.Errorf("invalid updated timestamp %q: %w", updated.String, err)
-		}
+	// Parse times with error handling
+	if feed.Updated, err = nullTime(updated, "updated"); err != nil {
+		return err
 	}
-	if lastFetched.Valid {
-		var err error
-		feed.LastFetched, err = time.Parse(time.RFC3339, lastFetched.String)
-		if err != nil {
-			return fmt.Errorf("invalid last_fetched timestamp %q: %w", lastFetched.String, err)
-		}
+	if feed.LastFetched, err = nullTime(lastFetched, "last_fetched"); err != nil {
+		return err
 	}
-	if nextFetch.Valid {
-		var err error
-		feed.NextFetch, err = time.Parse(time.RFC3339, nextFetch.String)
-		if err != nil {
-			return fmt.Errorf("invalid next_fetch timestamp %q: %w", nextFetch.String, err)
-		}
+	if feed.NextFetch, err = nullTime(nextFetch, "next_fetch"); err != nil {
+		return err
 	}
 
 	return nil
@@ -737,25 +738,13 @@ func scanEntries(rows *sql.Rows) ([]Entry, error) {
 			return nil, err
 		}
 
-		// Handle NULL strings
-		if title.Valid {
-			entry.Title = title.String
-		}
-		if link.Valid {
-			entry.Link = link.String
-		}
-		if author.Valid {
-			entry.Author = author.String
-		}
-		if content.Valid {
-			entry.Content = content.String
-		}
-		if contentType.Valid {
-			entry.ContentType = contentType.String
-		}
-		if summary.Valid {
-			entry.Summary = summary.String
-		}
+		// Use helper functions for NULL handling
+		entry.Title = nullString(title)
+		entry.Link = nullString(link)
+		entry.Author = nullString(author)
+		entry.Content = nullString(content)
+		entry.ContentType = nullString(contentType)
+		entry.Summary = nullString(summary)
 
 		// Parse times (required fields in database)
 		entry.Published, err = time.Parse(time.RFC3339, published)
