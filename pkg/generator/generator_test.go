@@ -456,8 +456,8 @@ func TestFormatDateGroup(t *testing.T) {
 
 	today := time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)
 	yesterday := time.Date(2025, 1, 14, 0, 0, 0, 0, time.UTC)
-	lastWeek := time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC)    // 5 days ago (Friday)
-	longAgo := time.Date(2024, 12, 16, 0, 0, 0, 0, time.UTC)    // 30 days ago
+	lastWeek := time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC) // 5 days ago (Friday)
+	longAgo := time.Date(2024, 12, 16, 0, 0, 0, 0, time.UTC) // 30 days ago
 
 	tests := []struct {
 		name     string
