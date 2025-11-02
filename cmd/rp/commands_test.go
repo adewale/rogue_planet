@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -119,8 +120,10 @@ path = %s
 			t.Fatalf("Failed to create repository: %v", err)
 		}
 
+		ctx := context.Background()
+
 		feedURL := "https://example.com/feed"
-		feedID, err := repo.AddFeed(feedURL, "Test Feed")
+		feedID, err := repo.AddFeed(ctx, feedURL, "Test Feed")
 		if err != nil {
 			t.Fatalf("Failed to add feed: %v", err)
 		}
@@ -139,7 +142,7 @@ path = %s
 				Content:     "Test content",
 				ContentType: "html",
 			}
-			if err := repo.UpsertEntry(entry); err != nil {
+			if err := repo.UpsertEntry(ctx, entry); err != nil {
 				t.Fatalf("Failed to add entry: %v", err)
 			}
 		}
@@ -174,13 +177,13 @@ path = %s
 		}
 		defer repo.Close()
 
-		_, err = repo.GetFeedByURL(feedURL)
+		_, err = repo.GetFeedByURL(ctx, feedURL)
 		if err != repository.ErrFeedNotFound {
 			t.Errorf("Feed should be removed, got error: %v", err)
 		}
 
 		// Verify entries were cascade deleted
-		count, err := repo.GetEntryCountForFeed(feedID)
+		count, err := repo.GetEntryCountForFeed(ctx, feedID)
 		if err != nil {
 			t.Fatalf("GetEntryCountForFeed() error = %v", err)
 		}
@@ -257,8 +260,10 @@ path = %s
 			t.Fatalf("Failed to create repository: %v", err)
 		}
 
+		ctx := context.Background()
+
 		feedURL := "https://example.com/feed"
-		feedID, err := repo.AddFeed(feedURL, "Test Feed")
+		feedID, err := repo.AddFeed(ctx, feedURL, "Test Feed")
 		if err != nil {
 			t.Fatalf("Failed to add feed: %v", err)
 		}
@@ -276,7 +281,7 @@ path = %s
 			Content:     "Test content",
 			ContentType: "html",
 		}
-		if err := repo.UpsertEntry(entry); err != nil {
+		if err := repo.UpsertEntry(ctx, entry); err != nil {
 			t.Fatalf("Failed to add entry: %v", err)
 		}
 		repo.Close()
@@ -315,7 +320,7 @@ path = %s
 		}
 		defer repo.Close()
 
-		_, err = repo.GetFeedByURL(feedURL)
+		_, err = repo.GetFeedByURL(ctx, feedURL)
 		if err != repository.ErrFeedNotFound {
 			t.Errorf("Feed should be removed, got error: %v", err)
 		}
@@ -345,8 +350,10 @@ path = %s
 			t.Fatalf("Failed to create repository: %v", err)
 		}
 
+		ctx := context.Background()
+
 		feedURL := "https://example.com/feed"
-		_, err = repo.AddFeed(feedURL, "Test Feed")
+		_, err = repo.AddFeed(ctx, feedURL, "Test Feed")
 		if err != nil {
 			t.Fatalf("Failed to add feed: %v", err)
 		}
@@ -386,7 +393,7 @@ path = %s
 		}
 		defer repo.Close()
 
-		feed, err := repo.GetFeedByURL(feedURL)
+		feed, err := repo.GetFeedByURL(ctx, feedURL)
 		if err != nil {
 			t.Errorf("Feed should still exist after cancellation, got error: %v", err)
 		}
@@ -419,8 +426,10 @@ path = %s
 			t.Fatalf("Failed to create repository: %v", err)
 		}
 
+		ctx := context.Background()
+
 		feedURL := "https://example.com/feed"
-		_, err = repo.AddFeed(feedURL, "Test Feed")
+		_, err = repo.AddFeed(ctx, feedURL, "Test Feed")
 		if err != nil {
 			t.Fatalf("Failed to add feed: %v", err)
 		}
@@ -468,8 +477,10 @@ path = %s
 			t.Fatalf("Failed to create repository: %v", err)
 		}
 
+		ctx := context.Background()
+
 		feedURL := "https://example.com/feed"
-		_, err = repo.AddFeed(feedURL, "Test Feed")
+		_, err = repo.AddFeed(ctx, feedURL, "Test Feed")
 		if err != nil {
 			t.Fatalf("Failed to add feed: %v", err)
 		}
@@ -616,7 +627,7 @@ func TestCmdPrune(t *testing.T) {
 	}
 
 	// With dry-run, should print message and return without error
-	err := cmdPrune(opts)
+	err := cmdPrune(context.Background(), opts)
 	if err == nil {
 		output := buf.String()
 		if !strings.Contains(output, "Dry run") {
@@ -867,7 +878,7 @@ path = ` + dbPath + `
 				Logger:     logging.New("info"),
 			}
 
-			err := cmdUpdate(opts)
+			err := cmdUpdate(context.Background(), opts)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("cmdUpdate() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -933,7 +944,7 @@ path = ` + dbPath + `
 				Logger:     logging.New("info"),
 			}
 
-			err := cmdFetch(opts)
+			err := cmdFetch(context.Background(), opts)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("cmdFetch() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1045,7 +1056,7 @@ path = ` + dbPath + `
 				Output:     &buf,
 			}
 
-			err := cmdGenerate(opts)
+			err := cmdGenerate(context.Background(), opts)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("cmdGenerate() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1093,8 +1104,10 @@ path = ` + dbPath + `
 		t.Fatal(err)
 	}
 
+	ctx := context.Background()
+
 	// Add a feed (will fail to fetch, but that's okay - we just need to test signal handling)
-	_, err = repo.AddFeed("https://example.com/feed.xml", "Example Feed")
+	_, err = repo.AddFeed(ctx, "https://example.com/feed.xml", "Example Feed")
 	if err != nil {
 		repo.Close()
 		t.Fatal(err)
@@ -1121,7 +1134,7 @@ path = ` + dbPath + `
 		Logger:     logging.New("info"),
 	}
 
-	err = cmdFetch(opts)
+	err = cmdFetch(context.Background(), opts)
 	if err != nil {
 		t.Fatalf("cmdFetch() error = %v", err)
 	}

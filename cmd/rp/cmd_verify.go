@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -26,6 +27,8 @@ func cmdVerify(opts VerifyOptions) error {
 		errors = append(errors, fmt.Sprintf("Invalid config value: %v", err))
 	}
 
+	ctx := context.Background()
+
 	// 2. Check database accessibility and schema
 	if _, err := os.Stat(cfg.Database.Path); os.IsNotExist(err) {
 		errors = append(errors, "Database does not exist → run 'rp init' to create")
@@ -36,7 +39,7 @@ func cmdVerify(opts VerifyOptions) error {
 			errors = append(errors, fmt.Sprintf("Database error: %v", err))
 		} else {
 			// Try a simple query to verify schema
-			_, err := repo.GetFeeds(false)
+			_, err := repo.GetFeeds(ctx, false)
 			if err != nil {
 				errors = append(errors, fmt.Sprintf("Database schema error: %v", err))
 			}
@@ -80,8 +83,8 @@ func cmdVerify(opts VerifyOptions) error {
 	repo, err := repository.New(cfg.Database.Path)
 	if err == nil {
 		defer repo.Close()
-		feeds, _ := repo.GetFeeds(false)
-		entries, _ := repo.CountEntries()
+		feeds, _ := repo.GetFeeds(ctx, false)
+		entries, _ := repo.CountEntries(ctx)
 		fmt.Fprintf(opts.Output, "✓ Configuration valid (%d feeds, %d entries)\n", len(feeds), entries)
 	} else {
 		fmt.Fprintln(opts.Output, "✓ Configuration valid")

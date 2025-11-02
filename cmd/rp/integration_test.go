@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -204,7 +205,7 @@ func TestHTMLGeneration(t *testing.T) {
 		ConfigPath: configPath,
 		Output:     os.Stdout,
 	}
-	if err := cmdGenerate(generateOpts); err != nil {
+	if err := cmdGenerate(context.Background(), generateOpts); err != nil {
 		t.Fatalf("Failed to generate HTML: %v", err)
 	}
 
@@ -299,15 +300,17 @@ path = ` + dbPath
 		t.Fatalf("Failed to open config and repo: %v", err)
 	}
 
+	ctx := context.Background()
+
 	// Get the feed by old URL
-	feed, err := repo.GetFeedByURL(oldURL)
+	feed, err := repo.GetFeedByURL(ctx, oldURL)
 	if err != nil {
 		cleanup()
 		t.Fatalf("Failed to get feed by old URL: %v", err)
 	}
 
 	// Update the URL (simulating 301 redirect)
-	if err := repo.UpdateFeedURL(feed.ID, newURL); err != nil {
+	if err := repo.UpdateFeedURL(ctx, feed.ID, newURL); err != nil {
 		cleanup()
 		t.Fatalf("Failed to update feed URL: %v", err)
 	}

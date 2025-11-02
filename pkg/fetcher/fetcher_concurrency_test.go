@@ -253,29 +253,29 @@ func (m *mockRepositoryWithConcurrency) trackOperation() func() {
 	}
 }
 
-func (m *mockRepositoryWithConcurrency) UpdateFeedError(id int64, errorMsg string) error {
+func (m *mockRepositoryWithConcurrency) UpdateFeedError(ctx context.Context, id int64, errorMsg string) error {
 	defer m.trackOperation()()
-	return m.mockRepository.UpdateFeedError(id, errorMsg)
+	return m.mockRepository.UpdateFeedError(ctx, id, errorMsg)
 }
 
-func (m *mockRepositoryWithConcurrency) UpdateFeedURL(id int64, newURL string) error {
+func (m *mockRepositoryWithConcurrency) UpdateFeedURL(ctx context.Context, id int64, newURL string) error {
 	defer m.trackOperation()()
-	return m.mockRepository.UpdateFeedURL(id, newURL)
+	return m.mockRepository.UpdateFeedURL(ctx, id, newURL)
 }
 
-func (m *mockRepositoryWithConcurrency) UpdateFeedCache(id int64, etag, lastModified string, lastFetched time.Time) error {
+func (m *mockRepositoryWithConcurrency) UpdateFeedCache(ctx context.Context, id int64, etag, lastModified string, lastFetched time.Time) error {
 	defer m.trackOperation()()
-	return m.mockRepository.UpdateFeedCache(id, etag, lastModified, lastFetched)
+	return m.mockRepository.UpdateFeedCache(ctx, id, etag, lastModified, lastFetched)
 }
 
-func (m *mockRepositoryWithConcurrency) UpdateFeed(id int64, title, link string, updated time.Time) error {
+func (m *mockRepositoryWithConcurrency) UpdateFeed(ctx context.Context, id int64, title, link string, updated time.Time) error {
 	defer m.trackOperation()()
-	return m.mockRepository.UpdateFeed(id, title, link, updated)
+	return m.mockRepository.UpdateFeed(ctx, id, title, link, updated)
 }
 
-func (m *mockRepositoryWithConcurrency) UpsertEntry(entry *repository.Entry) error {
+func (m *mockRepositoryWithConcurrency) UpsertEntry(ctx context.Context, entry *repository.Entry) error {
 	defer m.trackOperation()()
-	return m.mockRepository.UpsertEntry(entry)
+	return m.mockRepository.UpsertEntry(ctx, entry)
 }
 
 // BenchmarkFetchFeed_Sequential measures performance with serialized processing

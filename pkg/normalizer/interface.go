@@ -1,16 +1,20 @@
 package normalizer
 
 import (
+	"context"
 	"time"
 )
 
 // FeedNormalizer defines the interface for feed parsing and content normalization.
 // This interface enables dependency injection and makes testing easier by allowing
 // mock implementations to be used in place of the concrete Normalizer.
+//
+// Methods accept context.Context to enable cancellation of long-running parsing operations.
 type FeedNormalizer interface {
 	// Parse parses and normalizes a feed from raw bytes
 	// Returns feed metadata, normalized entries, and any parsing errors
-	Parse(feedData []byte, feedURL string, fetchTime time.Time) (*FeedMetadata, []Entry, error)
+	// The context can be used to cancel parsing of large feeds
+	Parse(ctx context.Context, feedData []byte, feedURL string, fetchTime time.Time) (*FeedMetadata, []Entry, error)
 }
 
 // Ensure Normalizer implements FeedNormalizer interface

@@ -1,8 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
-func cmdPrune(opts PruneOptions) error {
+func cmdPrune(ctx context.Context, opts PruneOptions) error {
 	_, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 	if err != nil {
 		return err
@@ -15,7 +18,7 @@ func cmdPrune(opts PruneOptions) error {
 		return nil
 	}
 
-	deleted, err := repo.PruneOldEntries(opts.Days)
+	deleted, err := repo.PruneOldEntries(ctx, opts.Days)
 	if err != nil {
 		return fmt.Errorf("failed to prune entries: %w", err)
 	}

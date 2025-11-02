@@ -7,6 +7,7 @@
 package normalizer
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -70,7 +71,12 @@ func New() *Normalizer {
 }
 
 // Parse parses and normalizes a feed
-func (n *Normalizer) Parse(feedData []byte, feedURL string, fetchTime time.Time) (*FeedMetadata, []Entry, error) {
+func (n *Normalizer) Parse(ctx context.Context, feedData []byte, feedURL string, fetchTime time.Time) (*FeedMetadata, []Entry, error) {
+	// Check context before expensive parsing
+	if err := ctx.Err(); err != nil {
+		return nil, nil, err
+	}
+
 	// Parse feed
 	feed, err := n.parser.ParseString(string(feedData))
 	if err != nil {

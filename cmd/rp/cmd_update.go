@@ -1,8 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
-func cmdUpdate(opts UpdateOptions) error {
+func cmdUpdate(ctx context.Context, opts UpdateOptions) error {
 	setVerboseLogging(opts.Verbose)
 
 	// Load config
@@ -13,13 +16,13 @@ func cmdUpdate(opts UpdateOptions) error {
 
 	// Fetch feeds
 	fmt.Fprintln(opts.Output, "Fetching feeds...")
-	if err := fetchFeeds(cfg, opts.Logger); err != nil {
+	if err := fetchFeeds(ctx, cfg, opts.Logger); err != nil {
 		return fmt.Errorf("failed to fetch feeds: %w", err)
 	}
 
 	// Generate site
 	fmt.Fprintln(opts.Output, "Generating site...")
-	if err := generateSite(cfg); err != nil {
+	if err := generateSite(ctx, cfg); err != nil {
 		return fmt.Errorf("failed to generate site: %w", err)
 	}
 

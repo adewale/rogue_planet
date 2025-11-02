@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -15,8 +16,10 @@ func cmdExportOPML(opts ExportOPMLOptions) error {
 	}
 	defer cleanup()
 
+	ctx := context.Background()
+
 	// Get all feeds
-	repoFeeds, err := repo.GetFeeds(false)
+	repoFeeds, err := repo.GetFeeds(ctx, false)
 	if err != nil {
 		return fmt.Errorf("failed to get feeds: %w", err)
 	}

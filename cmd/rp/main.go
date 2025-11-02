@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 const version = "0.4.0"
@@ -22,6 +25,11 @@ func run() error {
 
 	command := os.Args[1]
 
+	// Create context with signal handling for long-running commands
+	// This enables graceful cancellation with Ctrl+C (SIGINT) or kill (SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	switch command {
 	case "init":
 		return runInit()
@@ -36,13 +44,17 @@ func run() error {
 	case "status":
 		return runStatus()
 	case "update":
-		return runUpdate()
+		// Long-running command - pass context for cancellation support
+		return runUpdateWithContext(ctx)
 	case "fetch":
-		return runFetch()
+		// Long-running command - pass context for cancellation support
+		return runFetchWithContext(ctx)
 	case "generate":
-		return runGenerate()
+		// Long-running command - pass context for cancellation support
+		return runGenerateWithContext(ctx)
 	case "prune":
-		return runPrune()
+		// Long-running command - pass context for cancellation support
+		return runPruneWithContext(ctx)
 	case "verify":
 		return runVerify()
 	case "import-opml":
@@ -198,7 +210,7 @@ func runUpdate() error {
 		return err
 	}
 	opts.Output = os.Stdout
-	return cmdUpdate(opts)
+	return cmdUpdate(context.Background(), opts)
 }
 
 func runFetch() error {
@@ -207,7 +219,7 @@ func runFetch() error {
 		return err
 	}
 	opts.Output = os.Stdout
-	return cmdFetch(opts)
+	return cmdFetch(context.Background(), opts)
 }
 
 func runGenerate() error {
@@ -216,7 +228,7 @@ func runGenerate() error {
 		return err
 	}
 	opts.Output = os.Stdout
-	return cmdGenerate(opts)
+	return cmdGenerate(context.Background(), opts)
 }
 
 func runPrune() error {
@@ -225,7 +237,44 @@ func runPrune() error {
 		return err
 	}
 	opts.Output = os.Stdout
-	return cmdPrune(opts)
+	return cmdPrune(context.Background(), opts)
+}
+
+// WithContext versions of long-running commands for cancellation support
+func runUpdateWithContext(ctx context.Context) error {
+	opts, err := parseUpdateFlags(os.Args[2:])
+	if err != nil {
+		return err
+	}
+	opts.Output = os.Stdout
+	return cmdUpdate(ctx, opts)
+}
+
+func runFetchWithContext(ctx context.Context) error {
+	opts, err := parseFetchFlags(os.Args[2:])
+	if err != nil {
+		return err
+	}
+	opts.Output = os.Stdout
+	return cmdFetch(ctx, opts)
+}
+
+func runGenerateWithContext(ctx context.Context) error {
+	opts, err := parseGenerateFlags(os.Args[2:])
+	if err != nil {
+		return err
+	}
+	opts.Output = os.Stdout
+	return cmdGenerate(ctx, opts)
+}
+
+func runPruneWithContext(ctx context.Context) error {
+	opts, err := parsePruneFlags(os.Args[2:])
+	if err != nil {
+		return err
+	}
+	opts.Output = os.Stdout
+	return cmdPrune(ctx, opts)
 }
 
 func runVerify() error {

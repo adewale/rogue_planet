@@ -1,6 +1,7 @@
 package opml
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -385,7 +386,7 @@ func TestParseFile(t *testing.T) {
 		t.Fatalf("Failed to write test file: %v", err)
 	}
 
-	opml, err := ParseFile(filePath)
+	opml, err := ParseFile(context.Background(), filePath)
 	if err != nil {
 		t.Fatalf("ParseFile failed: %v", err)
 	}
@@ -410,7 +411,7 @@ func TestWrite(t *testing.T) {
 		t.Fatalf("Generate failed: %v", err)
 	}
 
-	if err := opml.Write(filePath); err != nil {
+	if err := opml.Write(context.Background(), filePath); err != nil {
 		t.Fatalf("Write failed: %v", err)
 	}
 
@@ -420,7 +421,7 @@ func TestWrite(t *testing.T) {
 	}
 
 	// Verify content is valid OPML
-	parsed, err := ParseFile(filePath)
+	parsed, err := ParseFile(context.Background(), filePath)
 	if err != nil {
 		t.Fatalf("Failed to parse written file: %v", err)
 	}

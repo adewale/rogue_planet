@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -64,7 +65,7 @@ func TestOPMLRoundTrip(t *testing.T) {
 	}
 
 	// Parse exported OPML
-	opmlDoc, err := opml.ParseFile(exportPath)
+	opmlDoc, err := opml.ParseFile(context.Background(), exportPath)
 	if err != nil {
 		t.Fatalf("Failed to parse exported OPML: %v", err)
 	}
@@ -380,7 +381,7 @@ func TestOPMLRFC822DateHandling(t *testing.T) {
 		}
 
 		// Parse OPML
-		opmlDoc, err := opml.ParseFile(opmlPath)
+		opmlDoc, err := opml.ParseFile(context.Background(), opmlPath)
 		if err != nil {
 			t.Fatalf("Failed to parse OPML with date %q: %v", dateStr, err)
 		}

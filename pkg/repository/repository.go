@@ -6,6 +6,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -314,8 +315,8 @@ func (r *Repository) migrateToV2() error {
 }
 
 // AddFeed adds a new feed to the database
-func (r *Repository) AddFeed(url, title string) (int64, error) {
-	result, err := r.db.Exec(`
+func (r *Repository) AddFeed(ctx context.Context, url, title string) (int64, error) {
+	result, err := r.db.ExecContext(ctx, `
 		INSERT INTO feeds (url, title, next_fetch)
 		VALUES (?, ?, ?)
 	`, url, title, time.Now().Format(time.RFC3339))
@@ -328,8 +329,8 @@ func (r *Repository) AddFeed(url, title string) (int64, error) {
 }
 
 // UpdateFeed updates feed metadata
-func (r *Repository) UpdateFeed(id int64, title, link string, updated time.Time) error {
-	_, err := r.db.Exec(`
+func (r *Repository) UpdateFeed(ctx context.Context, id int64, title, link string, updated time.Time) error {
+	_, err := r.db.ExecContext(ctx, `
 		UPDATE feeds
 		SET title = ?, link = ?, updated = ?
 		WHERE id = ?
@@ -343,8 +344,8 @@ func (r *Repository) UpdateFeed(id int64, title, link string, updated time.Time)
 }
 
 // UpdateFeedCache updates the HTTP cache headers for a feed
-func (r *Repository) UpdateFeedCache(id int64, etag, lastModified string, lastFetched time.Time) error {
-	_, err := r.db.Exec(`
+func (r *Repository) UpdateFeedCache(ctx context.Context, id int64, etag, lastModified string, lastFetched time.Time) error {
+	_, err := r.db.ExecContext(ctx, `
 		UPDATE feeds
 		SET etag = ?, last_modified = ?, last_fetched = ?, fetch_error = NULL, fetch_error_count = 0
 		WHERE id = ?
@@ -358,8 +359,8 @@ func (r *Repository) UpdateFeedCache(id int64, etag, lastModified string, lastFe
 }
 
 // UpdateFeedError records a fetch error for a feed
-func (r *Repository) UpdateFeedError(id int64, errorMsg string) error {
-	_, err := r.db.Exec(`
+func (r *Repository) UpdateFeedError(ctx context.Context, id int64, errorMsg string) error {
+	_, err := r.db.ExecContext(ctx, `
 		UPDATE feeds
 		SET fetch_error = ?, fetch_error_count = fetch_error_count + 1, last_fetched = ?
 		WHERE id = ?
@@ -374,8 +375,8 @@ func (r *Repository) UpdateFeedError(id int64, errorMsg string) error {
 
 // UpdateFeedURL updates the URL of a feed (typically after a 301 permanent redirect).
 // This also resets the ETag and Last-Modified headers since they're associated with the old URL.
-func (r *Repository) UpdateFeedURL(id int64, newURL string) error {
-	_, err := r.db.Exec(`
+func (r *Repository) UpdateFeedURL(ctx context.Context, id int64, newURL string) error {
+	_, err := r.db.ExecContext(ctx, `
 		UPDATE feeds
 		SET url = ?, etag = NULL, last_modified = NULL
 		WHERE id = ?
@@ -389,14 +390,14 @@ func (r *Repository) UpdateFeedURL(id int64, newURL string) error {
 }
 
 // GetFeeds returns all feeds, optionally filtering by active status
-func (r *Repository) GetFeeds(activeOnly bool) ([]Feed, error) {
+func (r *Repository) GetFeeds(ctx context.Context, activeOnly bool) ([]Feed, error) {
 	query := "SELECT id, url, title, link, updated, last_fetched, etag, last_modified, fetch_error, fetch_error_count, next_fetch, active, fetch_interval FROM feeds"
 	if activeOnly {
 		query += " WHERE active = 1"
 	}
 	query += " ORDER BY id"
 
-	rows, err := r.db.Query(query)
+	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("query feeds: %w", err)
 	}
@@ -406,8 +407,8 @@ func (r *Repository) GetFeeds(activeOnly bool) ([]Feed, error) {
 }
 
 // GetFeedByURL returns a feed by its URL
-func (r *Repository) GetFeedByURL(url string) (*Feed, error) {
-	row := r.db.QueryRow(`
+func (r *Repository) GetFeedByURL(ctx context.Context, url string) (*Feed, error) {
+	row := r.db.QueryRowContext(ctx, `
 		SELECT id, url, title, link, updated, last_fetched, etag, last_modified, fetch_error, fetch_error_count, next_fetch, active, fetch_interval
 		FROM feeds
 		WHERE url = ?
@@ -426,8 +427,8 @@ func (r *Repository) GetFeedByURL(url string) (*Feed, error) {
 }
 
 // RemoveFeed removes a feed and all its entries
-func (r *Repository) RemoveFeed(id int64) error {
-	_, err := r.db.Exec("DELETE FROM feeds WHERE id = ?", id)
+func (r *Repository) RemoveFeed(ctx context.Context, id int64) error {
+	_, err := r.db.ExecContext(ctx, "DELETE FROM feeds WHERE id = ?", id)
 	if err != nil {
 		return fmt.Errorf("delete feed: %w", err)
 	}
@@ -438,8 +439,8 @@ func (r *Repository) RemoveFeed(id int64) error {
 // UpsertEntry inserts or updates an entry.
 // On conflict (duplicate feed_id + entry_id), updates content fields but preserves
 // first_seen to maintain the original discovery timestamp for spam prevention.
-func (r *Repository) UpsertEntry(entry *Entry) error {
-	_, err := r.db.Exec(`
+func (r *Repository) UpsertEntry(ctx context.Context, entry *Entry) error {
+	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO entries (feed_id, entry_id, title, link, author, published, updated, content, content_type, summary, first_seen)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(feed_id, entry_id) DO UPDATE SET
@@ -464,11 +465,11 @@ func (r *Repository) UpsertEntry(entry *Entry) error {
 // GetRecentEntries returns entries from the last N days.
 // If no entries are found in that time window, it falls back to returning
 // the most recent 50 entries to ensure the page always has content.
-func (r *Repository) GetRecentEntries(days int) ([]Entry, error) {
+func (r *Repository) GetRecentEntries(ctx context.Context, days int) ([]Entry, error) {
 	cutoff := time.Now().AddDate(0, 0, -days)
 
 	// First, try to get entries from the last N days
-	rows, err := r.db.Query(`
+	rows, err := r.db.QueryContext(ctx, `
 		SELECT e.id, e.feed_id, e.entry_id, e.title, e.link, e.author, e.published, e.updated, e.content, e.content_type, e.summary, e.first_seen
 		FROM entries e
 		JOIN feeds f ON e.feed_id = f.id
@@ -493,7 +494,7 @@ func (r *Repository) GetRecentEntries(days int) ([]Entry, error) {
 
 	// Otherwise, fall back to the most recent 50 entries regardless of date
 	// This ensures the page always has content even if feeds are stale
-	rows, err = r.db.Query(`
+	rows, err = r.db.QueryContext(ctx, `
 		SELECT e.id, e.feed_id, e.entry_id, e.title, e.link, e.author, e.published, e.updated, e.content, e.content_type, e.summary, e.first_seen
 		FROM entries e
 		JOIN feeds f ON e.feed_id = f.id
@@ -521,7 +522,7 @@ var validSortFields = map[string]string{
 // If filterByFirstSeen is true, only entries first seen within the time window are returned.
 // sortBy determines the ordering: "published" or "first_seen".
 // Falls back to the most recent 50 entries if none found in the time window.
-func (r *Repository) GetRecentEntriesWithOptions(days int, filterByFirstSeen bool, sortBy string) ([]Entry, error) {
+func (r *Repository) GetRecentEntriesWithOptions(ctx context.Context, days int, filterByFirstSeen bool, sortBy string) ([]Entry, error) {
 	// Validate sortBy using whitelist map (defense-in-depth against SQL injection)
 	sortField, ok := validSortFields[sortBy]
 	if !ok {
@@ -545,7 +546,7 @@ func (r *Repository) GetRecentEntriesWithOptions(days int, filterByFirstSeen boo
 		ORDER BY %s DESC
 	`, filterField, sortField)
 
-	rows, err := r.db.Query(query, cutoff.Format(time.RFC3339))
+	rows, err := r.db.QueryContext(ctx, query, cutoff.Format(time.RFC3339))
 	if err != nil {
 		return nil, fmt.Errorf("query entries: %w", err)
 	}
@@ -572,7 +573,7 @@ func (r *Repository) GetRecentEntriesWithOptions(days int, filterByFirstSeen boo
 		LIMIT 50
 	`, sortField)
 
-	rows, err = r.db.Query(query)
+	rows, err = r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("query fallback entries: %w", err)
 	}
@@ -582,9 +583,9 @@ func (r *Repository) GetRecentEntriesWithOptions(days int, filterByFirstSeen boo
 }
 
 // CountEntries returns the total number of entries in the database
-func (r *Repository) CountEntries() (int64, error) {
+func (r *Repository) CountEntries(ctx context.Context) (int64, error) {
 	var count int64
-	err := r.db.QueryRow("SELECT COUNT(*) FROM entries").Scan(&count)
+	err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM entries").Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("count entries: %w", err)
 	}
@@ -592,11 +593,11 @@ func (r *Repository) CountEntries() (int64, error) {
 }
 
 // CountRecentEntries returns the number of entries published within the last N days
-func (r *Repository) CountRecentEntries(days int) (int64, error) {
+func (r *Repository) CountRecentEntries(ctx context.Context, days int) (int64, error) {
 	cutoff := time.Now().AddDate(0, 0, -days)
 
 	var count int64
-	err := r.db.QueryRow(`
+	err := r.db.QueryRowContext(ctx, `
 		SELECT COUNT(*)
 		FROM entries
 		WHERE published >= ?
@@ -609,9 +610,9 @@ func (r *Repository) CountRecentEntries(days int) (int64, error) {
 }
 
 // GetEntryCountForFeed returns the number of entries for a specific feed
-func (r *Repository) GetEntryCountForFeed(feedID int64) (int64, error) {
+func (r *Repository) GetEntryCountForFeed(ctx context.Context, feedID int64) (int64, error) {
 	var count int64
-	err := r.db.QueryRow(`
+	err := r.db.QueryRowContext(ctx, `
 		SELECT COUNT(*)
 		FROM entries
 		WHERE feed_id = ?
@@ -624,10 +625,10 @@ func (r *Repository) GetEntryCountForFeed(feedID int64) (int64, error) {
 }
 
 // PruneOldEntries deletes entries older than N days
-func (r *Repository) PruneOldEntries(days int) (int64, error) {
+func (r *Repository) PruneOldEntries(ctx context.Context, days int) (int64, error) {
 	cutoff := time.Now().AddDate(0, 0, -days)
 
-	result, err := r.db.Exec(`
+	result, err := r.db.ExecContext(ctx, `
 		DELETE FROM entries
 		WHERE published < ?
 	`, cutoff.Format(time.RFC3339))

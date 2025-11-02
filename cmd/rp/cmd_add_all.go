@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/adewale/rogue_planet/pkg/config"
@@ -28,10 +29,12 @@ func cmdAddAll(opts AddAllOptions) error {
 		return nil
 	}
 
+	ctx := context.Background()
+
 	fmt.Fprintf(opts.Output, "Adding %d feeds from %s...\n", len(feedURLs), opts.FeedsFile)
 
 	// Add each feed to database
-	addedCount := importFeedsFromURLs(repo, feedURLs, opts.Output)
+	addedCount := importFeedsFromURLs(ctx, repo, feedURLs, opts.Output)
 
 	fmt.Fprintf(opts.Output, "\n✓ Added %d/%d feeds\n", addedCount, len(feedURLs))
 	return nil

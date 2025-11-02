@@ -57,11 +57,11 @@ func openConfigAndRepo(configPath string) (*config.Config, *repository.Repositor
 
 // importFeedsFromURLs adds a list of feed URLs to the repository with progress reporting
 // Returns the number of successfully added feeds
-func importFeedsFromURLs(repo *repository.Repository, feedURLs []string, output io.Writer) int {
+func importFeedsFromURLs(ctx context.Context, repo *repository.Repository, feedURLs []string, output io.Writer) int {
 	addedCount := 0
 	for i, url := range feedURLs {
 		fmt.Fprintf(output, "  [%d/%d] Adding %s\n", i+1, len(feedURLs), url)
-		id, err := repo.AddFeed(url, "")
+		id, err := repo.AddFeed(ctx, url, "")
 		if err != nil {
 			log.Printf("         Warning: Failed to add feed: %v", err)
 			continue
@@ -72,7 +72,7 @@ func importFeedsFromURLs(repo *repository.Repository, feedURLs []string, output 
 	return addedCount
 }
 
-func fetchFeeds(cfg *config.Config, logger logging.Logger) error {
+func fetchFeeds(ctx context.Context, cfg *config.Config, logger logging.Logger) error {
 	// Set log level from config if logger supports it
 	if stdLogger, ok := logger.(*logging.StandardLogger); ok {
 		stdLogger.SetLevel(cfg.Planet.LogLevel)
@@ -85,7 +85,7 @@ func fetchFeeds(cfg *config.Config, logger logging.Logger) error {
 	defer repo.Close()
 
 	// Get feeds from database
-	feeds, err := repo.GetFeeds(true)
+	feeds, err := repo.GetFeeds(ctx, true)
 	if err != nil {
 		return fmt.Errorf("get feeds: %w", err)
 	}
@@ -116,7 +116,7 @@ func fetchFeeds(cfg *config.Config, logger logging.Logger) error {
 	logger.Debug("Rate limiter configured: %d requests/min, burst=%d", cfg.Planet.RequestsPerMinute, cfg.Planet.RateLimitBurst)
 
 	// Set up signal handling for graceful shutdown
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	sigChan := make(chan os.Signal, 1)
@@ -224,7 +224,7 @@ func fetchFeeds(cfg *config.Config, logger logging.Logger) error {
 	return nil
 }
 
-func generateSite(cfg *config.Config) error {
+func generateSite(ctx context.Context, cfg *config.Config) error {
 	repo, err := repository.New(cfg.Database.Path)
 	if err != nil {
 		return fmt.Errorf("open database: %w", err)
@@ -232,13 +232,13 @@ func generateSite(cfg *config.Config) error {
 	defer repo.Close()
 
 	// Get recent entries
-	entries, err := repo.GetRecentEntriesWithOptions(cfg.Planet.Days, cfg.Planet.FilterByFirstSeen, cfg.Planet.SortBy)
+	entries, err := repo.GetRecentEntriesWithOptions(ctx, cfg.Planet.Days, cfg.Planet.FilterByFirstSeen, cfg.Planet.SortBy)
 	if err != nil {
 		return fmt.Errorf("get entries: %w", err)
 	}
 
 	// Get feeds for metadata
-	feeds, err := repo.GetFeeds(true)
+	feeds, err := repo.GetFeeds(ctx, true)
 	if err != nil {
 		return fmt.Errorf("get feeds: %w", err)
 	}
@@ -313,7 +313,7 @@ func generateSite(cfg *config.Config) error {
 	}
 
 	outputPath := filepath.Join(cfg.Planet.OutputDir, "index.html")
-	if err := gen.GenerateToFile(outputPath, data); err != nil {
+	if err := gen.GenerateToFile(ctx, outputPath, data); err != nil {
 		return fmt.Errorf("generate file: %w", err)
 	}
 

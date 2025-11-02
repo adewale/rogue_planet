@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/adewale/rogue_planet/pkg/crawler"
@@ -13,7 +14,7 @@ func cmdImportOPML(opts ImportOPMLOptions) error {
 	}
 
 	// Parse OPML file
-	opmlDoc, err := opml.ParseFile(opts.OPMLFile)
+	opmlDoc, err := opml.ParseFile(context.Background(), opts.OPMLFile)
 	if err != nil {
 		return fmt.Errorf("failed to parse OPML file: %w", err)
 	}
@@ -25,6 +26,8 @@ func cmdImportOPML(opts ImportOPMLOptions) error {
 		fmt.Fprintln(opts.Output, "No feeds found in OPML file")
 		return nil
 	}
+
+	ctx := context.Background()
 
 	if opts.DryRun {
 		fmt.Fprintf(opts.Output, "DRY RUN: Importing feeds from %s...\n\n", opts.OPMLFile)
@@ -45,7 +48,7 @@ func cmdImportOPML(opts ImportOPMLOptions) error {
 		// Check which feeds already exist
 		skipCount := 0
 		for i, feed := range feeds {
-			_, err := repo.GetFeedByURL(feed.FeedURL)
+			_, err := repo.GetFeedByURL(ctx, feed.FeedURL)
 			if err == nil {
 				fmt.Fprintf(opts.Output, "  [%d/%d] Would skip: %s (already exists)\n", i+1, len(feeds), feed.FeedURL)
 				skipCount++
@@ -74,7 +77,7 @@ func cmdImportOPML(opts ImportOPMLOptions) error {
 
 	for i, feed := range feeds {
 		// Check if feed already exists
-		_, err := repo.GetFeedByURL(feed.FeedURL)
+		_, err := repo.GetFeedByURL(ctx, feed.FeedURL)
 		if err == nil {
 			fmt.Fprintf(opts.Output, "  [%d/%d] %s\n", i+1, len(feeds), feed.FeedURL)
 			fmt.Fprintln(opts.Output, "         ⚠ Skipped (already exists)")
@@ -96,7 +99,7 @@ func cmdImportOPML(opts ImportOPMLOptions) error {
 			title = feed.FeedURL
 		}
 
-		id, err := repo.AddFeed(feed.FeedURL, title)
+		id, err := repo.AddFeed(ctx, feed.FeedURL, title)
 		if err != nil {
 			fmt.Fprintf(opts.Output, "  [%d/%d] %s\n", i+1, len(feeds), feed.FeedURL)
 			fmt.Fprintf(opts.Output, "         ✗ Failed: %v\n", err)

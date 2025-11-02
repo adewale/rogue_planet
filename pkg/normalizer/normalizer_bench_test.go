@@ -1,6 +1,7 @@
 package normalizer
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -68,7 +69,7 @@ func BenchmarkParse(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _, _ = n.Parse([]byte(feedXML), feedURL, fetchTime)
+		_, _, _ = n.Parse(context.Background(), []byte(feedXML), feedURL, fetchTime)
 	}
 }
 

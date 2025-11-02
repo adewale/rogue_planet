@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -12,8 +13,10 @@ func cmdListFeeds(opts ListFeedsOptions) error {
 	}
 	defer cleanup()
 
+	ctx := context.Background()
+
 	// Get feeds
-	feeds, err := repo.GetFeeds(false)
+	feeds, err := repo.GetFeeds(ctx, false)
 	if err != nil {
 		return fmt.Errorf("failed to get feeds: %w", err)
 	}

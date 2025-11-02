@@ -6,6 +6,7 @@
 package opml
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"os"
@@ -72,7 +73,10 @@ func Parse(data []byte) (*OPML, error) {
 }
 
 // ParseFile parses an OPML file from disk
-func ParseFile(path string) (*OPML, error) {
+func ParseFile(ctx context.Context, path string) (*OPML, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
@@ -173,7 +177,10 @@ func (o *OPML) Marshal() ([]byte, error) {
 }
 
 // Write writes OPML to file
-func (o *OPML) Write(path string) error {
+func (o *OPML) Write(ctx context.Context, path string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	data, err := o.Marshal()
 	if err != nil {
 		return err

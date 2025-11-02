@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io"
 	"os"
 	"path/filepath"
@@ -48,8 +49,10 @@ path = ./data/planet.db
 	}
 	defer repo.Close()
 
+	ctx := context.Background()
+
 	// Simulate adding a feed with old entries
-	feedID, _ := repo.AddFeed("https://example.com/feed", "Example Feed")
+	feedID, _ := repo.AddFeed(ctx, "https://example.com/feed", "Example Feed")
 
 	baseTime := time.Now()
 
@@ -85,7 +88,7 @@ path = ./data/planet.db
 	}
 
 	for _, e := range entries {
-		if err := repo.UpsertEntry(&e); err != nil {
+		if err := repo.UpsertEntry(ctx, &e); err != nil {
 			t.Fatalf("UpsertEntry() error = %v", err)
 		}
 	}
@@ -95,7 +98,7 @@ path = ./data/planet.db
 		ConfigPath: "./config.ini",
 		Output:     io.Discard,
 	}
-	if err := cmdGenerate(genOpts); err != nil {
+	if err := cmdGenerate(context.Background(), genOpts); err != nil {
 		t.Fatalf("cmdGenerate() error = %v", err)
 	}
 
@@ -138,11 +141,13 @@ func TestBackwardsCompatibility(t *testing.T) {
 	repo, _ := repository.New(filepath.Join(dir, "data/planet.db"))
 	defer repo.Close()
 
-	feedID, _ := repo.AddFeed("https://example.com/feed", "Example Feed")
+	ctx := context.Background()
+
+	feedID, _ := repo.AddFeed(ctx, "https://example.com/feed", "Example Feed")
 	baseTime := time.Now()
 
 	// Add entry published recently but first_seen long ago
-	if err := repo.UpsertEntry(&repository.Entry{
+	if err := repo.UpsertEntry(ctx, &repository.Entry{
 		FeedID:    feedID,
 		EntryID:   "test-entry",
 		Title:     "Test Entry",
@@ -153,7 +158,7 @@ func TestBackwardsCompatibility(t *testing.T) {
 	}
 
 	// Generate with default config (should filter by published)
-	if err := cmdGenerate(GenerateOptions{ConfigPath: "./config.ini", Output: io.Discard}); err != nil {
+	if err := cmdGenerate(context.Background(), GenerateOptions{ConfigPath: "./config.ini", Output: io.Discard}); err != nil {
 		t.Fatalf("cmdGenerate() error = %v", err)
 	}
 

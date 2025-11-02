@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 func cmdStatus(opts StatusOptions) error {
 	cfg, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
@@ -9,8 +12,10 @@ func cmdStatus(opts StatusOptions) error {
 	}
 	defer cleanup()
 
+	ctx := context.Background()
+
 	// Get feed counts
-	feeds, err := repo.GetFeeds(false)
+	feeds, err := repo.GetFeeds(ctx, false)
 	if err != nil {
 		return fmt.Errorf("failed to get feeds: %w", err)
 	}
@@ -23,13 +28,13 @@ func cmdStatus(opts StatusOptions) error {
 	}
 
 	// Get entry count
-	totalEntries, err := repo.CountEntries()
+	totalEntries, err := repo.CountEntries(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to count entries: %w", err)
 	}
 
 	// Get recent entry count (based on config days)
-	recentEntries, err := repo.CountRecentEntries(cfg.Planet.Days)
+	recentEntries, err := repo.CountRecentEntries(ctx, cfg.Planet.Days)
 	if err != nil {
 		return fmt.Errorf("failed to count recent entries: %w", err)
 	}

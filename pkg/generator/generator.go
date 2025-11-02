@@ -6,6 +6,7 @@
 package generator
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"io"
@@ -117,7 +118,11 @@ func NewWithTemplate(templatePath string) (*Generator, error) {
 }
 
 // Generate generates HTML and writes it to the specified writer
-func (g *Generator) Generate(w io.Writer, data TemplateData) error {
+func (g *Generator) Generate(ctx context.Context, w io.Writer, data TemplateData) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	// Add version info
 	data.Generator = "Rogue Planet v0.1"
 	data.Updated = g.timeProvider.Now()
@@ -141,7 +146,11 @@ func (g *Generator) Generate(w io.Writer, data TemplateData) error {
 }
 
 // GenerateToFile generates HTML and writes it to a file
-func (g *Generator) GenerateToFile(outputPath string, data TemplateData) (err error) {
+func (g *Generator) GenerateToFile(ctx context.Context, outputPath string, data TemplateData) (err error) {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	// Create output directory if it doesn't exist
 	dir := filepath.Dir(outputPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -160,13 +169,13 @@ func (g *Generator) GenerateToFile(outputPath string, data TemplateData) (err er
 	}()
 
 	// Generate HTML
-	if err := g.Generate(f, data); err != nil {
+	if err := g.Generate(ctx, f, data); err != nil {
 		return err
 	}
 
 	// Copy static assets if using custom template
 	if g.templatePath != "" {
-		if err := g.CopyStaticAssets(dir); err != nil {
+		if err := g.CopyStaticAssets(ctx, dir); err != nil {
 			return fmt.Errorf("copy static assets: %w", err)
 		}
 	}
@@ -175,7 +184,11 @@ func (g *Generator) GenerateToFile(outputPath string, data TemplateData) (err er
 }
 
 // CopyStaticAssets copies static assets from template directory to output directory
-func (g *Generator) CopyStaticAssets(outputDir string) error {
+func (g *Generator) CopyStaticAssets(ctx context.Context, outputDir string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	if g.templatePath == "" {
 		return nil // No custom template, no static assets
 	}
@@ -198,7 +211,7 @@ func (g *Generator) CopyStaticAssets(outputDir string) error {
 	}
 
 	// Copy static directory
-	if err := copyDir(staticSrc, staticDst); err != nil {
+	if err := copyDir(ctx, staticSrc, staticDst); err != nil {
 		return fmt.Errorf("copy static directory: %w", err)
 	}
 
@@ -206,7 +219,7 @@ func (g *Generator) CopyStaticAssets(outputDir string) error {
 }
 
 // copyDir recursively copies a directory
-func copyDir(src, dst string) error {
+func copyDir(ctx context.Context, src, dst string) error {
 	// Get source directory info
 	srcInfo, err := os.Stat(src)
 	if err != nil {
@@ -226,17 +239,21 @@ func copyDir(src, dst string) error {
 
 	// Copy each entry
 	for _, entry := range entries {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		srcPath := filepath.Join(src, entry.Name())
 		dstPath := filepath.Join(dst, entry.Name())
 
 		if entry.IsDir() {
 			// Recursively copy subdirectory
-			if err := copyDir(srcPath, dstPath); err != nil {
+			if err := copyDir(ctx, srcPath, dstPath); err != nil {
 				return err
 			}
 		} else {
 			// Copy file
-			if err := copyFile(srcPath, dstPath); err != nil {
+			if err := copyFile(ctx, srcPath, dstPath); err != nil {
 				return err
 			}
 		}
@@ -246,7 +263,11 @@ func copyDir(src, dst string) error {
 }
 
 // copyFile copies a single file
-func copyFile(src, dst string) (err error) {
+func copyFile(ctx context.Context, src, dst string) (err error) {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	// Open source file
 	srcFile, openErr := os.Open(src)
 	if openErr != nil {

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"testing"
 	"time"
 )
@@ -16,7 +17,7 @@ func BenchmarkAddFeed(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		url := "https://example.com/feed/" + string(rune(i%1000))
-		_, _ = repo.AddFeed(url, "Test Feed")
+		_, _ = repo.AddFeed(context.Background(), url, "Test Feed")
 	}
 }
 
@@ -29,7 +30,7 @@ func BenchmarkUpsertEntry(b *testing.B) {
 	defer repo.Close()
 
 	// Add a test feed
-	feedID, err := repo.AddFeed("https://example.com/feed", "Test Feed")
+	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
 	if err != nil {
 		b.Fatalf("Failed to add feed: %v", err)
 	}
@@ -52,7 +53,7 @@ func BenchmarkUpsertEntry(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		entry.EntryID = "entry-" + string(rune(i%1000))
-		_ = repo.UpsertEntry(entry)
+		_ = repo.UpsertEntry(context.Background(), entry)
 	}
 }
 
@@ -65,7 +66,7 @@ func BenchmarkGetRecentEntries(b *testing.B) {
 	defer repo.Close()
 
 	// Add test data
-	feedID, _ := repo.AddFeed("https://example.com/feed", "Test Feed")
+	feedID, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
 	now := time.Now()
 	for i := 0; i < 100; i++ {
 		entry := &Entry{
@@ -81,12 +82,12 @@ func BenchmarkGetRecentEntries(b *testing.B) {
 			Summary:     "Test summary",
 			FirstSeen:   now,
 		}
-		_ = repo.UpsertEntry(entry)
+		_ = repo.UpsertEntry(context.Background(), entry)
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = repo.GetRecentEntries(30)
+		_, _ = repo.GetRecentEntries(context.Background(), 30)
 	}
 }
 
@@ -100,12 +101,12 @@ func BenchmarkGetFeeds(b *testing.B) {
 
 	// Add test feeds
 	for i := 0; i < 50; i++ {
-		_, _ = repo.AddFeed("https://example.com/feed/"+string(rune(i)), "Test Feed "+string(rune(i)))
+		_, _ = repo.AddFeed(context.Background(), "https://example.com/feed/"+string(rune(i)), "Test Feed "+string(rune(i)))
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = repo.GetFeeds(true)
+		_, _ = repo.GetFeeds(context.Background(), true)
 	}
 }
 
@@ -117,12 +118,12 @@ func BenchmarkUpdateFeedCache(b *testing.B) {
 	}
 	defer repo.Close()
 
-	feedID, _ := repo.AddFeed("https://example.com/feed", "Test Feed")
+	feedID, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		etag := "etag-" + string(rune(i%100))
 		lastModified := "Mon, 01 Jan 2024 00:00:00 GMT"
-		_ = repo.UpdateFeedCache(feedID, etag, lastModified, time.Now())
+		_ = repo.UpdateFeedCache(context.Background(), feedID, etag, lastModified, time.Now())
 	}
 }

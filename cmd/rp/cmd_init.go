@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -63,8 +64,10 @@ path = ./data/planet.db
 			return fmt.Errorf("failed to load feeds file: %w", err)
 		}
 
+		ctx := context.Background()
+
 		// Add each feed to database
-		addedCount := importFeedsFromURLs(repo, feedURLs, opts.Output)
+		addedCount := importFeedsFromURLs(ctx, repo, feedURLs, opts.Output)
 
 		fmt.Fprintf(opts.Output, "\n✓ Imported %d/%d feeds\n", addedCount, len(feedURLs))
 

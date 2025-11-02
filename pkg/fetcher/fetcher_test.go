@@ -41,7 +41,7 @@ type mockNormalizer struct {
 	err      error
 }
 
-func (m *mockNormalizer) Parse(feedData []byte, feedURL string, fetchTime time.Time) (*normalizer.FeedMetadata, []normalizer.Entry, error) {
+func (m *mockNormalizer) Parse(ctx context.Context, feedData []byte, feedURL string, fetchTime time.Time) (*normalizer.FeedMetadata, []normalizer.Entry, error) {
 	if m.err != nil {
 		return nil, nil, m.err
 	}
@@ -66,29 +66,29 @@ type mockRepository struct {
 	upsertEntryFunc func(entry *repository.Entry) error
 }
 
-func (m *mockRepository) UpdateFeedError(id int64, errorMsg string) error {
+func (m *mockRepository) UpdateFeedError(ctx context.Context, id int64, errorMsg string) error {
 	m.updateFeedErrorCalled = true
 	m.updateFeedErrorMsg = errorMsg
 	return m.updateFeedErrorError
 }
 
-func (m *mockRepository) UpdateFeedURL(id int64, newURL string) error {
+func (m *mockRepository) UpdateFeedURL(ctx context.Context, id int64, newURL string) error {
 	m.updateFeedURLCalled = true
 	m.updateFeedURLNewURL = newURL
 	return m.updateFeedURLError
 }
 
-func (m *mockRepository) UpdateFeedCache(id int64, etag, lastModified string, lastFetched time.Time) error {
+func (m *mockRepository) UpdateFeedCache(ctx context.Context, id int64, etag, lastModified string, lastFetched time.Time) error {
 	m.updateFeedCacheCalled = true
 	return m.updateFeedCacheError
 }
 
-func (m *mockRepository) UpdateFeed(id int64, title, link string, updated time.Time) error {
+func (m *mockRepository) UpdateFeed(ctx context.Context, id int64, title, link string, updated time.Time) error {
 	m.updateFeedCalled = true
 	return m.updateFeedError
 }
 
-func (m *mockRepository) UpsertEntry(entry *repository.Entry) error {
+func (m *mockRepository) UpsertEntry(ctx context.Context, entry *repository.Entry) error {
 	m.upsertEntryCalled = true
 	m.upsertEntryCount++
 	if m.upsertEntryFunc != nil {
@@ -98,39 +98,43 @@ func (m *mockRepository) UpsertEntry(entry *repository.Entry) error {
 }
 
 // Implement remaining interface methods (not used in tests)
-func (m *mockRepository) GetFeeds(activeOnly bool) ([]repository.Feed, error) {
+func (m *mockRepository) GetFeeds(ctx context.Context, activeOnly bool) ([]repository.Feed, error) {
 	return nil, nil
 }
 
-func (m *mockRepository) AddFeed(url, title string) (int64, error) {
+func (m *mockRepository) AddFeed(ctx context.Context, url, title string) (int64, error) {
 	return 0, nil
 }
 
-func (m *mockRepository) GetFeedByURL(url string) (*repository.Feed, error) {
+func (m *mockRepository) GetFeedByURL(ctx context.Context, url string) (*repository.Feed, error) {
 	return nil, nil
 }
 
-func (m *mockRepository) RemoveFeed(id int64) error {
+func (m *mockRepository) RemoveFeed(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (m *mockRepository) GetRecentEntries(days int) ([]repository.Entry, error) {
+func (m *mockRepository) GetRecentEntries(ctx context.Context, days int) ([]repository.Entry, error) {
 	return nil, nil
 }
 
-func (m *mockRepository) GetRecentEntriesWithOptions(days int, filterByFirstSeen bool, sortBy string) ([]repository.Entry, error) {
+func (m *mockRepository) GetRecentEntriesWithOptions(ctx context.Context, days int, filterByFirstSeen bool, sortBy string) ([]repository.Entry, error) {
 	return nil, nil
 }
 
-func (m *mockRepository) CountEntries() (int64, error) {
+func (m *mockRepository) CountEntries(ctx context.Context) (int64, error) {
 	return 0, nil
 }
 
-func (m *mockRepository) CountRecentEntries(days int) (int64, error) {
+func (m *mockRepository) CountRecentEntries(ctx context.Context, days int) (int64, error) {
 	return 0, nil
 }
 
-func (m *mockRepository) PruneOldEntries(days int) (int64, error) {
+func (m *mockRepository) GetEntryCountForFeed(ctx context.Context, feedID int64) (int64, error) {
+	return 0, nil
+}
+
+func (m *mockRepository) PruneOldEntries(ctx context.Context, days int) (int64, error) {
 	return 0, nil
 }
 
@@ -1093,7 +1097,7 @@ func TestFetchFeed_Integration_RedirectThenSuccess(t *testing.T) {
 	defer repo.Close()
 
 	// Add feed with original URL
-	feedID, err := repo.AddFeed(server.URL, "Test Feed")
+	feedID, err := repo.AddFeed(context.Background(), server.URL, "Test Feed")
 	if err != nil {
 		t.Fatalf("Failed to add feed: %v", err)
 	}
@@ -1106,7 +1110,7 @@ func TestFetchFeed_Integration_RedirectThenSuccess(t *testing.T) {
 	fetcher := New(crawler, normalizer, repo, nil, logger, 3)
 
 	// Execute: Fetch the feed
-	feed, err := repo.GetFeedByURL(server.URL)
+	feed, err := repo.GetFeedByURL(context.Background(), server.URL)
 	if err != nil {
 		t.Fatalf("Failed to get feed: %v", err)
 	}
@@ -1133,7 +1137,7 @@ func TestFetchFeed_Integration_RedirectThenSuccess(t *testing.T) {
 
 	// STATE VERIFICATION #1: Feed URL was updated after 301 redirect
 	expectedNewURL := serverURL + "/new-location"
-	updatedFeed, err := repo.GetFeedByURL(expectedNewURL)
+	updatedFeed, err := repo.GetFeedByURL(context.Background(), expectedNewURL)
 	if err != nil {
 		t.Fatalf("Failed to get feed by new URL after redirect: %v", err)
 	}
@@ -1145,13 +1149,13 @@ func TestFetchFeed_Integration_RedirectThenSuccess(t *testing.T) {
 	}
 
 	// Verify old URL no longer exists
-	oldFeed, err := repo.GetFeedByURL(serverURL)
+	oldFeed, err := repo.GetFeedByURL(context.Background(), serverURL)
 	if err == nil && oldFeed != nil {
 		t.Error("Old URL should not exist after 301 redirect and URL update")
 	}
 
 	// STATE VERIFICATION #2: Can retrieve entries (proves they were stored correctly)
-	entries, err := repo.GetRecentEntries(7)
+	entries, err := repo.GetRecentEntries(context.Background(), 7)
 	if err != nil {
 		t.Fatalf("Failed to get recent entries: %v", err)
 	}
@@ -1172,7 +1176,7 @@ func TestFetchFeed_Integration_RedirectThenSuccess(t *testing.T) {
 	}
 
 	// STATE VERIFICATION #3: Entry count is correct
-	entryCount, err := repo.CountEntries()
+	entryCount, err := repo.CountEntries(context.Background())
 	if err != nil {
 		t.Fatalf("Failed to count entries: %v", err)
 	}
@@ -1181,7 +1185,7 @@ func TestFetchFeed_Integration_RedirectThenSuccess(t *testing.T) {
 	}
 
 	// STATE VERIFICATION #4: Feed has no fetch errors
-	allFeeds, err := repo.GetFeeds(false)
+	allFeeds, err := repo.GetFeeds(context.Background(), false)
 	if err != nil {
 		t.Fatalf("Failed to get feeds: %v", err)
 	}

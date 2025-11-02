@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 func cmdAddFeed(opts AddFeedOptions) error {
 	if opts.URL == "" {
@@ -13,8 +16,10 @@ func cmdAddFeed(opts AddFeedOptions) error {
 	}
 	defer cleanup()
 
+	ctx := context.Background()
+
 	// Add feed
-	id, err := repo.AddFeed(opts.URL, "")
+	id, err := repo.AddFeed(ctx, opts.URL, "")
 	if err != nil {
 		return fmt.Errorf("failed to add feed: %w", err)
 	}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -18,14 +19,16 @@ func cmdRemoveFeed(opts RemoveFeedOptions) error {
 	}
 	defer cleanup()
 
+	ctx := context.Background()
+
 	// Find feed
-	feed, err := repo.GetFeedByURL(opts.URL)
+	feed, err := repo.GetFeedByURL(ctx, opts.URL)
 	if err != nil {
 		return fmt.Errorf("feed not found: %w", err)
 	}
 
 	// Get entry count for this feed
-	entryCount, err := repo.GetEntryCountForFeed(feed.ID)
+	entryCount, err := repo.GetEntryCountForFeed(ctx, feed.ID)
 	if err != nil {
 		return fmt.Errorf("failed to count entries: %w", err)
 	}
@@ -76,7 +79,7 @@ func cmdRemoveFeed(opts RemoveFeedOptions) error {
 	}
 
 	// Remove feed (CASCADE DELETE will remove all entries)
-	if err := repo.RemoveFeed(feed.ID); err != nil {
+	if err := repo.RemoveFeed(ctx, feed.ID); err != nil {
 		return fmt.Errorf("failed to remove feed: %w", err)
 	}
 

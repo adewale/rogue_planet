@@ -1,6 +1,7 @@
 package normalizer
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -47,7 +48,7 @@ func TestParseRealWorldFeeds(t *testing.T) {
 			}
 
 			// Parse feed
-			metadata, entries, err := n.Parse(data, tt.feedURL, time.Now())
+			metadata, entries, err := n.Parse(context.Background(), data, tt.feedURL, time.Now())
 			if err != nil {
 				t.Fatalf("Failed to parse %s feed: %v", tt.feedType, err)
 			}
@@ -132,7 +133,7 @@ func testEndToEndWithFeedFile(t *testing.T, feedPath, expectedTitle string) {
 	}
 
 	// Parse feed
-	metadata, entries, err := n.Parse(data, "https://example.com/feed", time.Now())
+	metadata, entries, err := n.Parse(context.Background(), data, "https://example.com/feed", time.Now())
 	if err != nil {
 		t.Fatalf("Failed to parse feed: %v", err)
 	}
@@ -220,7 +221,7 @@ func TestParseJSONFeed10(t *testing.T) {
 	}
 
 	// Parse feed
-	metadata, entries, err := n.Parse(data, "https://example.org/feed.json", time.Now())
+	metadata, entries, err := n.Parse(context.Background(), data, "https://example.org/feed.json", time.Now())
 	if err != nil {
 		t.Fatalf("Failed to parse JSON Feed 1.0: %v", err)
 	}
@@ -308,7 +309,7 @@ func TestParseJSONFeed11(t *testing.T) {
 	}
 
 	// Parse feed
-	metadata, entries, err := n.Parse(data, "https://example.org/feed.json", time.Now())
+	metadata, entries, err := n.Parse(context.Background(), data, "https://example.org/feed.json", time.Now())
 	if err != nil {
 		t.Fatalf("Failed to parse JSON Feed 1.1: %v", err)
 	}
@@ -380,7 +381,7 @@ func TestParseJSONFeedEdgeCases(t *testing.T) {
 
 	// Parse feed
 	fetchTime := time.Now()
-	metadata, entries, err := n.Parse(data, "https://edge.example.org/feed.json", fetchTime)
+	metadata, entries, err := n.Parse(context.Background(), data, "https://edge.example.org/feed.json", fetchTime)
 	if err != nil {
 		t.Fatalf("Failed to parse JSON Feed edge cases: %v", err)
 	}
@@ -512,7 +513,7 @@ func TestJSONFeedSecuritySanitization(t *testing.T) {
 	}`
 
 	// Parse feed
-	metadata, entries, err := n.Parse([]byte(dangerousJSON), "https://test.example.org/feed.json", time.Now())
+	metadata, entries, err := n.Parse(context.Background(), []byte(dangerousJSON), "https://test.example.org/feed.json", time.Now())
 	if err != nil {
 		t.Fatalf("Failed to parse security test feed: %v", err)
 	}

@@ -47,7 +47,8 @@ func TestEndToEndHTMLGeneration(t *testing.T) {
 	defer repo.Close()
 
 	// Add feed
-	feedID, err := repo.AddFeed(server.URL, "Test Blog")
+	ctx := context.Background()
+	feedID, err := repo.AddFeed(ctx, server.URL, "Test Blog")
 	if err != nil {
 		t.Fatalf("Failed to add feed: %v", err)
 	}
@@ -56,14 +57,13 @@ func TestEndToEndHTMLGeneration(t *testing.T) {
 	c := crawler.NewForTesting() // Skip SSRF check for localhost
 	n := normalizer.New()
 
-	ctx := context.Background()
 	resp, err := c.Fetch(ctx, server.URL, crawler.FeedCache{})
 	if err != nil {
 		t.Fatalf("Failed to fetch feed: %v", err)
 	}
 
 	// Parse feed
-	metadata, entries, err := n.Parse(resp.Body, server.URL, time.Now())
+	metadata, entries, err := n.Parse(ctx, resp.Body, server.URL, time.Now())
 	if err != nil {
 		t.Fatalf("Failed to parse feed: %v", err)
 	}
@@ -84,13 +84,13 @@ func TestEndToEndHTMLGeneration(t *testing.T) {
 			FirstSeen:   entry.FirstSeen,
 		}
 
-		if err := repo.UpsertEntry(repoEntry); err != nil {
+		if err := repo.UpsertEntry(ctx, repoEntry); err != nil {
 			t.Fatalf("Failed to store entry: %v", err)
 		}
 	}
 
 	// Get entries from database
-	dbEntries, err := repo.GetRecentEntries(7)
+	dbEntries, err := repo.GetRecentEntries(ctx, 7)
 	if err != nil {
 		t.Fatalf("Failed to get entries: %v", err)
 	}
@@ -131,7 +131,7 @@ func TestEndToEndHTMLGeneration(t *testing.T) {
 		GroupByDate: true,
 	}
 
-	if err := gen.GenerateToFile(outputPath, data); err != nil {
+	if err := gen.GenerateToFile(ctx, outputPath, data); err != nil {
 		t.Fatalf("Failed to generate HTML: %v", err)
 	}
 
@@ -192,6 +192,7 @@ func TestHTMLGenerationWithNoEntries(t *testing.T) {
 		t.Fatalf("Failed to create generator: %v", err)
 	}
 
+	ctx := context.Background()
 	outputPath := filepath.Join(tmpDir, "index.html")
 	data := TemplateData{
 		Title:       "Empty Planet",
@@ -202,7 +203,7 @@ func TestHTMLGenerationWithNoEntries(t *testing.T) {
 		GroupByDate: false,
 	}
 
-	if err := gen.GenerateToFile(outputPath, data); err != nil {
+	if err := gen.GenerateToFile(ctx, outputPath, data); err != nil {
 		t.Fatalf("Failed to generate HTML: %v", err)
 	}
 
@@ -294,6 +295,7 @@ func TestGeneratedHTMLStructure(t *testing.T) {
 		t.Fatalf("Failed to create generator: %v", err)
 	}
 
+	ctx := context.Background()
 	// Create test entry
 	now := time.Now()
 	entries := []EntryData{
@@ -319,7 +321,7 @@ func TestGeneratedHTMLStructure(t *testing.T) {
 		GroupByDate: false,
 	}
 
-	if err := gen.GenerateToFile(outputPath, data); err != nil {
+	if err := gen.GenerateToFile(ctx, outputPath, data); err != nil {
 		t.Fatalf("Failed to generate HTML: %v", err)
 	}
 

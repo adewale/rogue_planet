@@ -1,6 +1,7 @@
 package normalizer
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -55,7 +56,7 @@ func TestAtomContentType_XHTML(t *testing.T) {
 		t.Fatalf("Failed to read test feed: %v", err)
 	}
 
-	metadata, entries, err := n.Parse(feedData, "https://example.com/feed", time.Now())
+	metadata, entries, err := n.Parse(context.Background(), feedData, "https://example.com/feed", time.Now())
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -100,7 +101,7 @@ func TestAtomContentType_HTML(t *testing.T) {
 		t.Fatalf("Failed to read test feed: %v", err)
 	}
 
-	_, entries, err := n.Parse(feedData, "https://example.com/feed", time.Now())
+	_, entries, err := n.Parse(context.Background(), feedData, "https://example.com/feed", time.Now())
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -137,7 +138,7 @@ func TestAtomContentType_Text(t *testing.T) {
 		t.Fatalf("Failed to read test feed: %v", err)
 	}
 
-	_, entries, err := n.Parse(feedData, "https://example.com/feed", time.Now())
+	_, entries, err := n.Parse(context.Background(), feedData, "https://example.com/feed", time.Now())
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -178,7 +179,7 @@ func TestXHTML_ComplexStructure(t *testing.T) {
 		t.Fatalf("Failed to read test feed: %v", err)
 	}
 
-	_, entries, err := n.Parse(feedData, "https://example.com/feed", time.Now())
+	_, entries, err := n.Parse(context.Background(), feedData, "https://example.com/feed", time.Now())
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -222,7 +223,7 @@ func TestMathML_BasicEquations(t *testing.T) {
 		t.Fatalf("Failed to read test feed: %v", err)
 	}
 
-	metadata, entries, err := n.Parse(feedData, "https://example.com/feed", time.Now())
+	metadata, entries, err := n.Parse(context.Background(), feedData, "https://example.com/feed", time.Now())
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -274,7 +275,7 @@ func TestMathML_Sanitization(t *testing.T) {
 		t.Fatalf("Failed to read test feed: %v", err)
 	}
 
-	_, entries, err := n.Parse(feedData, "https://example.com/feed", time.Now())
+	_, entries, err := n.Parse(context.Background(), feedData, "https://example.com/feed", time.Now())
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -316,7 +317,7 @@ func TestMathML_ComplexFormulas(t *testing.T) {
 		t.Fatalf("Failed to read test feed: %v", err)
 	}
 
-	_, entries, err := n.Parse(feedData, "https://example.com/feed", time.Now())
+	_, entries, err := n.Parse(context.Background(), feedData, "https://example.com/feed", time.Now())
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -360,7 +361,7 @@ func TestSVG_Inline(t *testing.T) {
 		t.Fatalf("Failed to read test feed: %v", err)
 	}
 
-	metadata, entries, err := n.Parse(feedData, "https://example.com/feed", time.Now())
+	metadata, entries, err := n.Parse(context.Background(), feedData, "https://example.com/feed", time.Now())
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -408,7 +409,7 @@ func TestSVG_WithFallback(t *testing.T) {
 		t.Fatalf("Failed to read test feed: %v", err)
 	}
 
-	_, entries, err := n.Parse(feedData, "https://example.com/feed", time.Now())
+	_, entries, err := n.Parse(context.Background(), feedData, "https://example.com/feed", time.Now())
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -463,7 +464,7 @@ func TestSVG_Security(t *testing.T) {
 		t.Fatalf("Failed to read test feed: %v", err)
 	}
 
-	_, entries, err := n.Parse(feedData, "https://example.com/feed", time.Now())
+	_, entries, err := n.Parse(context.Background(), feedData, "https://example.com/feed", time.Now())
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -505,7 +506,7 @@ func TestSVG_InImgTag(t *testing.T) {
 		t.Fatalf("Failed to read test feed: %v", err)
 	}
 
-	_, entries, err := n.Parse(feedData, "https://example.com/feed", time.Now())
+	_, entries, err := n.Parse(context.Background(), feedData, "https://example.com/feed", time.Now())
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -544,7 +545,7 @@ func TestXHTML_MixedContent(t *testing.T) {
 		t.Fatalf("Failed to read test feed: %v", err)
 	}
 
-	_, entries, err := n.Parse(feedData, "https://example.com/feed", time.Now())
+	_, entries, err := n.Parse(context.Background(), feedData, "https://example.com/feed", time.Now())
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -586,7 +587,7 @@ func TestContentTypeDetection(t *testing.T) {
 		t.Fatalf("Failed to read test feed: %v", err)
 	}
 
-	_, entries, err := n.Parse(feedData, "https://example.com/feed", time.Now())
+	_, entries, err := n.Parse(context.Background(), feedData, "https://example.com/feed", time.Now())
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -633,7 +634,7 @@ func TestNamespaceHandling(t *testing.T) {
 				t.Fatalf("Failed to read %s: %v", feedFile, err)
 			}
 
-			_, entries, err := n.Parse(feedData, "https://example.com/feed", time.Now())
+			_, entries, err := n.Parse(context.Background(), feedData, "https://example.com/feed", time.Now())
 			if err != nil {
 				t.Fatalf("Parse failed for %s: %v", feedFile, err)
 			}
@@ -670,7 +671,7 @@ func TestXHTML_CaseSensitivity(t *testing.T) {
 		t.Fatalf("Failed to read test feed: %v", err)
 	}
 
-	_, entries, err := n.Parse(feedData, "https://example.com/feed", time.Now())
+	_, entries, err := n.Parse(context.Background(), feedData, "https://example.com/feed", time.Now())
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}
@@ -749,7 +750,7 @@ func TestXMLBase_RelativeURLResolution(t *testing.T) {
 		t.Fatalf("Failed to read test feed: %v", err)
 	}
 
-	_, entries, err := n.Parse(feedData, "https://example.com/feed", time.Now())
+	_, entries, err := n.Parse(context.Background(), feedData, "https://example.com/feed", time.Now())
 	if err != nil {
 		t.Fatalf("Parse failed: %v", err)
 	}

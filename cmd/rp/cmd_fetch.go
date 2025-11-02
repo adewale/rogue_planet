@@ -1,8 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
-func cmdFetch(opts FetchOptions) error {
+func cmdFetch(ctx context.Context, opts FetchOptions) error {
 	setVerboseLogging(opts.Verbose)
 
 	cfg, err := loadConfig(opts.ConfigPath)
@@ -11,7 +14,7 @@ func cmdFetch(opts FetchOptions) error {
 	}
 
 	fmt.Fprintln(opts.Output, "Fetching feeds...")
-	if err := fetchFeeds(cfg, opts.Logger); err != nil {
+	if err := fetchFeeds(ctx, cfg, opts.Logger); err != nil {
 		return fmt.Errorf("failed to fetch feeds: %w", err)
 	}
 
