@@ -62,8 +62,6 @@ type mockRepository struct {
 	updateFeedCacheError  error
 	updateFeedURLError    error
 	updateFeedErrorError  error
-	updateFeedMetadataError error
-	insertEntryError      error
 	// Function fields for dynamic behavior
 	upsertEntryFunc func(entry *repository.Entry) error
 }
