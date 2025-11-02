@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - Context Propagation
+- **Comprehensive context.Context support throughout codebase**
+  - Enables graceful cancellation with Ctrl+C (SIGINT/SIGTERM)
+  - Timeout enforcement for long-running database queries
+  - Proper shutdown during bulk operations (update, fetch, generate, prune)
+- **Repository layer**: All 15 interface methods now accept context.Context as first parameter
+  - Converted to context-aware SQL methods (QueryContext, ExecContext, QueryRowContext)
+  - Database operations can be cancelled via context
+- **Signal handling**: Added signal.NotifyContext in main.go for SIGINT/SIGTERM
+  - Long-running commands (update, fetch, generate, prune) respect cancellation
+  - Users can safely interrupt operations without corrupting state
+- **Parser and generator**: Normalizer.Parse() and Generator methods now accept context
+  - Enables cancellation of CPU-intensive parsing and file I/O operations
+- **Test updates**: All 38 test files updated to pass context.Background()
+  - Maintains existing test coverage (70.4%)
+  - All tests passing across Linux, macOS, and Windows
+
 ### Added - Architecture & Testing
 - **pkg/fetcher package**: Extracted feed processing business logic
   - Separates orchestration (concurrency, rate limiting) from core logic
