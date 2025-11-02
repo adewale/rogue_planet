@@ -1148,3 +1148,74 @@ func TestRemoveFeedCascadeDelete(t *testing.T) {
 		t.Errorf("GetEntryCountForFeed() after feed delete = %d, want 0 (cascade delete failed)", count)
 	}
 }
+
+// Boolean flag tests for branch coverage
+
+func TestGetFeeds_ActiveOnly(t *testing.T) {
+	t.Parallel()
+	// Test branch where activeOnly is true (line 394)
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "test.db")
+
+	repo, err := New(dbPath)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer repo.Close()
+
+	// Add some feeds with different active statuses
+	id1, err := repo.AddFeed("http://example.com/feed1", "Active Feed 1")
+	if err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
+
+	id2, err := repo.AddFeed("http://example.com/feed2", "Active Feed 2")
+	if err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
+
+	id3, err := repo.AddFeed("http://example.com/feed3", "Inactive Feed")
+	if err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
+
+	// Mark feed 3 as inactive
+	_, err = repo.db.Exec("UPDATE feeds SET active = 0 WHERE id = ?", id3)
+	if err != nil {
+		t.Fatalf("Failed to mark feed as inactive: %v", err)
+	}
+
+	// Test with activeOnly = false (should get all 3 feeds)
+	allFeeds, err := repo.GetFeeds(false)
+	if err != nil {
+		t.Fatalf("GetFeeds(false) error = %v", err)
+	}
+	if len(allFeeds) != 3 {
+		t.Errorf("GetFeeds(false) returned %d feeds, want 3", len(allFeeds))
+	}
+
+	// Test with activeOnly = true (should get only 2 active feeds)
+	activeFeeds, err := repo.GetFeeds(true)
+	if err != nil {
+		t.Fatalf("GetFeeds(true) error = %v", err)
+	}
+	if len(activeFeeds) != 2 {
+		t.Errorf("GetFeeds(true) returned %d feeds, want 2", len(activeFeeds))
+	}
+
+	// Verify we got the right feeds (id1 and id2, not id3)
+	foundIds := make(map[int64]bool)
+	for _, feed := range activeFeeds {
+		foundIds[feed.ID] = true
+	}
+
+	if !foundIds[id1] {
+		t.Error("Active feed 1 not returned by GetFeeds(true)")
+	}
+	if !foundIds[id2] {
+		t.Error("Active feed 2 not returned by GetFeeds(true)")
+	}
+	if foundIds[id3] {
+		t.Error("Inactive feed 3 should not be returned by GetFeeds(true)")
+	}
+}

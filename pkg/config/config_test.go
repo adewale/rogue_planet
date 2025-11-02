@@ -838,3 +838,116 @@ idle_conn_timeout_seconds = 120
 		}
 	})
 }
+
+// Edge case tests for branch coverage
+
+func TestLoadFromFile_MalformedLine(t *testing.T) {
+	t.Parallel()
+	// Test branch where len(parts) != 2 (line 175: malformed line without =)
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.ini")
+
+	content := `[planet]
+name = Test Planet
+link = https://example.com
+invalid line without equals sign
+owner_name = Test Owner`
+
+	err := os.WriteFile(configPath, []byte(content), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write config file: %v", err)
+	}
+
+	_, err = LoadFromFile(configPath)
+
+	if err == nil {
+		t.Error("Expected error for malformed line")
+	}
+
+	if !strings.Contains(err.Error(), "invalid line") && !strings.Contains(err.Error(), "format") {
+		t.Errorf("Expected error about invalid line format, got: %v", err)
+	}
+}
+
+func TestLoadFromFile_KeyBeforeSection(t *testing.T) {
+	t.Parallel()
+	// Test branch where section == "" (line 204: key before any [section] header)
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.ini")
+
+	content := `name = Test Planet
+link = https://example.com
+
+[planet]
+owner_name = Test Owner`
+
+	err := os.WriteFile(configPath, []byte(content), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write config file: %v", err)
+	}
+
+	cfg, err := LoadFromFile(configPath)
+
+	// Should succeed - keys before section are treated as planet keys
+	if err != nil {
+		t.Errorf("Unexpected error for keys before section: %v", err)
+	}
+
+	// Verify the values were set
+	if cfg.Planet.Name != "Test Planet" {
+		t.Errorf("Planet.Name = %q, want %q", cfg.Planet.Name, "Test Planet")
+	}
+	if cfg.Planet.Link != "https://example.com" {
+		t.Errorf("Planet.Link = %q, want %q", cfg.Planet.Link, "https://example.com")
+	}
+}
+
+func TestLoadFromFile_AllTimeoutConfigs(t *testing.T) {
+	t.Parallel()
+	// Test branches for all timeout config keys (lines 284-294)
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.ini")
+
+	content := `[planet]
+name = Test Planet
+link = https://example.com
+owner_name = Test Owner
+http_timeout_seconds = 45
+dial_timeout_seconds = 15
+tls_handshake_timeout_seconds = 12
+response_header_timeout_seconds = 8
+requests_per_minute = 120
+rate_limit_burst = 20
+`
+
+	err := os.WriteFile(configPath, []byte(content), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write config file: %v", err)
+	}
+
+	cfg, err := LoadFromFile(configPath)
+
+	if err != nil {
+		t.Fatalf("LoadFromFile() error = %v", err)
+	}
+
+	// Verify all timeout values were set correctly
+	if cfg.Planet.HTTPTimeoutSeconds != 45 {
+		t.Errorf("HTTPTimeoutSeconds = %d, want 45", cfg.Planet.HTTPTimeoutSeconds)
+	}
+	if cfg.Planet.DialTimeoutSeconds != 15 {
+		t.Errorf("DialTimeoutSeconds = %d, want 15", cfg.Planet.DialTimeoutSeconds)
+	}
+	if cfg.Planet.TLSHandshakeTimeoutSeconds != 12 {
+		t.Errorf("TLSHandshakeTimeoutSeconds = %d, want 12", cfg.Planet.TLSHandshakeTimeoutSeconds)
+	}
+	if cfg.Planet.ResponseHeaderTimeoutSeconds != 8 {
+		t.Errorf("ResponseHeaderTimeoutSeconds = %d, want 8", cfg.Planet.ResponseHeaderTimeoutSeconds)
+	}
+	if cfg.Planet.RequestsPerMinute != 120 {
+		t.Errorf("RequestsPerMinute = %d, want 120", cfg.Planet.RequestsPerMinute)
+	}
+	if cfg.Planet.RateLimitBurst != 20 {
+		t.Errorf("RateLimitBurst = %d, want 20", cfg.Planet.RateLimitBurst)
+	}
+}

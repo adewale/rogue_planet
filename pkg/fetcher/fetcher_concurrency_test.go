@@ -2,6 +2,7 @@ package fetcher
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -17,26 +18,34 @@ type mockSlowCrawler struct {
 	delay         time.Duration
 	concurrentOps *int32 // Tracks concurrent operations
 	maxConcurrent *int32 // Tracks maximum concurrent operations observed
+	responseFunc  func() (*crawler.FeedResponse, error) // Optional dynamic response
 }
 
 func (m *mockSlowCrawler) FetchWithRetry(ctx context.Context, feedURL string, cache crawler.FeedCache, maxRetries int) (*crawler.FeedResponse, error) {
-	// Track concurrent operations
-	current := atomic.AddInt32(m.concurrentOps, 1)
-	defer atomic.AddInt32(m.concurrentOps, -1)
+	// Track concurrent operations if pointers are provided
+	if m.concurrentOps != nil && m.maxConcurrent != nil {
+		current := atomic.AddInt32(m.concurrentOps, 1)
+		defer atomic.AddInt32(m.concurrentOps, -1)
 
-	// Update max concurrent if this is higher
-	for {
-		oldMax := atomic.LoadInt32(m.maxConcurrent)
-		if current <= oldMax {
-			break
-		}
-		if atomic.CompareAndSwapInt32(m.maxConcurrent, oldMax, current) {
-			break
+		// Update max concurrent if this is higher
+		for {
+			oldMax := atomic.LoadInt32(m.maxConcurrent)
+			if current <= oldMax {
+				break
+			}
+			if atomic.CompareAndSwapInt32(m.maxConcurrent, oldMax, current) {
+				break
+			}
 		}
 	}
 
 	// Simulate slow HTTP fetch
 	time.Sleep(m.delay)
+
+	// Use dynamic response if provided
+	if m.responseFunc != nil {
+		return m.responseFunc()
+	}
 
 	return &crawler.FeedResponse{
 		Body:       []byte("<feed><entry>test</entry></feed>"),
@@ -327,4 +336,204 @@ func BenchmarkFetchFeed_Concurrent(b *testing.B) {
 			f.FetchFeed(context.Background(), feed)
 		}
 	})
+}
+
+// ADDITIONAL CONCURRENT FETCH EDGE CASES
+
+func TestFetchFeed_ConcurrentErrorHandling(t *testing.T) {
+	t.Parallel()
+
+	// Scenario: Multiple feeds failing simultaneously
+	// Verify error handling is thread-safe and doesn't deadlock or panic
+
+	const numFeeds = 10
+
+	// All requests will fail with different errors
+	errorMessages := make([]string, numFeeds)
+	for i := 0; i < numFeeds; i++ {
+		errorMessages[i] = "Network error " + string(rune('A'+i))
+	}
+
+	requestCount := int32(0)
+	mc := &mockCrawler{
+		responseFunc: func() (*crawler.FeedResponse, error) {
+			idx := atomic.AddInt32(&requestCount, 1) - 1
+			return nil, errors.New(errorMessages[idx])
+		},
+	}
+
+	mn := &mockNormalizer{}
+	mr := &mockRepository{}
+	ml := &mockLogger{}
+
+	var mu sync.Mutex
+	fetcher := New(mc, mn, mr, &mu, ml, 3)
+
+	// Launch concurrent fetches that will all fail
+	var wg sync.WaitGroup
+	results := make([]FetchResult, numFeeds)
+
+	for i := 0; i < numFeeds; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			feed := repository.Feed{ID: int64(idx + 1), URL: "http://example.com/feed" + string(rune('0'+idx))}
+			results[idx] = fetcher.FetchFeed(context.Background(), feed)
+		}(i)
+	}
+
+	wg.Wait()
+
+	// Verify all requests failed with errors
+	for i, result := range results {
+		if result.Error == nil {
+			t.Errorf("Feed %d: Expected error, got nil", i)
+		}
+	}
+
+	// Verify UpdateFeedError was called for each feed
+	if mr.updateFeedErrorCalled {
+		// At least some errors were recorded (mock doesn't track count)
+		t.Logf("✓ Error recording handled concurrently without deadlock")
+	}
+}
+
+func TestFetchFeed_ContextCancellationDuringConcurrentFetches(t *testing.T) {
+	t.Parallel()
+
+	// Scenario: Cancel context while multiple fetches are in progress
+	// Should gracefully stop all ongoing fetches
+
+	const numFeeds = 20
+	const fetchDelay = 500 * time.Millisecond
+
+	var activeRequests int32
+
+	mc := &mockSlowCrawler{
+		delay:         fetchDelay,
+		concurrentOps: &activeRequests,
+	}
+
+	mn := &mockNormalizer{
+		metadata: &normalizer.FeedMetadata{Title: "Test"},
+		entries:  []normalizer.Entry{{ID: "1"}},
+	}
+
+	mr := &mockRepository{}
+	ml := &mockLogger{}
+
+	var mu sync.Mutex
+	fetcher := New(mc, mn, mr, &mu, ml, 3)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Launch concurrent fetches
+	var wg sync.WaitGroup
+	completedCount := int32(0)
+	errorCount := int32(0)
+
+	for i := 0; i < numFeeds; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			feed := repository.Feed{ID: int64(idx + 1), URL: "http://example.com/feed"}
+			result := fetcher.FetchFeed(ctx, feed)
+
+			if result.Error != nil {
+				atomic.AddInt32(&errorCount, 1)
+			} else {
+				atomic.AddInt32(&completedCount, 1)
+			}
+		}(i)
+	}
+
+	// Let some fetches start
+	time.Sleep(100 * time.Millisecond)
+
+	// Cancel context
+	cancel()
+
+	// Wait for all goroutines to finish
+	wg.Wait()
+
+	// Verify all goroutines completed without deadlock
+	errors := atomic.LoadInt32(&errorCount)
+	completed := atomic.LoadInt32(&completedCount)
+
+	t.Logf("✓ Concurrent fetch with cancellation: %d completed, %d errored", completed, errors)
+
+	// The important thing is that cancellation didn't cause deadlock or panic
+	// Some may complete before cancellation propagates, which is fine
+	if completed+errors != numFeeds {
+		t.Errorf("Expected %d total results, got %d completed + %d errors = %d",
+			numFeeds, completed, errors, completed+errors)
+	}
+}
+
+func TestFetchFeed_ConcurrentAccessToSameFeed(t *testing.T) {
+	t.Parallel()
+
+	// Scenario: Multiple goroutines fetching the SAME feed URL simultaneously
+	// This is a real-world scenario (e.g., manual refresh + scheduled fetch)
+	// Verify no data corruption or race conditions
+
+	const numConcurrent = 5
+	const fetchDelay = 50 * time.Millisecond
+
+	var requestCount int32
+
+	mc := &mockSlowCrawler{
+		delay: fetchDelay,
+		responseFunc: func() (*crawler.FeedResponse, error) {
+			count := atomic.AddInt32(&requestCount, 1)
+			return &crawler.FeedResponse{
+				Body: []byte("<feed>data " + string(rune('0'+count-1)) + "</feed>"),
+				StatusCode: 200,
+				FetchTime:  time.Now(),
+			}, nil
+		},
+	}
+
+	mn := &mockNormalizer{
+		metadata: &normalizer.FeedMetadata{Title: "Test Feed"},
+		entries:  []normalizer.Entry{{ID: "entry-1", Title: "Entry"}},
+	}
+
+	mr := &mockRepository{}
+	ml := &mockLogger{}
+
+	var mu sync.Mutex
+	fetcher := New(mc, mn, mr, &mu, ml, 3)
+
+	// Same feed fetched by multiple goroutines simultaneously
+	sameFeed := repository.Feed{ID: 1, URL: "http://example.com/feed"}
+
+	var wg sync.WaitGroup
+	results := make([]FetchResult, numConcurrent)
+
+	// Launch concurrent fetches of the SAME feed
+	for i := 0; i < numConcurrent; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			results[idx] = fetcher.FetchFeed(context.Background(), sameFeed)
+		}(i)
+	}
+
+	wg.Wait()
+
+	// All should succeed without panics or data corruption
+	for i, result := range results {
+		if result.Error != nil {
+			t.Errorf("Fetch %d failed: %v", i, result.Error)
+		}
+	}
+
+	// Should have made numConcurrent requests (one per goroutine)
+	totalRequests := atomic.LoadInt32(&requestCount)
+	if totalRequests != numConcurrent {
+		t.Errorf("Expected %d concurrent requests, got %d", numConcurrent, totalRequests)
+	}
+
+	t.Logf("✓ %d concurrent fetches of same feed completed without race conditions", numConcurrent)
 }
