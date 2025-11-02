@@ -1114,7 +1114,7 @@ func TestFetchFeed_Integration_RedirectThenSuccess(t *testing.T) {
 	result := fetcher.FetchFeed(context.Background(), *feed)
 
 	// IMPROVEMENT #2: State verification - verify actual database state
-	
+
 	// Verify HTTP behavior
 	if redirectCount != 2 {
 		t.Errorf("Expected 2 HTTP requests (redirect + follow), got %d", redirectCount)
@@ -1287,9 +1287,9 @@ func TestFetchFeed_CascadeDBFailures(t *testing.T) {
 	}
 
 	mr := &mockRepository{
-		upsertEntryError:        errors.New("database locked"),
-		updateFeedError:         errors.New("database locked"),
-		updateFeedCacheError:    errors.New("database locked"),
+		upsertEntryError:     errors.New("database locked"),
+		updateFeedError:      errors.New("database locked"),
+		updateFeedCacheError: errors.New("database locked"),
 	}
 
 	f := &Fetcher{

@@ -520,7 +520,7 @@ func TestNormalizeEntry_WithPublishedDate(t *testing.T) {
 	}
 
 	entry := entries[0]
-	
+
 	// Verify published date was used
 	expectedTime := time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC)
 	if !entry.Published.Equal(expectedTime) {
@@ -557,7 +557,7 @@ func TestExtractPublished_ZeroTime(t *testing.T) {
 	}
 
 	entry := entries[0]
-	
+
 	// Should fall back to feed.UpdatedParsed, not fetchTime
 	feedUpdated := time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC)
 	if !entry.Published.Equal(feedUpdated) {

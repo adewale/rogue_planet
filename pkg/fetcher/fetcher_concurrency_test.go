@@ -16,8 +16,8 @@ import (
 // mockSlowCrawler simulates slow HTTP fetching
 type mockSlowCrawler struct {
 	delay         time.Duration
-	concurrentOps *int32 // Tracks concurrent operations
-	maxConcurrent *int32 // Tracks maximum concurrent operations observed
+	concurrentOps *int32                                // Tracks concurrent operations
+	maxConcurrent *int32                                // Tracks maximum concurrent operations observed
 	responseFunc  func() (*crawler.FeedResponse, error) // Optional dynamic response
 }
 
@@ -487,7 +487,7 @@ func TestFetchFeed_ConcurrentAccessToSameFeed(t *testing.T) {
 		responseFunc: func() (*crawler.FeedResponse, error) {
 			count := atomic.AddInt32(&requestCount, 1)
 			return &crawler.FeedResponse{
-				Body: []byte("<feed>data " + string(rune('0'+count-1)) + "</feed>"),
+				Body:       []byte("<feed>data " + string(rune('0'+count-1)) + "</feed>"),
 				StatusCode: 200,
 				FetchTime:  time.Now(),
 			}, nil
