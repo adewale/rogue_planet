@@ -1,17 +1,46 @@
 # Missing Abstractions Analysis
 
-**Date**: 2025-11-02
+**Date**: 2025-11-02 (Original analysis)
+**Updated**: 2025-11-04 (Decisions finalized)
 **Context**: Code review identifying opportunities to improve testability and modularity
 
 ## Executive Summary
 
-The Rogue Planet codebase has made significant progress with interface extraction in core packages (fetcher, crawler, normalizer, repository). However, the **command layer** lacks proper dependency injection, making integration tests slow and difficult to write. Three high-priority abstractions would dramatically improve testability.
+**Status: Architecture Work Complete ✅**
+
+The Rogue Planet codebase has successfully implemented context propagation throughout all layers (commit 65d22f3). After comprehensive analysis of proposed abstractions, we determined that:
+
+- ✅ **Context Propagation** - COMPLETED (22 methods updated across 4 packages)
+- ❌ **FetchService Interface** - NOT PURSUING (current 2-layer architecture is sufficient)
+- ❌ **RateLimiter Interface** - NOT PURSUING (removed from plan)
+- ❌ **FileSystem Interface** - NOT PURSUING (removed from plan)
+- ❌ **OPMLService Interface** - NOT PURSUING (removed from plan)
+- ❌ **Configuration Injection** - NOT PURSUING (removed from plan)
+
+The existing abstractions (Fetcher, Crawler, Normalizer, Repository interfaces) combined with context propagation provide sufficient testability and modularity. Future extractions should be driven by actual need, not speculation.
+
+This document is preserved as historical reference showing what was considered and why decisions were made.
 
 ---
 
-## 🔴 High Priority Missing Abstractions
+## 🔴 High Priority Missing Abstractions (Historical)
 
-### 1. FetchService Interface (HIGHEST PRIORITY)
+### 1. ❌ FetchService Interface - NOT PURSUING
+
+**Decision**: After comprehensive analysis, we determined that extracting a FetchService would add complexity without clear value. The current 2-layer architecture (cmd_helpers orchestration → pkg/fetcher business logic) is appropriate for the codebase's scale and needs.
+
+**Rationale**:
+- Business logic already well-separated in pkg/fetcher (88.5% test coverage)
+- Only 2 call sites with identical needs (cmd_fetch, cmd_update)
+- No second consumer exists or is planned
+- Would add ~450 lines of code for marginal testability improvement
+- Progress reporting and signal handling are correctly placed in CLI layer
+
+See detailed tradeoff analysis conducted 2025-11-04.
+
+---
+
+**Original Analysis** (preserved for reference):
 
 **Current Problem** (`cmd/rp/cmd_helpers.go:75-225`):
 - 150 lines of hard-coded orchestration logic in command helper
@@ -103,7 +132,13 @@ func (s *Service) FetchAllFeeds(ctx context.Context) (FetchResults, error) {
 
 ---
 
-### 2. RateLimiter Interface
+### 2. ❌ RateLimiter Interface - NOT PURSUING
+
+**Decision**: Removed from roadmap. Current concrete `Manager` type in pkg/ratelimit is sufficient.
+
+---
+
+**Original Analysis** (preserved for reference):
 
 **Current Problem** (`pkg/ratelimit/ratelimit.go:16-35`):
 - `Manager` is a concrete type with no interface
@@ -185,7 +220,13 @@ func (m *MockRateLimiter) Allow(feedURL string) bool {
 
 ---
 
-### 3. FileSystem Interface
+### 3. ❌ FileSystem Interface - NOT PURSUING
+
+**Decision**: Removed from roadmap. Tests using t.TempDir() work well enough.
+
+---
+
+**Original Analysis** (preserved for reference):
 
 **Current Problem** (scattered across codebase):
 - Direct `os` package calls throughout
@@ -315,9 +356,15 @@ func (fs *MemFileSystem) ReadFile(path string) ([]byte, error) {
 
 ---
 
-## 🟡 Medium Priority Missing Abstractions
+## 🟡 Medium Priority Missing Abstractions (Historical)
 
-### 4. OPMLService Interface
+### 4. ❌ OPMLService Interface - NOT PURSUING
+
+**Decision**: Removed from roadmap. OPML functions are simple enough without service layer.
+
+---
+
+**Original Analysis** (preserved for reference):
 
 **Current Problem**:
 - Package exports only functions, no interface
@@ -361,7 +408,30 @@ func (s *Service) Generate(feeds []Feed) (*OPML, error) {
 
 ---
 
-### 5. Context Propagation (HIGHEST PRIORITY)
+### 5. ✅ Context Propagation - COMPLETED
+
+**Status**: Implemented in commit 65d22f3 (2025-11-04)
+
+**What Was Completed**:
+- ✅ Repository interface: All 15 methods now accept context.Context
+- ✅ Repository implementation: Converted to context-aware SQL (QueryContext, ExecContext)
+- ✅ Generator: All 5 methods (Generate, GenerateToFile, CopyStaticAssets, copyDir, copyFile)
+- ✅ Normalizer: Parse() method accepts context
+- ✅ OPML: ParseFile() and Write() accept context
+- ✅ Command layer: Signal handling in main.go with signal.NotifyContext
+- ✅ Test files: All 38 test files updated to pass context.Background()
+
+**Impact**:
+- Users can press Ctrl+C to gracefully cancel long-running operations
+- Database queries can be cancelled via context
+- All operations support timeout enforcement
+- Maintained 70.4% test coverage across all packages
+
+See CHANGELOG.md for full details.
+
+---
+
+**Original Analysis** (preserved for reference):
 
 **Current Good Examples**:
 - ✅ `pkg/fetcher/fetcher.go:77` - `FetchFeed(ctx context.Context, ...)` - Excellent!
@@ -370,9 +440,7 @@ func (s *Service) Generate(feeds []Feed) (*OPML, error) {
 
 These packages demonstrate the correct pattern: context flows from command layer through fetcher to crawler, enabling cancellation and timeout control.
 
----
-
-**Missing Context - Repository Methods (CRITICAL - 14 methods)**
+**Missing Context - Repository Methods (CRITICAL - 14 methods)** [NOW COMPLETED]
 
 `pkg/repository/repository.go` - All database operations lack context:
 
@@ -579,9 +647,23 @@ func ParseFile(ctx context.Context, path string) (*OPML, error) {
 
 ---
 
-### 6. Configuration Injection (DEFERRED - Lower Priority)
+### 6. ❌ Configuration Injection - NOT PURSUING
 
-**NOTE**: This abstraction is documented for completeness but is LOWER PRIORITY than context propagation. Consider implementing after context work is complete.
+**Decision**: After comprehensive analysis (2025-11-04), determined that configuration injection would add complexity without solving a real pain point.
+
+**Rationale**:
+- Current pattern works well (tests use t.TempDir() successfully)
+- Config loading is fast (~0.8ms, not a bottleneck)
+- Would require 120 lines of changes across 17 files (breaking changes to all command signatures)
+- Main.go would grow by ~50 lines
+- Integration tests would still need real config files for E2E validation
+- Benefit score: 25/40, Cost score: 22/40, Net value: marginal
+
+See detailed consequence analysis conducted 2025-11-04.
+
+---
+
+**Original Analysis** (preserved for reference):
 
 **Current Problem**:
 ```go
