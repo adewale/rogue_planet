@@ -204,42 +204,6 @@ func runStatus() error {
 	return cmdStatus(opts)
 }
 
-func runUpdate() error {
-	opts, err := parseUpdateFlags(os.Args[2:])
-	if err != nil {
-		return err
-	}
-	opts.Output = os.Stdout
-	return cmdUpdate(context.Background(), opts)
-}
-
-func runFetch() error {
-	opts, err := parseFetchFlags(os.Args[2:])
-	if err != nil {
-		return err
-	}
-	opts.Output = os.Stdout
-	return cmdFetch(context.Background(), opts)
-}
-
-func runGenerate() error {
-	opts, err := parseGenerateFlags(os.Args[2:])
-	if err != nil {
-		return err
-	}
-	opts.Output = os.Stdout
-	return cmdGenerate(context.Background(), opts)
-}
-
-func runPrune() error {
-	opts, err := parsePruneFlags(os.Args[2:])
-	if err != nil {
-		return err
-	}
-	opts.Output = os.Stdout
-	return cmdPrune(context.Background(), opts)
-}
-
 // WithContext versions of long-running commands for cancellation support
 func runUpdateWithContext(ctx context.Context) error {
 	opts, err := parseUpdateFlags(os.Args[2:])
