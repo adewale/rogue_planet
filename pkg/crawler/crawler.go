@@ -459,7 +459,7 @@ func (c *Crawler) FetchWithRetry(ctx context.Context, feedURL string, cache Feed
 				// Add ±10% jitter to prevent thundering herd
 				// (prevents synchronized retries when many feeds fail simultaneously)
 				jitterRange := float64(backoff) * 0.1
-				jitter := time.Duration((rand.Float64()*2-1) * jitterRange)
+				jitter := time.Duration((rand.Float64()*2 - 1) * jitterRange)
 				backoff += jitter
 			}
 
