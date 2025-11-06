@@ -15,8 +15,8 @@ A modern feed aggregator written in Go, inspired by Planet Planet, Planet Venus 
   - Per-domain rate limiting (default: 60 req/min with burst of 10)
   - HTTP/1.1 connection pooling and keep-alive
   - Configurable timeouts for all HTTP stages
-  - Automatic retry with exponential backoff
-  - 301 permanent redirect auto-updating
+  - Automatic retry with exponential backoff and jitter
+  - 301/308 permanent redirect auto-updating
 - **Security First**:
   - XSS prevention via HTML sanitization (prevents CVE-2009-2937)
   - SSRF protection (blocks private IPs and localhost)
@@ -197,7 +197,8 @@ Implements proper HTTP behavior to minimize server load and avoid being blocked:
 - Never fabricates or modifies cache headers
 - **Rate Limiting**: Per-domain rate limiting (default 60 req/min) prevents overwhelming servers
 - **Retry-After**: Respects HTTP 429 responses and Retry-After headers
-- **301 Redirects**: Automatically updates feed URLs on permanent redirects
+- **Exponential Backoff with Jitter**: Retries failed requests with exponential delays (1s, 2s, 4s, 8s...) plus ±10% randomization to prevent thundering herd when many feeds fail simultaneously
+- **301/308 Redirects**: Automatically updates feed URLs on permanent redirects (both 301 Moved Permanently and 308 Permanent Redirect per RFC 7538)
 
 ## Test Coverage
 

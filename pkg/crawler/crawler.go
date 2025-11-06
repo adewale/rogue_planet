@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
@@ -26,7 +27,7 @@ const (
 	// MaxRedirects prevents redirect loops
 	MaxRedirects = 5
 	// UserAgent identifies the bot
-	UserAgent = "RoguePlanet/0.3 (+https://github.com/adewale/rogue_planet)"
+	UserAgent = "RoguePlanet/0.4 (+https://github.com/adewale/rogue_planet)"
 )
 
 var (
@@ -299,9 +300,10 @@ func (c *Crawler) Fetch(ctx context.Context, feedURL string, cache FeedCache) (*
 			if len(via) >= MaxRedirects {
 				return fmt.Errorf("stopped after %d redirects", MaxRedirects)
 			}
-			// Check if this redirect is a 301 Moved Permanently
+			// Check if this redirect is a 301 Moved Permanently or 308 Permanent Redirect
 			// req.Response contains the response that triggered this redirect
-			if req.Response != nil && req.Response.StatusCode == http.StatusMovedPermanently {
+			if req.Response != nil && (req.Response.StatusCode == http.StatusMovedPermanently ||
+				req.Response.StatusCode == http.StatusPermanentRedirect) {
 				sawPermanentRedirect = true
 			}
 			return nil
@@ -453,6 +455,12 @@ func (c *Crawler) FetchWithRetry(ctx context.Context, feedURL string, cache Feed
 			} else {
 				// Exponential backoff: 1s, 2s, 4s, 8s...
 				backoff = time.Duration(1<<uint(attempt-1)) * time.Second
+
+				// Add ±10% jitter to prevent thundering herd
+				// (prevents synchronized retries when many feeds fail simultaneously)
+				jitterRange := float64(backoff) * 0.1
+				jitter := time.Duration((rand.Float64()*2-1) * jitterRange)
+				backoff += jitter
 			}
 
 			select {

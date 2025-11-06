@@ -62,6 +62,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Users can add JSON Feed URLs (e.g., `https://example.micro.blog/feed.json`)
   - Same security guarantees as RSS/Atom (HTML sanitization, SSRF prevention)
 
+### Added - Retry Improvements
+- **Jitter for exponential backoff** (moved from v1.0.0 to v0.4.0)
+  - Adds ±10% randomization to retry delays (1s±100ms, 2s±200ms, 4s±400ms, etc.)
+  - Prevents thundering herd when many feeds fail simultaneously
+  - Industry best practice (AWS, Google SRE guidelines)
+  - 3 new tests: jitter bounds, jitter variability, timing verification
+- **HTTP 308 Permanent Redirect support**
+  - Now detects both 301 and 308 status codes as permanent redirects
+  - Complies with RFC 7538 (HTTP 308 specification)
+  - Modern servers (WordPress, CMSs) use 308 for feed relocations
+  - For GET requests (feed fetching), 308 behaves identically to 301
+  - Triggers automatic feed URL updates in database
+  - Test coverage: `TestFetch_Tracks308PermanentRedirect`
+
 ### Planned for 1.0.0
 - Feed autodiscovery (parse HTML for RSS/Atom/JSON Feed links)
 - Intelligent feed scheduling (adaptive polling)

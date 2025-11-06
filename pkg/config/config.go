@@ -112,7 +112,7 @@ func Default() *Config {
 			Days:              7,
 			LogLevel:          "info",
 			ConcurrentFetch:   5,
-			UserAgent:         "RoguePlanet/0.1",
+			UserAgent:         "RoguePlanet/0.4",
 			GroupByDate:       true,
 			FilterByFirstSeen: false,
 			SortBy:            "published",

@@ -355,6 +355,107 @@ The project has evolved significantly beyond the initial release:
 
 ---
 
+### v1.x - Output Formats (P1 Features)
+
+#### RSS/Atom Feed Generation
+**Problem**: Planet aggregators traditionally provide their own RSS/Atom feed so visitors can subscribe to the aggregated content. Currently Rogue Planet only generates HTML output.
+
+**Current Behavior**: Only static HTML output is generated. Visitors cannot subscribe to the planet via RSS readers.
+
+**Solution**: Generate RSS 2.0 and Atom 1.0 feeds of aggregated content
+- Generate `atom.xml` and `rss.xml` alongside `index.html`
+- Include same entries as HTML output (respecting `days` config)
+- Add `<link rel="alternate" type="application/atom+xml">` to HTML header
+- Add `<link rel="alternate" type="application/rss+xml">` to HTML header
+- Include planet metadata (title, link, owner info) in feed elements
+- Properly escape and sanitize content for XML output
+
+**Benefits**:
+- Visitors can subscribe to the planet via RSS readers
+- Standard feature of Planet/Venus aggregators
+- Enables feed-of-feeds workflow (planet feeds aggregated by other planets)
+- Better discoverability via feed autodiscovery links
+
+**Effort**: 2-3 days
+**Priority**: P1 - Standard aggregator feature
+
+---
+
+#### OPML Download Link
+**Problem**: Visitors who want to subscribe to all feeds in a planet must manually copy URLs. No easy way to import the entire feed list.
+
+**Current Behavior**: OPML export exists (`rp export-opml`) but is CLI-only. No way for website visitors to download OPML.
+
+**Solution**: Generate OPML file and link it from HTML output
+- Generate `feeds.opml` in output directory during `rp generate`
+- Add "Subscribe to all feeds (OPML)" link in HTML sidebar/footer
+- Include planet metadata in OPML header (title, owner, date)
+- Keep OPML file in sync with database (regenerate on each `rp generate`)
+
+**Benefits**:
+- One-click import of all planet feeds into RSS readers
+- Standard Planet/Venus feature
+- Improves feed discoverability
+- Useful for planet visitors who want to follow individual blogs
+
+**Effort**: 1 day
+**Priority**: P1 - Standard aggregator feature
+
+---
+
+#### OPML Round-Trip Testing
+**Problem**: While OPML import/export exists (v0.2.0), we need confidence that our exported OPML files can be reliably re-imported without data loss or corruption. Edge cases around feed URLs, titles, and metadata may cause issues.
+
+**Current Behavior**:
+- OPML export works (`rp export-opml`)
+- OPML import works (`rp import-opml`)
+- Limited integration testing for round-trip scenarios
+
+**Solution**: Comprehensive integration test suite for OPML round-trip scenarios
+```go
+// Scenarios to test:
+1. Export → Import → Export should produce identical OPML
+2. Import feeds → Export → Import to new planet → Verify all feeds present
+3. Edge cases:
+   - Feed URLs with query parameters (?key=value)
+   - Feed URLs with anchors (#section)
+   - Feed titles with special characters (&, <, >, quotes)
+   - Feed titles with Unicode (emoji, non-Latin scripts)
+   - Feeds with missing titles (should use URL as fallback)
+   - Nested OPML outlines (categories/folders)
+   - OPML with both xmlUrl and url attributes
+   - OPML with both text and title attributes
+4. Compatibility testing:
+   - Export from Rogue Planet → Import to Rogue Planet
+   - Real OPML from Feedly → Import → Export → Compare
+   - Real OPML from Inoreader → Import → Export → Compare
+5. Data preservation:
+   - Feed metadata preserved through round-trip
+   - No URL encoding issues (spaces, special chars)
+   - No HTML entity corruption in titles
+```
+
+**Implementation**:
+- Add `TestOPMLRoundTrip` integration test in `pkg/opml/opml_test.go`
+- Add `TestOPMLExportImportWorkflow` in `cmd/rp/opml_integration_test.go`
+- Test with real OPML files from popular readers (Feedly, Inoreader, NewsBlur)
+- Add fixtures in `testdata/opml/` for various edge cases
+- Verify byte-for-byte OPML comparison where appropriate
+- Verify semantic equivalence for normalized cases
+
+**Benefits**:
+- Confidence in OPML reliability for production use
+- Prevents regressions in OPML handling
+- Documents expected behavior for edge cases
+- Ensures compatibility with popular feed readers
+
+**Effort**: 1-2 days
+**Priority**: P1 - Quality assurance for existing feature
+
+**Related**: v0.2.0 OPML support (already implemented, needs testing)
+
+---
+
 ### v1.x - User Experience (P1 Features)
 
 #### HTML Escaping in Titles (Venus #24)

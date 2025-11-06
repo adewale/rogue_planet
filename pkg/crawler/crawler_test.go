@@ -1090,3 +1090,160 @@ func TestFetch_ZeroContextTimeout(t *testing.T) {
 		t.Errorf("Expected context.DeadlineExceeded, got: %v", err)
 	}
 }
+
+func TestFetch_Tracks308PermanentRedirect(t *testing.T) {
+	t.Parallel()
+	// Create a server that redirects with 308 (Permanent Redirect)
+	redirectCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/old-feed" {
+			redirectCount++
+			// 308 Permanent Redirect (RFC 7538)
+			w.Header().Set("Location", "/new-feed")
+			w.WriteHeader(http.StatusPermanentRedirect)
+			return
+		}
+		// Final destination
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write([]byte("<rss><channel><title>Test</title></channel></rss>"))
+		if err != nil {
+			t.Errorf("Write error: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	crawler := NewForTesting()
+	resp, err := crawler.Fetch(context.Background(), server.URL+"/old-feed", FeedCache{})
+
+	if err != nil {
+		t.Fatalf("Fetch error: %v", err)
+	}
+
+	if resp.StatusCode != 200 {
+		t.Errorf("StatusCode = %d, want 200", resp.StatusCode)
+	}
+
+	if !resp.PermanentRedirect {
+		t.Error("PermanentRedirect = false, want true (308 redirect was encountered)")
+	}
+
+	if !strings.HasSuffix(resp.FinalURL, "/new-feed") {
+		t.Errorf("FinalURL = %s, want to end with /new-feed", resp.FinalURL)
+	}
+
+	if redirectCount != 1 {
+		t.Errorf("redirectCount = %d, want 1", redirectCount)
+	}
+}
+
+func TestFetchWithRetry_JitterApplied(t *testing.T) {
+	t.Parallel()
+	// Test that jitter is applied to exponential backoff
+	// We'll make the server fail initially, then measure retry delays
+
+	attemptTimes := []time.Time{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attemptTimes = append(attemptTimes, time.Now())
+		if len(attemptTimes) < 3 {
+			// Fail first 2 attempts
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		// Succeed on 3rd attempt
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("<rss></rss>"))
+	}))
+	defer server.Close()
+
+	crawler := NewForTesting()
+	_, err := crawler.FetchWithRetry(context.Background(), server.URL, FeedCache{}, 3)
+
+	if err != nil {
+		t.Fatalf("FetchWithRetry error: %v", err)
+	}
+
+	if len(attemptTimes) != 3 {
+		t.Fatalf("Expected 3 attempts, got %d", len(attemptTimes))
+	}
+
+	// Check delays between attempts
+	// First retry: base 1s ± 10% jitter = 0.9s - 1.1s
+	// Second retry: base 2s ± 10% jitter = 1.8s - 2.2s
+	delays := []time.Duration{
+		attemptTimes[1].Sub(attemptTimes[0]),
+		attemptTimes[2].Sub(attemptTimes[1]),
+	}
+
+	// First retry should be ~1s ± 10%
+	minDelay1 := 900 * time.Millisecond
+	maxDelay1 := 1100 * time.Millisecond
+	if delays[0] < minDelay1 || delays[0] > maxDelay1 {
+		t.Errorf("First retry delay = %v, want between %v and %v (1s ± 10%%)",
+			delays[0], minDelay1, maxDelay1)
+	}
+
+	// Second retry should be ~2s ± 10%
+	minDelay2 := 1800 * time.Millisecond
+	maxDelay2 := 2200 * time.Millisecond
+	if delays[1] < minDelay2 || delays[1] > maxDelay2 {
+		t.Errorf("Second retry delay = %v, want between %v and %v (2s ± 10%%)",
+			delays[1], minDelay2, maxDelay2)
+	}
+}
+
+func TestFetchWithRetry_JitterVariability(t *testing.T) {
+	t.Parallel()
+	// Test that jitter produces different delays on multiple runs
+	// This verifies randomization is working
+
+	collectDelay := func() time.Duration {
+		attemptTimes := []time.Time{}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			attemptTimes = append(attemptTimes, time.Now())
+			if len(attemptTimes) < 2 {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("<rss></rss>"))
+		}))
+		defer server.Close()
+
+		crawler := NewForTesting()
+		_, _ = crawler.FetchWithRetry(context.Background(), server.URL, FeedCache{}, 3)
+
+		if len(attemptTimes) >= 2 {
+			return attemptTimes[1].Sub(attemptTimes[0])
+		}
+		return 0
+	}
+
+	// Collect delays from 5 runs
+	delays := make([]time.Duration, 5)
+	for i := 0; i < 5; i++ {
+		delays[i] = collectDelay()
+	}
+
+	// Verify that not all delays are identical (would indicate no jitter)
+	allSame := true
+	for i := 1; i < len(delays); i++ {
+		// Allow 5ms tolerance for timing variance
+		if delays[i]-delays[0] > 5*time.Millisecond || delays[0]-delays[i] > 5*time.Millisecond {
+			allSame = false
+			break
+		}
+	}
+
+	if allSame {
+		t.Error("All retry delays are identical - jitter is not working")
+	}
+
+	// Verify all delays are within acceptable range (1s ± 10%)
+	minDelay := 900 * time.Millisecond
+	maxDelay := 1100 * time.Millisecond
+	for i, delay := range delays {
+		if delay < minDelay || delay > maxDelay {
+			t.Errorf("Delay %d = %v, want between %v and %v", i, delay, minDelay, maxDelay)
+		}
+	}
+}

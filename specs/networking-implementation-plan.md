@@ -35,6 +35,8 @@ This document consolidates all networking-related work from v0.4.0-plan.md and v
 - Connection pooling (new connection per fetch)
 - Rate limiting (no per-domain throttling)
 - 301 redirect URL updates (followed but not stored)
+- 308 redirect handling (not tracked as permanent)
+- Jitter for exponential backoff (deterministic delays)
 - Intelligent scheduling (all feeds fetched every time)
 - Cache-Control header support
 - FetchWithRetry unused in production code
@@ -287,7 +289,76 @@ func NewWithConfig(config PlanetConfig) *Crawler {
 
 ---
 
-### Phase 2: 301 Redirect Handling 🔄
+#### 1.6 Add Jitter to Exponential Backoff (NEW - moved from Phase 4)
+**Source**: Phase 4.4 (simplified for immediate use)
+**File**: `pkg/crawler/crawler.go`
+**Benefit**: Prevent thundering herd on synchronized retries
+
+**Current Problem**:
+```go
+// FetchWithRetry line 454-455
+// Exponential backoff: 1s, 2s, 4s, 8s...
+backoff = time.Duration(1<<uint(attempt-1)) * time.Second
+// No jitter - all clients retry at same intervals!
+```
+
+**Solution**:
+```go
+import "math/rand"
+
+// In FetchWithRetry around line 454
+backoff = time.Duration(1<<uint(attempt-1)) * time.Second
+
+// Add ±10% jitter to prevent synchronized retries
+jitterRange := float64(backoff) * 0.1
+jitter := time.Duration((rand.Float64()*2-1) * jitterRange)
+backoff += jitter
+```
+
+**Testing**:
+- Unit test: Verify jitter is within ±10% of base backoff
+- Unit test: Test multiple retries produce different delays
+- Unit test: Test with rand seed for deterministic testing
+- Benchmark: Verify jitter overhead is negligible
+
+**Rationale**: Industry best practice (AWS, Google SRE books). Without jitter, if 100 feeds fail at the same instant, they all retry at exactly 1s, 2s, 4s intervals - overwhelming the server. Jitter spreads retries across a range.
+
+---
+
+#### 1.7 Add HTTP 308 Permanent Redirect Support (NEW)
+**Source**: HTTP 308 investigation (RFC 7538)
+**File**: `pkg/crawler/crawler.go`
+**Benefit**: Handle modern permanent redirects correctly
+
+**Current Problem**:
+```go
+// CheckRedirect line 304
+if req.Response.StatusCode == http.StatusMovedPermanently {
+    sawPermanentRedirect = true
+}
+// Only detects 301, ignores 308!
+```
+
+**Solution**:
+```go
+// Detect both 301 and 308 as permanent
+if req.Response.StatusCode == http.StatusMovedPermanently ||
+   req.Response.StatusCode == http.StatusPermanentRedirect {
+    sawPermanentRedirect = true
+}
+```
+
+**Testing**:
+- Unit test: 308 redirect marked as permanent
+- Unit test: 308 triggers URL update in database
+- Unit test: Multiple redirects (301→308) marked permanent
+- Integration test: 308 equivalent to 301 for feed fetching
+
+**Rationale**: Modern servers use 308 for permanent redirects (WordPress, many CMSs). For GET requests (feed fetching), 308 behaves identically to 301. This is a one-line change with zero downside.
+
+---
+
+### Phase 2: 301/308 Redirect Handling 🔄
 **Effort**: 0.5 days | **Dependencies**: Phase 1
 
 Permanent redirects should update the stored feed URL to avoid extra hop on every fetch.

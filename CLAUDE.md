@@ -224,8 +224,8 @@ rp version                    # Show version information
    - Include version and contact URL in User-Agent: `RoguePlanet/1.0 (+https://yoursite.com/about)`
    - Respect Cache-Control headers
    - Per-domain rate limiting (default: 60 req/min with burst of 10)
-   - Honor 429 responses with exponential backoff
-   - Handle 301 permanent redirects by auto-updating feed URLs
+   - Honor 429 responses with exponential backoff and jitter (±10% randomization)
+   - Handle 301/308 permanent redirects by auto-updating feed URLs
    - Default fetch interval: 1 hour (not more frequent than 15 minutes)
 
 4. **Graceful Degradation**: One failing feed should not break the entire aggregation - log errors and continue
@@ -333,7 +333,7 @@ Real-world feeds are messy. Handle these scenarios:
 - Incorrect character encoding declarations
 - Malformed HTML in feed content
 - Future dates (configurable: ignore or accept)
-- 301/302 redirects (update feed URL in database for 301)
+- 301/302/308 redirects (update feed URL in database for 301 and 308 permanent redirects)
 - Huge feed files (limit to 10MB)
 - Network timeouts (30 second default)
 
