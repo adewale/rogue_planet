@@ -20,6 +20,11 @@ import (
 	"github.com/mmcdole/gofeed"
 )
 
+// GeneratedIDLength is the length of generated entry IDs (hex characters).
+// Using 16 hex chars (64 bits) from SHA256 provides sufficient uniqueness
+// while keeping IDs reasonably short.
+const GeneratedIDLength = 16
+
 var (
 	ErrInvalidFeed = errors.New("invalid feed data")
 	ErrNoEntries   = errors.New("feed contains no entries")
@@ -179,7 +184,7 @@ func (n *Normalizer) extractID(item *gofeed.Item, feedURL string) string {
 		if item.PublishedParsed != nil {
 			hash.Write([]byte(item.PublishedParsed.String()))
 		}
-		return hex.EncodeToString(hash.Sum(nil))[:16]
+		return hex.EncodeToString(hash.Sum(nil))[:GeneratedIDLength]
 	}
 
 	// Last resort: hash of content
@@ -187,7 +192,7 @@ func (n *Normalizer) extractID(item *gofeed.Item, feedURL string) string {
 	hash.Write([]byte(feedURL))
 	hash.Write([]byte(item.Description))
 	hash.Write([]byte(item.Content))
-	return hex.EncodeToString(hash.Sum(nil))[:16]
+	return hex.EncodeToString(hash.Sum(nil))[:GeneratedIDLength]
 }
 
 // extractAuthor gets the author name from entry or feed level

@@ -375,7 +375,8 @@ func relativeTime(t time.Time, tp timeprovider.TimeProvider) string {
 // groupEntriesByDate groups entries by their published date
 func groupEntriesByDate(entries []EntryData, tp timeprovider.TimeProvider) []DateGroup {
 	groups := make(map[string][]EntryData)
-	dateOrder := []string{}
+	// Pre-allocate with entries length as upper bound (worst case: one entry per day)
+	dateOrder := make([]string, 0, len(entries))
 
 	for _, entry := range entries {
 		dateKey := entry.Published.Format("2006-01-02")

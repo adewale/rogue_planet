@@ -15,6 +15,10 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// FallbackEntryLimit is the maximum number of entries returned when no entries
+// are found in the configured time window. This ensures the page always has content.
+const FallbackEntryLimit = 50
+
 var (
 	ErrFeedNotFound  = errors.New("feed not found")
 	ErrEntryNotFound = errors.New("entry not found")
@@ -203,16 +207,16 @@ func (r *Repository) createInitialSchema() error {
 
 // getSchemaVersion returns the current schema version
 func (r *Repository) getSchemaVersion() (int, error) {
-	var version int
+	var version sql.NullInt64
 	err := r.db.QueryRow("SELECT MAX(version) FROM schema_version").Scan(&version)
 	if err != nil {
-		// If no rows, version is 0
-		if err.Error() == "sql: Scan error on column index 0, name \"MAX(version)\": converting NULL to int is unsupported" {
-			return 0, nil
-		}
 		return 0, err
 	}
-	return version, nil
+	if !version.Valid {
+		// No rows in schema_version table, version is 0
+		return 0, nil
+	}
+	return int(version.Int64), nil
 }
 
 // setSchemaVersion records that a schema version has been applied
@@ -245,8 +249,9 @@ func (r *Repository) detectLegacyVersion() (int, error) {
 
 // runMigrations runs all migrations from fromVersion to toVersion
 func (r *Repository) runMigrations(fromVersion, toVersion int) error {
-	migrations := map[int]func() error{
-		2: r.migrateToV2, // Add first_seen column (v0.3.0)
+	// Migration functions receive the transaction to ensure atomicity
+	migrations := map[int]func(tx *sql.Tx) error{
+		2: migrateToV2, // Add first_seen column (v0.3.0)
 	}
 
 	for v := fromVersion + 1; v <= toVersion; v++ {
@@ -262,13 +267,13 @@ func (r *Repository) runMigrations(fromVersion, toVersion int) error {
 			return fmt.Errorf("begin transaction for v%d: %w", v, err)
 		}
 
-		// Execute migration
-		if err := migrateFn(); err != nil {
+		// Execute migration within transaction
+		if err := migrateFn(tx); err != nil {
 			_ = tx.Rollback() // Rollback on error; ignore rollback errors
 			return fmt.Errorf("migration to v%d failed: %w", v, err)
 		}
 
-		// Record version
+		// Record version within same transaction
 		_, err = tx.Exec("INSERT INTO schema_version (version) VALUES (?)", v)
 		if err != nil {
 			_ = tx.Rollback() // Rollback on error; ignore rollback errors
@@ -284,21 +289,22 @@ func (r *Repository) runMigrations(fromVersion, toVersion int) error {
 }
 
 // migrateToV2 adds the first_seen column and backfills data (v0.3.0)
-func (r *Repository) migrateToV2() error {
+// This is a standalone function (not a method) to ensure it uses the transaction.
+func migrateToV2(tx *sql.Tx) error {
 	// Add first_seen column
-	_, err := r.db.Exec(`ALTER TABLE entries ADD COLUMN first_seen TEXT`)
+	_, err := tx.Exec(`ALTER TABLE entries ADD COLUMN first_seen TEXT`)
 	if err != nil {
 		return fmt.Errorf("add first_seen column: %w", err)
 	}
 
 	// Create index
-	_, err = r.db.Exec(`CREATE INDEX idx_entries_first_seen ON entries(first_seen DESC)`)
+	_, err = tx.Exec(`CREATE INDEX idx_entries_first_seen ON entries(first_seen DESC)`)
 	if err != nil {
 		return fmt.Errorf("create first_seen index: %w", err)
 	}
 
 	// Backfill first_seen for existing entries
-	_, err = r.db.Exec(`
+	_, err = tx.Exec(`
 		UPDATE entries
 		SET first_seen = COALESCE(
 			published,
@@ -492,16 +498,16 @@ func (r *Repository) GetRecentEntries(ctx context.Context, days int) ([]Entry, e
 		return entries, nil
 	}
 
-	// Otherwise, fall back to the most recent 50 entries regardless of date
+	// Otherwise, fall back to the most recent entries regardless of date
 	// This ensures the page always has content even if feeds are stale
-	rows, err = r.db.QueryContext(ctx, `
+	rows, err = r.db.QueryContext(ctx, fmt.Sprintf(`
 		SELECT e.id, e.feed_id, e.entry_id, e.title, e.link, e.author, e.published, e.updated, e.content, e.content_type, e.summary, e.first_seen
 		FROM entries e
 		JOIN feeds f ON e.feed_id = f.id
 		WHERE f.active = 1
 		ORDER BY e.published DESC
-		LIMIT 50
-	`)
+		LIMIT %d
+	`, FallbackEntryLimit))
 
 	if err != nil {
 		return nil, fmt.Errorf("query fallback entries: %w", err)
@@ -562,7 +568,7 @@ func (r *Repository) GetRecentEntriesWithOptions(ctx context.Context, days int, 
 		return entries, nil
 	}
 
-	// Fallback to most recent 50 entries (use same sort field)
+	// Fallback to most recent entries (use same sort field)
 	query = fmt.Sprintf(`
 		SELECT e.id, e.feed_id, e.entry_id, e.title, e.link, e.author,
 		       e.published, e.updated, e.content, e.content_type, e.summary, e.first_seen
@@ -570,8 +576,8 @@ func (r *Repository) GetRecentEntriesWithOptions(ctx context.Context, days int, 
 		JOIN feeds f ON e.feed_id = f.id
 		WHERE f.active = 1
 		ORDER BY %s DESC
-		LIMIT 50
-	`, sortField)
+		LIMIT %d
+	`, sortField, FallbackEntryLimit)
 
 	rows, err = r.db.QueryContext(ctx, query)
 	if err != nil {
@@ -706,7 +712,9 @@ func scanFeed(row interface{ Scan(...interface{}) error }, feed *Feed) error {
 }
 
 func scanFeeds(rows *sql.Rows) ([]Feed, error) {
-	var feeds []Feed
+	// Pre-allocate with reasonable initial capacity to reduce reallocations.
+	// Most planets have 10-50 feeds; using 16 as a power-of-2 starting point.
+	feeds := make([]Feed, 0, 16)
 
 	for rows.Next() {
 		var feed Feed
@@ -720,7 +728,9 @@ func scanFeeds(rows *sql.Rows) ([]Feed, error) {
 }
 
 func scanEntries(rows *sql.Rows) ([]Entry, error) {
-	var entries []Entry
+	// Pre-allocate with reasonable initial capacity to reduce reallocations.
+	// Queries typically return up to FallbackEntryLimit (50) entries.
+	entries := make([]Entry, 0, FallbackEntryLimit)
 
 	for rows.Next() {
 		var entry Entry

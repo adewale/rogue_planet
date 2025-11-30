@@ -365,8 +365,8 @@ func LoadFeedsFile(path string) ([]string, error) {
 		return nil, fmt.Errorf("read feeds file: %w", err)
 	}
 
-	var urls []string
 	lines := strings.Split(string(data), "\n")
+	urls := make([]string, 0, len(lines))
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
