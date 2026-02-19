@@ -1015,3 +1015,73 @@ func TestGenerateWithSubtitle(t *testing.T) {
 		t.Error("Title should be a link when Link is provided")
 	}
 }
+
+func TestCopyDirSkipsSymlinks(t *testing.T) {
+	t.Parallel()
+	tmpDir := t.TempDir()
+	templateDir := filepath.Join(tmpDir, "templates")
+	staticSrc := filepath.Join(templateDir, "static")
+	outputDir := filepath.Join(tmpDir, "output")
+
+	// Create static directory with a real file
+	if err := os.MkdirAll(staticSrc, 0755); err != nil {
+		t.Fatalf("Failed to create static dir: %v", err)
+	}
+
+	realFile := filepath.Join(staticSrc, "real.css")
+	if err := os.WriteFile(realFile, []byte("body { }"), 0644); err != nil {
+		t.Fatalf("Failed to write real file: %v", err)
+	}
+
+	// Create a sensitive file outside the static directory
+	sensitiveFile := filepath.Join(tmpDir, "secret.txt")
+	if err := os.WriteFile(sensitiveFile, []byte("TOP SECRET DATA"), 0644); err != nil {
+		t.Fatalf("Failed to write sensitive file: %v", err)
+	}
+
+	// Create a symlink inside static pointing to the sensitive file
+	symlinkPath := filepath.Join(staticSrc, "evil_link")
+	if err := os.Symlink(sensitiveFile, symlinkPath); err != nil {
+		t.Fatalf("Failed to create symlink: %v", err)
+	}
+
+	// Create a symlink directory pointing outside
+	symlinkDir := filepath.Join(staticSrc, "evil_dir_link")
+	if err := os.Symlink(tmpDir, symlinkDir); err != nil {
+		t.Fatalf("Failed to create directory symlink: %v", err)
+	}
+
+	// Create template
+	templatePath := filepath.Join(templateDir, "template.html")
+	if err := os.WriteFile(templatePath, []byte("<html><body>{{.Title}}</body></html>"), 0644); err != nil {
+		t.Fatalf("Failed to write template: %v", err)
+	}
+
+	gen, err := NewWithTemplate(templatePath)
+	if err != nil {
+		t.Fatalf("NewWithTemplate() error = %v", err)
+	}
+
+	// Copy static assets
+	if err := gen.CopyStaticAssets(context.Background(), outputDir); err != nil {
+		t.Fatalf("CopyStaticAssets() error = %v", err)
+	}
+
+	// Real file should be copied
+	copiedReal := filepath.Join(outputDir, "static", "real.css")
+	if _, err := os.Stat(copiedReal); os.IsNotExist(err) {
+		t.Error("Real file should be copied")
+	}
+
+	// Symlinked file should NOT be copied
+	copiedSymlink := filepath.Join(outputDir, "static", "evil_link")
+	if _, err := os.Stat(copiedSymlink); !os.IsNotExist(err) {
+		t.Error("Symlinked file should NOT be copied (security risk)")
+	}
+
+	// Symlinked directory should NOT be copied
+	copiedSymlinkDir := filepath.Join(outputDir, "static", "evil_dir_link")
+	if _, err := os.Stat(copiedSymlinkDir); !os.IsNotExist(err) {
+		t.Error("Symlinked directory should NOT be copied (security risk)")
+	}
+}

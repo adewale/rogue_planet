@@ -1,6 +1,8 @@
 package normalizer
 
 import (
+	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -562,5 +564,235 @@ func TestExtractPublished_ZeroTime(t *testing.T) {
 	feedUpdated := time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC)
 	if !entry.Published.Equal(feedUpdated) {
 		t.Errorf("Published = %v, want %v (feed updated)", entry.Published, feedUpdated)
+	}
+}
+
+func TestSanitizeHTML_MailtoBlocked(t *testing.T) {
+	t.Parallel()
+	n := New()
+
+	tests := []struct {
+		name        string
+		input       string
+		notContains []string
+		contains    []string
+	}{
+		{
+			name:        "mailto link removed",
+			input:       `<a href="mailto:evil@example.com">contact</a>`,
+			notContains: []string{"mailto:"},
+		},
+		{
+			name:     "http link preserved",
+			input:    `<a href="https://example.com">link</a>`,
+			contains: []string{"https://example.com"},
+		},
+		{
+			name:        "mailto in content stripped",
+			input:       `<p>Email me at <a href="mailto:user@example.com">user@example.com</a></p>`,
+			notContains: []string{"mailto:"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := n.SanitizeHTML(tt.input)
+			for _, s := range tt.notContains {
+				if strings.Contains(result, s) {
+					t.Errorf("Result should NOT contain %q, got: %s", s, result)
+				}
+			}
+			for _, s := range tt.contains {
+				if !strings.Contains(result, s) {
+					t.Errorf("Result should contain %q, got: %s", s, result)
+				}
+			}
+		})
+	}
+}
+
+func TestParse_EntryCountLimit(t *testing.T) {
+	t.Parallel()
+
+	// Build a feed with more than MaxEntriesPerFeed entries
+	var items strings.Builder
+	for i := 0; i < MaxEntriesPerFeed+100; i++ {
+		fmt.Fprintf(&items, `<item><title>Entry %d</title><guid>entry-%d</guid><description>Content %d</description></item>`, i, i, i)
+	}
+
+	feedData := fmt.Sprintf(`<?xml version="1.0"?>
+<rss version="2.0">
+  <channel>
+    <title>Huge Feed</title>
+    <link>https://example.com</link>
+    %s
+  </channel>
+</rss>`, items.String())
+
+	n := New()
+	_, entries, err := n.Parse(context.Background(), []byte(feedData), "https://example.com/feed", time.Now())
+
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+
+	if len(entries) > MaxEntriesPerFeed {
+		t.Errorf("len(entries) = %d, want <= %d", len(entries), MaxEntriesPerFeed)
+	}
+}
+
+func TestParse_ContentSizeLimit(t *testing.T) {
+	t.Parallel()
+
+	// Create content larger than MaxEntryContentSize
+	hugeContent := strings.Repeat("x", MaxEntryContentSize+1000)
+
+	feedData := fmt.Sprintf(`<?xml version="1.0"?>
+<rss version="2.0">
+  <channel>
+    <title>Feed with huge content</title>
+    <link>https://example.com</link>
+    <item>
+      <title>Huge Entry</title>
+      <guid>huge-1</guid>
+      <description>%s</description>
+    </item>
+  </channel>
+</rss>`, hugeContent)
+
+	n := New()
+	_, entries, err := n.Parse(context.Background(), []byte(feedData), "https://example.com/feed", time.Now())
+
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+
+	if len(entries) != 1 {
+		t.Fatalf("len(entries) = %d, want 1", len(entries))
+	}
+
+	// Content should be truncated (after sanitization, may be shorter)
+	if len(entries[0].Content) > MaxEntryContentSize {
+		t.Errorf("Content length = %d, should be <= %d", len(entries[0].Content), MaxEntryContentSize)
+	}
+}
+
+func TestParse_SummarySizeLimit(t *testing.T) {
+	t.Parallel()
+
+	// Create content and summary both larger than MaxEntryContentSize
+	hugeContent := strings.Repeat("y", MaxEntryContentSize+500)
+	hugeSummary := strings.Repeat("z", MaxEntryContentSize+500)
+
+	feedData := fmt.Sprintf(`<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Test Feed</title>
+  <link href="https://example.com"/>
+  <entry>
+    <title>Huge Entry</title>
+    <id>huge-2</id>
+    <updated>2024-01-01T00:00:00Z</updated>
+    <summary>%s</summary>
+    <content>%s</content>
+  </entry>
+</feed>`, hugeSummary, hugeContent)
+
+	n := New()
+	_, entries, err := n.Parse(context.Background(), []byte(feedData), "https://example.com/feed", time.Now())
+
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+
+	if len(entries) != 1 {
+		t.Fatalf("len(entries) = %d, want 1", len(entries))
+	}
+
+	if len(entries[0].Content) > MaxEntryContentSize {
+		t.Errorf("Content length = %d, should be <= %d", len(entries[0].Content), MaxEntryContentSize)
+	}
+
+	if len(entries[0].Summary) > MaxEntryContentSize {
+		t.Errorf("Summary length = %d, should be <= %d", len(entries[0].Summary), MaxEntryContentSize)
+	}
+}
+
+func TestSanitizeTitle_XSS(t *testing.T) {
+	t.Parallel()
+	n := New()
+
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "plain text unchanged",
+			input: "Hello World",
+			want:  "Hello World",
+		},
+		{
+			name:  "script tag in title stripped",
+			input: "<script>alert('xss')</script>My Title",
+			want:  "My Title",
+		},
+		{
+			name:  "img onerror XSS stripped",
+			input: `<img src="x" onerror="alert(1)"/>Breaking News`,
+			want:  "Breaking News",
+		},
+		{
+			name:  "event handler in tag stripped",
+			input: `<div onclick="alert(1)">Title</div>`,
+			want:  "Title",
+		},
+		{
+			name:  "HTML entities preserved as text",
+			input: "Tom &amp; Jerry",
+			want:  "Tom &amp; Jerry",
+		},
+		{
+			name:  "nested HTML stripped",
+			input: "<b><i>Bold Italic</i></b> Title",
+			want:  "Bold Italic Title",
+		},
+		{
+			name:  "whitespace trimmed",
+			input: "  spaced title  ",
+			want:  "spaced title",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Parse a feed with the malicious title
+			feedData := fmt.Sprintf(`<?xml version="1.0"?>
+<rss version="2.0">
+  <channel>
+    <title>Test Feed</title>
+    <link>https://example.com</link>
+    <item>
+      <title>%s</title>
+      <link>https://example.com/post1</link>
+      <guid>test-entry</guid>
+      <description>Content</description>
+    </item>
+  </channel>
+</rss>`, tt.input)
+
+			metadata, entries, err := n.Parse(context.Background(), []byte(feedData), "https://example.com/feed", time.Now())
+			if err != nil {
+				t.Fatalf("Parse() error = %v", err)
+			}
+			_ = metadata
+
+			if len(entries) != 1 {
+				t.Fatalf("len(entries) = %d, want 1", len(entries))
+			}
+
+			if entries[0].Title != tt.want {
+				t.Errorf("Title = %q, want %q", entries[0].Title, tt.want)
+			}
+		})
 	}
 }

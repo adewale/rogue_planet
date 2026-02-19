@@ -65,6 +65,12 @@ func New(dbPath string) (*Repository, error) {
 		return nil, fmt.Errorf("open database: %w", err)
 	}
 
+	// Ensure a single connection for consistent PRAGMA settings.
+	// SQLite only supports one writer at a time anyway, and PRAGMAs like
+	// foreign_keys are per-connection settings that won't propagate to
+	// new connections in the pool.
+	db.SetMaxOpenConns(1)
+
 	// Enable WAL mode for better concurrency
 	if _, err := db.Exec("PRAGMA journal_mode=WAL"); err != nil {
 		db.Close()
@@ -204,12 +210,8 @@ func (r *Repository) createInitialSchema() error {
 // getSchemaVersion returns the current schema version
 func (r *Repository) getSchemaVersion() (int, error) {
 	var version int
-	err := r.db.QueryRow("SELECT MAX(version) FROM schema_version").Scan(&version)
+	err := r.db.QueryRow("SELECT COALESCE(MAX(version), 0) FROM schema_version").Scan(&version)
 	if err != nil {
-		// If no rows, version is 0
-		if err.Error() == "sql: Scan error on column index 0, name \"MAX(version)\": converting NULL to int is unsupported" {
-			return 0, nil
-		}
 		return 0, err
 	}
 	return version, nil
@@ -245,7 +247,7 @@ func (r *Repository) detectLegacyVersion() (int, error) {
 
 // runMigrations runs all migrations from fromVersion to toVersion
 func (r *Repository) runMigrations(fromVersion, toVersion int) error {
-	migrations := map[int]func() error{
+	migrations := map[int]func(tx *sql.Tx) error{
 		2: r.migrateToV2, // Add first_seen column (v0.3.0)
 	}
 
@@ -262,13 +264,13 @@ func (r *Repository) runMigrations(fromVersion, toVersion int) error {
 			return fmt.Errorf("begin transaction for v%d: %w", v, err)
 		}
 
-		// Execute migration
-		if err := migrateFn(); err != nil {
+		// Execute migration within the transaction
+		if err := migrateFn(tx); err != nil {
 			_ = tx.Rollback() // Rollback on error; ignore rollback errors
 			return fmt.Errorf("migration to v%d failed: %w", v, err)
 		}
 
-		// Record version
+		// Record version within the same transaction
 		_, err = tx.Exec("INSERT INTO schema_version (version) VALUES (?)", v)
 		if err != nil {
 			_ = tx.Rollback() // Rollback on error; ignore rollback errors
@@ -284,21 +286,21 @@ func (r *Repository) runMigrations(fromVersion, toVersion int) error {
 }
 
 // migrateToV2 adds the first_seen column and backfills data (v0.3.0)
-func (r *Repository) migrateToV2() error {
+func (r *Repository) migrateToV2(tx *sql.Tx) error {
 	// Add first_seen column
-	_, err := r.db.Exec(`ALTER TABLE entries ADD COLUMN first_seen TEXT`)
+	_, err := tx.Exec(`ALTER TABLE entries ADD COLUMN first_seen TEXT`)
 	if err != nil {
 		return fmt.Errorf("add first_seen column: %w", err)
 	}
 
 	// Create index
-	_, err = r.db.Exec(`CREATE INDEX idx_entries_first_seen ON entries(first_seen DESC)`)
+	_, err = tx.Exec(`CREATE INDEX idx_entries_first_seen ON entries(first_seen DESC)`)
 	if err != nil {
 		return fmt.Errorf("create first_seen index: %w", err)
 	}
 
 	// Backfill first_seen for existing entries
-	_, err = r.db.Exec(`
+	_, err = tx.Exec(`
 		UPDATE entries
 		SET first_seen = COALESCE(
 			published,
@@ -626,6 +628,10 @@ func (r *Repository) GetEntryCountForFeed(ctx context.Context, feedID int64) (in
 
 // PruneOldEntries deletes entries older than N days
 func (r *Repository) PruneOldEntries(ctx context.Context, days int) (int64, error) {
+	if days < 1 {
+		return 0, fmt.Errorf("days must be >= 1, got %d", days)
+	}
+
 	cutoff := time.Now().AddDate(0, 0, -days)
 
 	result, err := r.db.ExecContext(ctx, `

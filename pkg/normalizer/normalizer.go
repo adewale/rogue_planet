@@ -25,6 +25,13 @@ var (
 	ErrNoEntries   = errors.New("feed contains no entries")
 )
 
+const (
+	// MaxEntryContentSize is the maximum size in bytes for a single entry's content
+	MaxEntryContentSize = 1024 * 1024 // 1MB
+	// MaxEntriesPerFeed is the maximum number of entries to process from a single feed
+	MaxEntriesPerFeed = 500
+)
+
 // Entry represents a normalized feed entry
 type Entry struct {
 	ID          string // Unique ID (GUID or generated)
@@ -59,6 +66,12 @@ func New() *Normalizer {
 
 	// Only allow http and https schemes
 	policy.AllowURLSchemes("http", "https")
+
+	// Block mailto: scheme which UGCPolicy allows by default via AllowStandardURLs().
+	// The spec requires "Only allow http/https URL schemes."
+	policy.AllowURLSchemeWithCustomPolicy("mailto", func(u *url.URL) bool {
+		return false // Reject all mailto: URLs
+	})
 
 	// Additional safe attributes
 	policy.AllowAttrs("alt", "title").OnElements("img")
@@ -100,8 +113,14 @@ func (n *Normalizer) Parse(ctx context.Context, feedData []byte, feedURL string,
 		return &metadata, []Entry{}, nil
 	}
 
-	entries := make([]Entry, 0, len(feed.Items))
-	for _, item := range feed.Items {
+	// Limit number of entries to prevent memory exhaustion
+	items := feed.Items
+	if len(items) > MaxEntriesPerFeed {
+		items = items[:MaxEntriesPerFeed]
+	}
+
+	entries := make([]Entry, 0, len(items))
+	for _, item := range items {
 		entry, err := n.normalizeEntry(item, feed, feedURL, fetchTime)
 		if err != nil {
 			// Log error but continue processing other entries
@@ -123,7 +142,7 @@ func (n *Normalizer) normalizeEntry(item *gofeed.Item, feed *gofeed.Feed, feedUR
 	entry.ID = n.extractID(item, feedURL)
 
 	// Extract title
-	entry.Title = strings.TrimSpace(item.Title)
+	entry.Title = n.sanitizeTitle(item.Title)
 
 	// Extract link and resolve to absolute URL
 	if item.Link != "" {
@@ -143,17 +162,30 @@ func (n *Normalizer) normalizeEntry(item *gofeed.Item, feed *gofeed.Feed, feedUR
 	entry.Updated = n.extractUpdated(item, entry.Published)
 
 	// Extract content (prefer full content over summary)
+	// Truncate before sanitization to prevent memory exhaustion
 	if item.Content != "" {
-		entry.Content = n.sanitizeHTML(item.Content, feedURL)
+		content := item.Content
+		if len(content) > MaxEntryContentSize {
+			content = content[:MaxEntryContentSize]
+		}
+		entry.Content = n.sanitizeHTML(content, feedURL)
 		entry.ContentType = "html"
 	} else if item.Description != "" {
-		entry.Content = n.sanitizeHTML(item.Description, feedURL)
+		desc := item.Description
+		if len(desc) > MaxEntryContentSize {
+			desc = desc[:MaxEntryContentSize]
+		}
+		entry.Content = n.sanitizeHTML(desc, feedURL)
 		entry.ContentType = "html"
 	}
 
 	// Extract summary
 	if item.Description != "" && item.Content != "" {
-		entry.Summary = n.sanitizeHTML(item.Description, feedURL)
+		desc := item.Description
+		if len(desc) > MaxEntryContentSize {
+			desc = desc[:MaxEntryContentSize]
+		}
+		entry.Summary = n.sanitizeHTML(desc, feedURL)
 	}
 
 	return entry, nil
@@ -248,6 +280,16 @@ func (n *Normalizer) sanitizeHTML(html string, baseURL string) string {
 	sanitized := n.sanitizer.Sanitize(html)
 
 	return strings.TrimSpace(sanitized)
+}
+
+// sanitizeTitle strips all HTML tags from titles.
+// Titles should be plain text, not HTML. This prevents XSS when
+// titles are cast to template.HTML for rendering.
+func (n *Normalizer) sanitizeTitle(title string) string {
+	// Use bluemonday StrictPolicy to strip ALL HTML tags
+	strict := bluemonday.StrictPolicy()
+	cleaned := strict.Sanitize(title)
+	return strings.TrimSpace(cleaned)
 }
 
 // resolveURL converts a relative URL to absolute using the feed URL as base

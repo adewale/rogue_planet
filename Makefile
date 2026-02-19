@@ -17,7 +17,7 @@ endif
 
 # Go parameters
 GOCMD := go
-GOBUILD := $(GOCMD) build
+GOBUILD := CGO_ENABLED=1 $(GOCMD) build -trimpath
 GOTEST := $(GOCMD) test
 GOCLEAN := $(GOCMD) clean
 GOMOD := $(GOCMD) mod

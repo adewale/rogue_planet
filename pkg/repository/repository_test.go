@@ -1,12 +1,16 @@
 package repository
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func setupTestDB(t *testing.T) (*Repository, string) {
@@ -1217,5 +1221,249 @@ func TestGetFeeds_ActiveOnly(t *testing.T) {
 	}
 	if foundIds[id3] {
 		t.Error("Inactive feed 3 should not be returned by GetFeeds(true)")
+	}
+}
+
+func TestPruneOldEntries_InvalidDays(t *testing.T) {
+	t.Parallel()
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	// Zero days should be rejected (would delete all entries)
+	_, err := repo.PruneOldEntries(context.Background(), 0)
+	if err == nil {
+		t.Error("PruneOldEntries(0) should return error")
+	}
+	if err != nil && !strings.Contains(err.Error(), "days must be >= 1") {
+		t.Errorf("PruneOldEntries(0) error = %v, want 'days must be >= 1'", err)
+	}
+
+	// Negative days should be rejected
+	_, err = repo.PruneOldEntries(context.Background(), -1)
+	if err == nil {
+		t.Error("PruneOldEntries(-1) should return error")
+	}
+	if err != nil && !strings.Contains(err.Error(), "days must be >= 1") {
+		t.Errorf("PruneOldEntries(-1) error = %v, want 'days must be >= 1'", err)
+	}
+
+	// Verify that valid days still works
+	_, err = repo.PruneOldEntries(context.Background(), 1)
+	if err != nil {
+		t.Errorf("PruneOldEntries(1) should succeed, got error: %v", err)
+	}
+}
+
+func TestGetSchemaVersion_EmptyTable(t *testing.T) {
+	t.Parallel()
+	// Test that getSchemaVersion returns 0 when the schema_version table
+	// is empty, without relying on fragile error string matching.
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, "test.db")
+
+	// Create a database with schema_version table but no rows
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		t.Fatalf("Open db: %v", err)
+	}
+	db.SetMaxOpenConns(1)
+	_, err = db.Exec(`
+		CREATE TABLE schema_version (
+			version INTEGER PRIMARY KEY,
+			applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	if err != nil {
+		t.Fatalf("Create table: %v", err)
+	}
+
+	repo := &Repository{db: db}
+	defer repo.Close()
+
+	version, err := repo.getSchemaVersion()
+	if err != nil {
+		t.Fatalf("getSchemaVersion() error = %v", err)
+	}
+	if version != 0 {
+		t.Errorf("getSchemaVersion() = %d, want 0 for empty table", version)
+	}
+}
+
+func TestMaxOpenConnsForPragmaConsistency(t *testing.T) {
+	t.Parallel()
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	// Verify that MaxOpenConns is set to 1 to ensure PRAGMA settings
+	// (like foreign_keys=ON) apply consistently across all operations.
+	// Without this, new connections from the pool would not have
+	// foreign_keys enabled.
+	stats := repo.db.Stats()
+	// MaxOpenConnections of 1 means only one connection in the pool
+	if stats.MaxOpenConnections != 1 {
+		t.Errorf("MaxOpenConnections = %d, want 1 (for consistent PRAGMA settings)", stats.MaxOpenConnections)
+	}
+
+	// Verify foreign keys are actually enforced by trying to insert
+	// an entry with a non-existent feed_id
+	_, err := repo.db.Exec(`
+		INSERT INTO entries (feed_id, entry_id, title, published, updated, first_seen)
+		VALUES (99999, 'test', 'Test', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z')
+	`)
+	if err == nil {
+		t.Error("Foreign key constraint should reject entry with non-existent feed_id")
+	}
+}
+
+func TestMigrationTransactional(t *testing.T) {
+	t.Parallel()
+	// Verify that schema version and schema changes are in the same transaction
+	// by checking that both exist after successful migration
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, "test.db")
+
+	repo, err := New(dbPath)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer repo.Close()
+
+	// Verify schema version was set
+	var version int
+	err = repo.db.QueryRow("SELECT COALESCE(MAX(version), 0) FROM schema_version").Scan(&version)
+	if err != nil {
+		t.Fatalf("Query schema version: %v", err)
+	}
+
+	if version != currentSchemaVersion {
+		t.Errorf("Schema version = %d, want %d", version, currentSchemaVersion)
+	}
+
+	// Verify first_seen column exists (added in v2 migration)
+	var hasFirstSeen bool
+	err = repo.db.QueryRow(`
+		SELECT COUNT(*) > 0
+		FROM pragma_table_info('entries')
+		WHERE name = 'first_seen'
+	`).Scan(&hasFirstSeen)
+	if err != nil {
+		t.Fatalf("Check first_seen column: %v", err)
+	}
+
+	if !hasFirstSeen {
+		t.Error("first_seen column should exist after migration")
+	}
+}
+
+func TestMigrationFromV1(t *testing.T) {
+	t.Parallel()
+	// Create a v1-style database (without first_seen column) and verify migration
+	// runs within the transaction (uses tx, not r.db)
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, "test.db")
+
+	// Manually create a v1-like database
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		t.Fatalf("Open db: %v", err)
+	}
+
+	_, err = db.Exec(`
+		CREATE TABLE schema_version (
+			version INTEGER PRIMARY KEY,
+			applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);
+		INSERT INTO schema_version (version) VALUES (1);
+
+		CREATE TABLE feeds (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			url TEXT NOT NULL UNIQUE,
+			title TEXT,
+			link TEXT,
+			updated TEXT,
+			last_fetched TEXT,
+			etag TEXT,
+			last_modified TEXT,
+			fetch_error TEXT,
+			fetch_error_count INTEGER DEFAULT 0,
+			next_fetch TEXT,
+			active INTEGER DEFAULT 1,
+			fetch_interval INTEGER DEFAULT 3600
+		);
+
+		CREATE TABLE entries (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			feed_id INTEGER NOT NULL,
+			entry_id TEXT NOT NULL,
+			title TEXT,
+			link TEXT,
+			author TEXT,
+			published TEXT,
+			updated TEXT,
+			content TEXT,
+			content_type TEXT DEFAULT 'html',
+			summary TEXT,
+			FOREIGN KEY (feed_id) REFERENCES feeds(id) ON DELETE CASCADE,
+			UNIQUE(feed_id, entry_id)
+		);
+
+		CREATE INDEX idx_entries_published ON entries(published DESC);
+		CREATE INDEX idx_entries_updated ON entries(updated DESC);
+		CREATE INDEX idx_entries_feed_id ON entries(feed_id);
+	`)
+	if err != nil {
+		t.Fatalf("Create v1 schema: %v", err)
+	}
+
+	// Add a test entry so migration backfill has data to work on
+	_, err = db.Exec(`
+		INSERT INTO feeds (url, title) VALUES ('https://example.com/feed', 'Test');
+		INSERT INTO entries (feed_id, entry_id, title, published, updated)
+		VALUES (1, 'e1', 'Test Entry', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z');
+	`)
+	if err != nil {
+		t.Fatalf("Insert test data: %v", err)
+	}
+	db.Close()
+
+	// Now open with Repository which should run the v1->v2 migration
+	repo, err := New(dbPath)
+	if err != nil {
+		t.Fatalf("New() on v1 database error = %v", err)
+	}
+	defer repo.Close()
+
+	// Verify migration completed: first_seen column should exist
+	var hasFirstSeen bool
+	err = repo.db.QueryRow(`
+		SELECT COUNT(*) > 0
+		FROM pragma_table_info('entries')
+		WHERE name = 'first_seen'
+	`).Scan(&hasFirstSeen)
+	if err != nil {
+		t.Fatalf("Check first_seen column: %v", err)
+	}
+	if !hasFirstSeen {
+		t.Error("first_seen column should exist after v1->v2 migration")
+	}
+
+	// Verify schema version was updated to 2
+	var version int
+	err = repo.db.QueryRow("SELECT COALESCE(MAX(version), 0) FROM schema_version").Scan(&version)
+	if err != nil {
+		t.Fatalf("Query schema version: %v", err)
+	}
+	if version != 2 {
+		t.Errorf("Schema version = %d, want 2", version)
+	}
+
+	// Verify backfill happened (first_seen should be populated)
+	var firstSeen string
+	err = repo.db.QueryRow("SELECT first_seen FROM entries WHERE entry_id = 'e1'").Scan(&firstSeen)
+	if err != nil {
+		t.Fatalf("Query first_seen: %v", err)
+	}
+	if firstSeen == "" {
+		t.Error("first_seen should be backfilled after migration")
 	}
 }

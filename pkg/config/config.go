@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -331,15 +332,15 @@ func (c *Config) Validate() error {
 	}
 
 	// Path validation - prevent path traversal attacks
-	// Reject parent directory references in paths (the main security concern)
-	if strings.Contains(c.Database.Path, "..") {
+	// Use filepath.Clean to normalize and detect traversal attempts
+	if pathContainsTraversal(c.Database.Path) {
 		return fmt.Errorf("database path must not contain parent directory references (..): %s", c.Database.Path)
 	}
-	if strings.Contains(c.Planet.OutputDir, "..") {
+	if pathContainsTraversal(c.Planet.OutputDir) {
 		return fmt.Errorf("output directory must not contain parent directory references (..): %s", c.Planet.OutputDir)
 	}
 	// Validate template path if specified (empty is allowed - uses default template)
-	if c.Planet.Template != "" && strings.Contains(c.Planet.Template, "..") {
+	if c.Planet.Template != "" && pathContainsTraversal(c.Planet.Template) {
 		return fmt.Errorf("template path must not contain parent directory references (..): %s", c.Planet.Template)
 	}
 
@@ -352,6 +353,20 @@ func (c *Config) Validate() error {
 	}
 
 	return nil
+}
+
+// pathContainsTraversal checks if a path contains directory traversal
+// using filepath.Clean to normalize the path before checking for ".."
+// as an actual path component (not just a substring like "foo..bar").
+func pathContainsTraversal(path string) bool {
+	cleaned := filepath.Clean(path)
+	// Check each path component for exactly ".."
+	for _, part := range strings.Split(cleaned, string(filepath.Separator)) {
+		if part == ".." {
+			return true
+		}
+	}
+	return false
 }
 
 // LoadFeedsFile loads feed URLs from a text file.

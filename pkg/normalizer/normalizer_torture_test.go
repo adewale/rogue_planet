@@ -237,8 +237,9 @@ func TestMathML_BasicEquations(t *testing.T) {
 
 	// Test Einstein's equation entry
 	entry := entries[0]
-	if entry.Title != "Einstein's Mass-Energy Equivalence" {
-		t.Errorf("Expected first entry title 'Einstein's Mass-Energy Equivalence', got %q", entry.Title)
+	// Title is sanitized through StrictPolicy which encodes special characters
+	if entry.Title != "Einstein\u0027s Mass-Energy Equivalence" && entry.Title != "Einstein&#39;s Mass-Energy Equivalence" {
+		t.Errorf("Expected first entry title with sanitized apostrophe, got %q", entry.Title)
 	}
 
 	// Check if content contains the equation text

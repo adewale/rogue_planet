@@ -44,6 +44,123 @@ func TestCmdAddFeed(t *testing.T) {
 	}
 }
 
+func TestCmdAddFeed_SSRFValidation(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		url     string
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:    "reject localhost URL",
+			url:     "http://localhost/feed",
+			wantErr: true,
+			errMsg:  "invalid feed URL",
+		},
+		{
+			name:    "reject 127.0.0.1 URL",
+			url:     "http://127.0.0.1/feed",
+			wantErr: true,
+			errMsg:  "invalid feed URL",
+		},
+		{
+			name:    "reject private IP 10.x",
+			url:     "http://10.0.0.1/feed",
+			wantErr: true,
+			errMsg:  "invalid feed URL",
+		},
+		{
+			name:    "reject private IP 192.168.x",
+			url:     "http://192.168.1.1/feed",
+			wantErr: true,
+			errMsg:  "invalid feed URL",
+		},
+		{
+			name:    "reject ftp scheme",
+			url:     "ftp://example.com/feed",
+			wantErr: true,
+			errMsg:  "invalid feed URL",
+		},
+		{
+			name:    "reject javascript scheme",
+			url:     "javascript:alert(1)",
+			wantErr: true,
+			errMsg:  "invalid feed URL",
+		},
+		{
+			name:    "reject file scheme",
+			url:     "file:///etc/passwd",
+			wantErr: true,
+			errMsg:  "invalid feed URL",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			err := cmdAddFeed(AddFeedOptions{
+				URL:        tt.url,
+				ConfigPath: "./config.ini",
+				Output:     &buf,
+			})
+			if (err != nil) != tt.wantErr {
+				t.Errorf("cmdAddFeed(%q) error = %v, wantErr %v", tt.url, err, tt.wantErr)
+			}
+			if tt.wantErr && err != nil && !strings.Contains(err.Error(), tt.errMsg) {
+				t.Errorf("cmdAddFeed(%q) error = %v, want error containing %q", tt.url, err, tt.errMsg)
+			}
+		})
+	}
+}
+
+func TestImportFeedsFromURLs_SSRFValidation(t *testing.T) {
+	t.Parallel()
+
+	// Set up a real database
+	tmpDir := t.TempDir()
+	dataDir := filepath.Join(tmpDir, "data")
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		t.Fatalf("Failed to create data directory: %v", err)
+	}
+	dbPath := filepath.Join(dataDir, "planet.db")
+
+	repo, err := repository.New(dbPath)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
+	defer repo.Close()
+
+	ctx := context.Background()
+	var buf bytes.Buffer
+
+	// Mix of valid and SSRF URLs
+	feedURLs := []string{
+		"https://example.com/feed.xml",    // valid
+		"http://localhost/evil",            // SSRF - should be skipped
+		"http://127.0.0.1/evil",           // SSRF - should be skipped
+		"http://192.168.1.1/evil",         // SSRF - should be skipped
+		"ftp://example.com/feed",          // invalid scheme - should be skipped
+		"https://blog.example.com/feed",   // valid
+	}
+
+	added := importFeedsFromURLs(ctx, repo, feedURLs, &buf)
+
+	// Only the 2 valid URLs should be added
+	if added != 2 {
+		t.Errorf("importFeedsFromURLs() added %d feeds, want 2", added)
+	}
+
+	// Verify valid feeds were added
+	feeds, err := repo.GetFeeds(ctx, false)
+	if err != nil {
+		t.Fatalf("GetFeeds() error = %v", err)
+	}
+	if len(feeds) != 2 {
+		t.Errorf("Expected 2 feeds in database, got %d", len(feeds))
+	}
+}
+
 func TestCmdAddAll(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

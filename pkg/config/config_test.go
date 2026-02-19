@@ -347,6 +347,66 @@ func TestValidate(t *testing.T) {
 			t.Errorf("Validate() error = %v, want nil for empty template", err)
 		}
 	})
+
+	t.Run("pathContainsTraversal uses filepath.Clean", func(t *testing.T) {
+		// After applying filepath.Clean, only real traversal should be detected.
+		// A path like "foo..bar" should NOT be flagged (no actual traversal).
+		if pathContainsTraversal("foo..bar/data.db") {
+			t.Error("pathContainsTraversal should not flag 'foo..bar/data.db' (no real traversal)")
+		}
+		// A path like "./data/planet.db" should be fine
+		if pathContainsTraversal("./data/planet.db") {
+			t.Error("pathContainsTraversal should not flag './data/planet.db'")
+		}
+		// A path with real traversal should be detected
+		if !pathContainsTraversal("../etc/passwd") {
+			t.Error("pathContainsTraversal should flag '../etc/passwd'")
+		}
+		// Normalized traversal should be detected
+		if !pathContainsTraversal("./foo/../../etc/passwd") {
+			t.Error("pathContainsTraversal should flag './foo/../../etc/passwd' after cleaning")
+		}
+	})
+
+	t.Run("obfuscated traversal with dot segments in database path", func(t *testing.T) {
+		config := Default()
+		// filepath.Clean normalizes this to "../etc/passwd"
+		config.Database.Path = "./foo/./../../etc/passwd"
+
+		err := config.Validate()
+		if err == nil {
+			t.Error("Expected error for obfuscated path traversal in database path")
+		}
+		if err != nil && !strings.Contains(err.Error(), "parent directory") {
+			t.Errorf("Expected parent directory error, got: %v", err)
+		}
+	})
+
+	t.Run("obfuscated traversal with dot segments in output dir", func(t *testing.T) {
+		config := Default()
+		config.Planet.OutputDir = "./public/./../../etc"
+
+		err := config.Validate()
+		if err == nil {
+			t.Error("Expected error for obfuscated path traversal in output dir")
+		}
+		if err != nil && !strings.Contains(err.Error(), "parent directory") {
+			t.Errorf("Expected parent directory error, got: %v", err)
+		}
+	})
+
+	t.Run("obfuscated traversal with dot segments in template path", func(t *testing.T) {
+		config := Default()
+		config.Planet.Template = "./themes/./../../etc/passwd"
+
+		err := config.Validate()
+		if err == nil {
+			t.Error("Expected error for obfuscated path traversal in template path")
+		}
+		if err != nil && !strings.Contains(err.Error(), "parent directory") {
+			t.Errorf("Expected parent directory error, got: %v", err)
+		}
+	})
 }
 
 func TestSetPlanet(t *testing.T) {

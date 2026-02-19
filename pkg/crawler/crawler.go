@@ -91,21 +91,28 @@ func New() *Crawler {
 		ExpectContinueTimeout: 1 * time.Second,
 	}
 
-	return &Crawler{
+	c := &Crawler{
 		client: &http.Client{
 			Transport: transport,
 			Timeout:   DefaultTimeout,
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				if len(via) >= MaxRedirects {
-					return fmt.Errorf("stopped after %d redirects", MaxRedirects)
-				}
-				return nil
-			},
 		},
 		userAgent:     UserAgent,
 		maxSize:       MaxFeedSize,
 		skipSSRFCheck: false,
 	}
+	c.client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if len(via) >= MaxRedirects {
+			return fmt.Errorf("stopped after %d redirects", MaxRedirects)
+		}
+		// SSRF prevention: validate redirect target URL
+		if !c.skipSSRFCheck {
+			if err := ValidateURL(req.URL.String()); err != nil {
+				return fmt.Errorf("redirect blocked by SSRF check: %w", err)
+			}
+		}
+		return nil
+	}
+	return c
 }
 
 // NewWithUserAgent creates a Crawler with a custom user agent
@@ -189,21 +196,28 @@ func NewWithConfig(cfg CrawlerConfig) *Crawler {
 		userAgent = UserAgent
 	}
 
-	return &Crawler{
+	c := &Crawler{
 		client: &http.Client{
 			Transport: transport,
 			Timeout:   time.Duration(httpTimeout) * time.Second,
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				if len(via) >= MaxRedirects {
-					return fmt.Errorf("stopped after %d redirects", MaxRedirects)
-				}
-				return nil
-			},
 		},
 		userAgent:     userAgent,
 		maxSize:       MaxFeedSize,
 		skipSSRFCheck: false,
 	}
+	c.client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if len(via) >= MaxRedirects {
+			return fmt.Errorf("stopped after %d redirects", MaxRedirects)
+		}
+		// SSRF prevention: validate redirect target URL
+		if !c.skipSSRFCheck {
+			if err := ValidateURL(req.URL.String()); err != nil {
+				return fmt.Errorf("redirect blocked by SSRF check: %w", err)
+			}
+		}
+		return nil
+	}
+	return c
 }
 
 // ValidateURL checks if a URL is safe to fetch (SSRF prevention)
@@ -299,6 +313,12 @@ func (c *Crawler) Fetch(ctx context.Context, feedURL string, cache FeedCache) (*
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if len(via) >= MaxRedirects {
 				return fmt.Errorf("stopped after %d redirects", MaxRedirects)
+			}
+			// SSRF prevention: validate redirect target URL
+			if !c.skipSSRFCheck {
+				if err := ValidateURL(req.URL.String()); err != nil {
+					return fmt.Errorf("redirect blocked by SSRF check: %w", err)
+				}
 			}
 			// Check if this redirect is a 301 Moved Permanently or 308 Permanent Redirect
 			// req.Response contains the response that triggered this redirect

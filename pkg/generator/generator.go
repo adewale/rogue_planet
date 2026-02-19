@@ -44,7 +44,7 @@ type FeedData struct {
 
 // EntryData represents an entry for template rendering
 type EntryData struct {
-	Title             template.HTML
+	Title             string
 	Link              string
 	Author            string
 	FeedTitle         string
@@ -246,7 +246,17 @@ func copyDir(ctx context.Context, src, dst string) error {
 		srcPath := filepath.Join(src, entry.Name())
 		dstPath := filepath.Join(dst, entry.Name())
 
-		if entry.IsDir() {
+		// Use Lstat to detect symlinks (os.Stat follows them)
+		fi, err := os.Lstat(srcPath)
+		if err != nil {
+			return err
+		}
+		// Skip symlinks to prevent path traversal/exfiltration attacks
+		if fi.Mode()&os.ModeSymlink != 0 {
+			continue
+		}
+
+		if fi.IsDir() {
 			// Recursively copy subdirectory
 			if err := copyDir(ctx, srcPath, dstPath); err != nil {
 				return err
