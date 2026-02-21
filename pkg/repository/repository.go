@@ -10,6 +10,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/url"
+	"os"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -60,6 +63,11 @@ type Repository struct {
 
 // New creates a new Repository and initializes the database
 func New(dbPath string) (*Repository, error) {
+	// L10: Check if the database file already exists before opening.
+	// If it doesn't exist, we'll set restrictive permissions after creation.
+	_, statErr := os.Stat(dbPath)
+	isNewFile := os.IsNotExist(statErr)
+
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
@@ -71,6 +79,29 @@ func New(dbPath string) (*Repository, error) {
 	// new connections in the pool.
 	db.SetMaxOpenConns(1)
 
+	// Force the database file to be created by pinging the connection.
+	// sql.Open is lazy and won't create the file until first use.
+	if err := db.Ping(); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("ping database: %w", err)
+	}
+
+	// L10: Set restrictive file permissions for newly created database files.
+	// Only change permissions on new files; don't alter existing file permissions.
+	if isNewFile {
+		if err := os.Chmod(dbPath, 0600); err != nil {
+			db.Close()
+			return nil, fmt.Errorf("set database file permissions: %w", err)
+		}
+	}
+
+	// L7: Set busy timeout before other PRAGMAs to avoid immediate failures
+	// if another process holds the lock during initialization.
+	if _, err := db.Exec("PRAGMA busy_timeout = 5000"); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("set busy timeout: %w", err)
+	}
+
 	// Enable WAL mode for better concurrency
 	if _, err := db.Exec("PRAGMA journal_mode=WAL"); err != nil {
 		db.Close()
@@ -81,6 +112,19 @@ func New(dbPath string) (*Repository, error) {
 	if _, err := db.Exec("PRAGMA foreign_keys = ON"); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("enable foreign keys: %w", err)
+	}
+
+	// L7: Security-hardening PRAGMAs
+	// Prevent malicious schema exploitation (e.g., malicious virtual tables)
+	if _, err := db.Exec("PRAGMA trusted_schema = OFF"); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("disable trusted schema: %w", err)
+	}
+
+	// Detect database corruption at the cell level
+	if _, err := db.Exec("PRAGMA cell_size_check = ON"); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("enable cell size check: %w", err)
 	}
 
 	repo := &Repository{db: db}
@@ -101,10 +145,18 @@ func (r *Repository) Close() error {
 
 const currentSchemaVersion = 2
 
-// initSchema creates the database schema and runs migrations
+// schemaInitTimeout is the maximum time allowed for schema initialization.
+// This prevents indefinite blocking if the database is locked by another process.
+const schemaInitTimeout = 30 * time.Second
+
+// initSchema creates the database schema and runs migrations.
+// Uses a context with timeout to prevent indefinite blocking on a locked database.
 func (r *Repository) initSchema() error {
+	ctx, cancel := context.WithTimeout(context.Background(), schemaInitTimeout)
+	defer cancel()
+
 	// Create schema_version table if it doesn't exist
-	_, err := r.db.Exec(`
+	_, err := r.db.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS schema_version (
 			version INTEGER PRIMARY KEY,
 			applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -115,7 +167,7 @@ func (r *Repository) initSchema() error {
 	}
 
 	// Get current schema version
-	version, err := r.getSchemaVersion()
+	version, err := r.getSchemaVersion(ctx)
 	if err != nil {
 		return fmt.Errorf("get schema version: %w", err)
 	}
@@ -124,27 +176,27 @@ func (r *Repository) initSchema() error {
 	if version == 0 {
 		// Check if tables exist to determine if this is truly new or legacy
 		var tableCount int
-		err = r.db.QueryRow("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('feeds', 'entries')").Scan(&tableCount)
+		err = r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('feeds', 'entries')").Scan(&tableCount)
 		if err != nil {
 			return fmt.Errorf("check existing tables: %w", err)
 		}
 
 		if tableCount == 0 {
 			// New database - create initial schema
-			if err := r.createInitialSchema(); err != nil {
+			if err := r.createInitialSchema(ctx); err != nil {
 				return fmt.Errorf("create initial schema: %w", err)
 			}
 			version = currentSchemaVersion
 		} else {
 			// Legacy database - detect version by checking schema
-			version, err = r.detectLegacyVersion()
+			version, err = r.detectLegacyVersion(ctx)
 			if err != nil {
 				return fmt.Errorf("detect legacy version: %w", err)
 			}
 		}
 
 		// Set initial version
-		if err := r.setSchemaVersion(version); err != nil {
+		if err := r.setSchemaVersion(ctx, version); err != nil {
 			return fmt.Errorf("set initial schema version: %w", err)
 		}
 	}
@@ -160,7 +212,7 @@ func (r *Repository) initSchema() error {
 }
 
 // createInitialSchema creates the complete schema for a new database
-func (r *Repository) createInitialSchema() error {
+func (r *Repository) createInitialSchema(ctx context.Context) error {
 	schema := `
 	CREATE TABLE feeds (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -203,14 +255,14 @@ func (r *Repository) createInitialSchema() error {
 	CREATE INDEX idx_feeds_next_fetch ON feeds(next_fetch);
 	`
 
-	_, err := r.db.Exec(schema)
+	_, err := r.db.ExecContext(ctx, schema)
 	return err
 }
 
 // getSchemaVersion returns the current schema version
-func (r *Repository) getSchemaVersion() (int, error) {
+func (r *Repository) getSchemaVersion(ctx context.Context) (int, error) {
 	var version int
-	err := r.db.QueryRow("SELECT COALESCE(MAX(version), 0) FROM schema_version").Scan(&version)
+	err := r.db.QueryRowContext(ctx, "SELECT COALESCE(MAX(version), 0) FROM schema_version").Scan(&version)
 	if err != nil {
 		return 0, err
 	}
@@ -218,16 +270,16 @@ func (r *Repository) getSchemaVersion() (int, error) {
 }
 
 // setSchemaVersion records that a schema version has been applied
-func (r *Repository) setSchemaVersion(version int) error {
-	_, err := r.db.Exec("INSERT INTO schema_version (version) VALUES (?)", version)
+func (r *Repository) setSchemaVersion(ctx context.Context, version int) error {
+	_, err := r.db.ExecContext(ctx, "INSERT INTO schema_version (version) VALUES (?)", version)
 	return err
 }
 
 // detectLegacyVersion detects the schema version of a pre-migration database
-func (r *Repository) detectLegacyVersion() (int, error) {
+func (r *Repository) detectLegacyVersion(ctx context.Context) (int, error) {
 	// Check if first_seen column exists in entries table
 	var hasFirstSeen bool
-	err := r.db.QueryRow(`
+	err := r.db.QueryRowContext(ctx, `
 		SELECT COUNT(*) > 0
 		FROM pragma_table_info('entries')
 		WHERE name = 'first_seen'
@@ -316,12 +368,35 @@ func (r *Repository) migrateToV2(tx *sql.Tx) error {
 	return nil
 }
 
+// validateFeedURL checks that a URL is non-empty and uses http or https scheme.
+func validateFeedURL(rawURL string) error {
+	trimmed := strings.TrimSpace(rawURL)
+	if trimmed == "" {
+		return fmt.Errorf("feed URL must not be empty")
+	}
+
+	parsed, err := url.Parse(trimmed)
+	if err != nil {
+		return fmt.Errorf("invalid feed URL: %w", err)
+	}
+
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return fmt.Errorf("feed URL must use http or https scheme, got %q", parsed.Scheme)
+	}
+
+	return nil
+}
+
 // AddFeed adds a new feed to the database
-func (r *Repository) AddFeed(ctx context.Context, url, title string) (int64, error) {
+func (r *Repository) AddFeed(ctx context.Context, feedURL, title string) (int64, error) {
+	if err := validateFeedURL(feedURL); err != nil {
+		return 0, fmt.Errorf("validate feed URL: %w", err)
+	}
+
 	result, err := r.db.ExecContext(ctx, `
 		INSERT INTO feeds (url, title, next_fetch)
 		VALUES (?, ?, ?)
-	`, url, title, time.Now().Format(time.RFC3339))
+	`, feedURL, title, time.Now().Format(time.RFC3339))
 
 	if err != nil {
 		return 0, fmt.Errorf("insert feed: %w", err)
@@ -378,6 +453,10 @@ func (r *Repository) UpdateFeedError(ctx context.Context, id int64, errorMsg str
 // UpdateFeedURL updates the URL of a feed (typically after a 301 permanent redirect).
 // This also resets the ETag and Last-Modified headers since they're associated with the old URL.
 func (r *Repository) UpdateFeedURL(ctx context.Context, id int64, newURL string) error {
+	if err := validateFeedURL(newURL); err != nil {
+		return fmt.Errorf("validate new feed URL: %w", err)
+	}
+
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE feeds
 		SET url = ?, etag = NULL, last_modified = NULL
@@ -438,10 +517,25 @@ func (r *Repository) RemoveFeed(ctx context.Context, id int64) error {
 	return nil
 }
 
+// validateEntry checks that an entry has required fields set.
+func validateEntry(entry *Entry) error {
+	if strings.TrimSpace(entry.EntryID) == "" {
+		return fmt.Errorf("entry_id must not be empty")
+	}
+	if entry.FeedID == 0 {
+		return fmt.Errorf("feed_id must not be zero")
+	}
+	return nil
+}
+
 // UpsertEntry inserts or updates an entry.
 // On conflict (duplicate feed_id + entry_id), updates content fields but preserves
 // first_seen to maintain the original discovery timestamp for spam prevention.
 func (r *Repository) UpsertEntry(ctx context.Context, entry *Entry) error {
+	if err := validateEntry(entry); err != nil {
+		return fmt.Errorf("validate entry: %w", err)
+	}
+
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO entries (feed_id, entry_id, title, link, author, published, updated, content, content_type, summary, first_seen)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -462,6 +556,67 @@ func (r *Repository) UpsertEntry(ctx context.Context, entry *Entry) error {
 	}
 
 	return nil
+}
+
+// UpsertEntriesBatch inserts or updates multiple entries in a single transaction.
+// This provides atomicity (all succeed or all fail) and better performance by
+// avoiding per-write WAL sync overhead.
+// Returns the number of successfully upserted entries.
+func (r *Repository) UpsertEntriesBatch(ctx context.Context, entries []*Entry) (int, error) {
+	if len(entries) == 0 {
+		return 0, nil
+	}
+
+	// Validate all entries before starting the transaction.
+	// This provides fast-fail behavior without needing to roll back.
+	for i, entry := range entries {
+		if err := validateEntry(entry); err != nil {
+			return 0, fmt.Errorf("validate entry[%d]: %w", i, err)
+		}
+	}
+
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() {
+		// Rollback is a no-op if the transaction was committed.
+		_ = tx.Rollback()
+	}()
+
+	stmt, err := tx.PrepareContext(ctx, `
+		INSERT INTO entries (feed_id, entry_id, title, link, author, published, updated, content, content_type, summary, first_seen)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(feed_id, entry_id) DO UPDATE SET
+			title = excluded.title,
+			link = excluded.link,
+			author = excluded.author,
+			updated = excluded.updated,
+			content = excluded.content,
+			summary = excluded.summary
+	`)
+	if err != nil {
+		return 0, fmt.Errorf("prepare upsert statement: %w", err)
+	}
+	defer stmt.Close()
+
+	count := 0
+	for _, entry := range entries {
+		_, err := stmt.ExecContext(ctx,
+			entry.FeedID, entry.EntryID, entry.Title, entry.Link, entry.Author,
+			entry.Published.Format(time.RFC3339), entry.Updated.Format(time.RFC3339),
+			entry.Content, entry.ContentType, entry.Summary, entry.FirstSeen.Format(time.RFC3339))
+		if err != nil {
+			return 0, fmt.Errorf("upsert entry %q: %w", entry.EntryID, err)
+		}
+		count++
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return count, nil
 }
 
 // GetRecentEntries returns entries from the last N days.

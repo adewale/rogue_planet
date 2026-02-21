@@ -173,6 +173,14 @@ func (g *Generator) GenerateToFile(ctx context.Context, outputPath string, data 
 		return err
 	}
 
+	// Write default CSS file alongside HTML when using default template
+	if g.templatePath == "" {
+		cssPath := filepath.Join(dir, "style.css")
+		if err := os.WriteFile(cssPath, []byte(GetDefaultCSS()), 0644); err != nil {
+			return fmt.Errorf("write style.css: %w", err)
+		}
+	}
+
 	// Copy static assets if using custom template
 	if g.templatePath != "" {
 		if err := g.CopyStaticAssets(ctx, dir); err != nil {
@@ -426,203 +434,213 @@ func formatDateGroup(t time.Time, tp timeprovider.TimeProvider) string {
 	return t.Format("Monday, January 2, 2006")
 }
 
+// GetDefaultCSS returns the default CSS stylesheet content for the built-in template.
+// This is written to a separate style.css file alongside the generated HTML,
+// allowing the CSP to use style-src 'self' instead of 'unsafe-inline'.
+func GetDefaultCSS() string {
+	return defaultCSS
+}
+
+// defaultCSS contains the CSS for the built-in template, extracted to avoid
+// inline styles and enable strict Content Security Policy (no 'unsafe-inline').
+const defaultCSS = `* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background: #f5f5f5;
+    padding: 20px;
+}
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.layout {
+    display: flex;
+    gap: 0;
+}
+.main-content {
+    flex: 1;
+    padding: 40px;
+    min-width: 0;
+}
+.sidebar {
+    width: 280px;
+    background: #f9f9f9;
+    border-left: 1px solid #e0e0e0;
+    padding: 30px 20px;
+}
+.sidebar h2 {
+    font-size: 1.2em;
+    margin-bottom: 15px;
+    color: #333;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 8px;
+}
+.sidebar ul {
+    list-style: none;
+}
+.sidebar li {
+    margin-bottom: 12px;
+    font-size: 0.9em;
+}
+.sidebar a {
+    color: #0066cc;
+    text-decoration: none;
+    display: block;
+}
+.sidebar a:hover {
+    text-decoration: underline;
+}
+.feed-meta {
+    font-size: 0.8em;
+    color: #999;
+    margin-top: 3px;
+}
+.feed-error {
+    color: #cc0000;
+}
+header {
+    border-bottom: 3px solid #333;
+    padding-bottom: 20px;
+    margin-bottom: 40px;
+}
+h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+}
+h1 a {
+    color: #333;
+    text-decoration: none;
+}
+h1 a:hover {
+    color: #666;
+}
+.subtitle {
+    color: #666;
+    font-size: 1.1em;
+}
+.date-group {
+    margin-bottom: 40px;
+}
+.date-group h2 {
+    font-size: 1.5em;
+    color: #666;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.entry {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #eee;
+}
+.entry:last-child {
+    border-bottom: none;
+}
+.entry h3 {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+}
+.entry h3 a {
+    color: #0066cc;
+    text-decoration: none;
+}
+.entry h3 a:hover {
+    text-decoration: underline;
+}
+.entry-meta {
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+}
+.entry-meta a {
+    color: #666;
+    text-decoration: none;
+}
+.entry-meta a:hover {
+    color: #333;
+    text-decoration: underline;
+}
+.entry-content {
+    margin-top: 15px;
+}
+.entry-content img {
+    max-width: 100%;
+    height: auto;
+}
+.entry-content pre {
+    background: #f5f5f5;
+    padding: 15px;
+    overflow-x: auto;
+    border-radius: 5px;
+}
+.entry-content code {
+    background: #f5f5f5;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-family: monospace;
+}
+.entry-content pre code {
+    background: none;
+    padding: 0;
+}
+.entry-content blockquote {
+    border-left: 4px solid #ddd;
+    padding-left: 20px;
+    margin: 20px 0;
+    color: #666;
+}
+footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    text-align: center;
+    color: #666;
+    font-size: 0.9em;
+}
+footer a {
+    color: #666;
+}
+@media (max-width: 968px) {
+    .layout {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid #e0e0e0;
+    }
+}
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    .main-content {
+        padding: 20px;
+    }
+    h1 {
+        font-size: 2em;
+    }
+}
+`
+
 // defaultTemplate is the built-in HTML template
 const defaultTemplate = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https:; object-src 'none'; base-uri 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https:; object-src 'none'; base-uri 'self';">
     <title>{{.Title}}</title>
     <meta name="generator" content="{{.Generator}}">
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: #f5f5f5;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .layout {
-            display: flex;
-            gap: 0;
-        }
-        .main-content {
-            flex: 1;
-            padding: 40px;
-            min-width: 0;
-        }
-        .sidebar {
-            width: 280px;
-            background: #f9f9f9;
-            border-left: 1px solid #e0e0e0;
-            padding: 30px 20px;
-        }
-        .sidebar h2 {
-            font-size: 1.2em;
-            margin-bottom: 15px;
-            color: #333;
-            border-bottom: 2px solid #ddd;
-            padding-bottom: 8px;
-        }
-        .sidebar ul {
-            list-style: none;
-        }
-        .sidebar li {
-            margin-bottom: 12px;
-            font-size: 0.9em;
-        }
-        .sidebar a {
-            color: #0066cc;
-            text-decoration: none;
-            display: block;
-        }
-        .sidebar a:hover {
-            text-decoration: underline;
-        }
-        .feed-meta {
-            font-size: 0.8em;
-            color: #999;
-            margin-top: 3px;
-        }
-        .feed-error {
-            color: #cc0000;
-        }
-        header {
-            border-bottom: 3px solid #333;
-            padding-bottom: 20px;
-            margin-bottom: 40px;
-        }
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-        h1 a {
-            color: #333;
-            text-decoration: none;
-        }
-        h1 a:hover {
-            color: #666;
-        }
-        .subtitle {
-            color: #666;
-            font-size: 1.1em;
-        }
-        .date-group {
-            margin-bottom: 40px;
-        }
-        .date-group h2 {
-            font-size: 1.5em;
-            color: #666;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        .entry {
-            margin-bottom: 40px;
-            padding-bottom: 30px;
-            border-bottom: 1px solid #eee;
-        }
-        .entry:last-child {
-            border-bottom: none;
-        }
-        .entry h3 {
-            font-size: 1.5em;
-            margin-bottom: 10px;
-        }
-        .entry h3 a {
-            color: #0066cc;
-            text-decoration: none;
-        }
-        .entry h3 a:hover {
-            text-decoration: underline;
-        }
-        .entry-meta {
-            color: #666;
-            font-size: 0.9em;
-            margin-bottom: 15px;
-        }
-        .entry-meta a {
-            color: #666;
-            text-decoration: none;
-        }
-        .entry-meta a:hover {
-            color: #333;
-            text-decoration: underline;
-        }
-        .entry-content {
-            margin-top: 15px;
-        }
-        .entry-content img {
-            max-width: 100%;
-            height: auto;
-        }
-        .entry-content pre {
-            background: #f5f5f5;
-            padding: 15px;
-            overflow-x: auto;
-            border-radius: 5px;
-        }
-        .entry-content code {
-            background: #f5f5f5;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-family: monospace;
-        }
-        .entry-content pre code {
-            background: none;
-            padding: 0;
-        }
-        .entry-content blockquote {
-            border-left: 4px solid #ddd;
-            padding-left: 20px;
-            margin: 20px 0;
-            color: #666;
-        }
-        footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-            text-align: center;
-            color: #666;
-            font-size: 0.9em;
-        }
-        footer a {
-            color: #666;
-        }
-        @media (max-width: 968px) {
-            .layout {
-                flex-direction: column;
-            }
-            .sidebar {
-                width: 100%;
-                border-left: none;
-                border-top: 1px solid #e0e0e0;
-            }
-        }
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            .main-content {
-                padding: 20px;
-            }
-            h1 {
-                font-size: 2em;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">

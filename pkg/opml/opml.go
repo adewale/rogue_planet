@@ -49,6 +49,11 @@ type Outline struct {
 	Outlines []Outline `xml:"outline,omitempty"`
 }
 
+const (
+	// MaxOPMLFileSize is the maximum allowed size for an OPML file (10MB)
+	MaxOPMLFileSize = 10 * 1024 * 1024
+)
+
 // Feed represents an extracted feed
 type Feed struct {
 	Title   string
@@ -63,8 +68,12 @@ type Metadata struct {
 	OwnerEmail string
 }
 
-// Parse parses an OPML file from bytes
+// Parse parses an OPML file from bytes.
+// Returns an error if the data exceeds MaxOPMLFileSize.
 func Parse(data []byte) (*OPML, error) {
+	if int64(len(data)) > MaxOPMLFileSize {
+		return nil, fmt.Errorf("OPML data size (%d bytes) exceeds maximum allowed size (%d bytes)", len(data), MaxOPMLFileSize)
+	}
 	var opml OPML
 	if err := xml.Unmarshal(data, &opml); err != nil {
 		return nil, fmt.Errorf("parse OPML: %w", err)
@@ -72,11 +81,22 @@ func Parse(data []byte) (*OPML, error) {
 	return &opml, nil
 }
 
-// ParseFile parses an OPML file from disk
+// ParseFile parses an OPML file from disk.
+// Returns an error if the file exceeds MaxOPMLFileSize.
 func ParseFile(ctx context.Context, path string) (*OPML, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
+
+	// Check file size before reading to avoid loading huge files into memory
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("stat file: %w", err)
+	}
+	if info.Size() > MaxOPMLFileSize {
+		return nil, fmt.Errorf("OPML file size (%d bytes) exceeds maximum allowed size (%d bytes)", info.Size(), MaxOPMLFileSize)
+	}
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)

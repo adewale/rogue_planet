@@ -1280,7 +1280,7 @@ func TestGetSchemaVersion_EmptyTable(t *testing.T) {
 	repo := &Repository{db: db}
 	defer repo.Close()
 
-	version, err := repo.getSchemaVersion()
+	version, err := repo.getSchemaVersion(context.Background())
 	if err != nil {
 		t.Fatalf("getSchemaVersion() error = %v", err)
 	}
@@ -1465,5 +1465,663 @@ func TestMigrationFromV1(t *testing.T) {
 	}
 	if firstSeen == "" {
 		t.Error("first_seen should be backfilled after migration")
+	}
+}
+
+// =============================================================================
+// Tests for L7: Security-Hardening SQLite PRAGMAs
+// =============================================================================
+
+func TestSecurityPragmas(t *testing.T) {
+	t.Parallel()
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	// Verify trusted_schema = OFF
+	var trustedSchema int
+	err := repo.db.QueryRow("PRAGMA trusted_schema").Scan(&trustedSchema)
+	if err != nil {
+		t.Fatalf("PRAGMA trusted_schema query error: %v", err)
+	}
+	if trustedSchema != 0 {
+		t.Errorf("trusted_schema = %d, want 0 (OFF)", trustedSchema)
+	}
+
+	// Verify cell_size_check = ON
+	var cellSizeCheck int
+	err = repo.db.QueryRow("PRAGMA cell_size_check").Scan(&cellSizeCheck)
+	if err != nil {
+		t.Fatalf("PRAGMA cell_size_check query error: %v", err)
+	}
+	if cellSizeCheck != 1 {
+		t.Errorf("cell_size_check = %d, want 1 (ON)", cellSizeCheck)
+	}
+
+	// Verify busy_timeout = 5000
+	var busyTimeout int
+	err = repo.db.QueryRow("PRAGMA busy_timeout").Scan(&busyTimeout)
+	if err != nil {
+		t.Fatalf("PRAGMA busy_timeout query error: %v", err)
+	}
+	if busyTimeout != 5000 {
+		t.Errorf("busy_timeout = %d, want 5000", busyTimeout)
+	}
+}
+
+// =============================================================================
+// Tests for L10: Database File Permissions
+// =============================================================================
+
+func TestDatabaseFilePermissions(t *testing.T) {
+	t.Parallel()
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, "permissions_test.db")
+
+	// Database file should not exist yet
+	_, err := os.Stat(dbPath)
+	if !os.IsNotExist(err) {
+		t.Fatal("Database file should not exist before New()")
+	}
+
+	repo, err := New(dbPath)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer repo.Close()
+
+	// Verify file permissions are 0600 (owner read/write only)
+	info, err := os.Stat(dbPath)
+	if err != nil {
+		t.Fatalf("Stat() error = %v", err)
+	}
+
+	perm := info.Mode().Perm()
+	if perm != 0600 {
+		t.Errorf("Database file permissions = %o, want 0600", perm)
+	}
+}
+
+func TestDatabaseFilePermissions_ExistingFile(t *testing.T) {
+	t.Parallel()
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, "existing.db")
+
+	// Create a database file first
+	repo1, err := New(dbPath)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	repo1.Close()
+
+	// Change permissions to something different
+	if err := os.Chmod(dbPath, 0644); err != nil {
+		t.Fatalf("Chmod() error = %v", err)
+	}
+
+	// Reopen - should NOT change permissions of existing file
+	repo2, err := New(dbPath)
+	if err != nil {
+		t.Fatalf("New() reopen error = %v", err)
+	}
+	defer repo2.Close()
+
+	info, err := os.Stat(dbPath)
+	if err != nil {
+		t.Fatalf("Stat() error = %v", err)
+	}
+
+	perm := info.Mode().Perm()
+	if perm != 0644 {
+		t.Errorf("Existing file permissions changed to %o, should remain 0644", perm)
+	}
+}
+
+// =============================================================================
+// Tests for L11: Context/Timeout on Schema Initialization
+// =============================================================================
+
+func TestSchemaInitializationWithContext(t *testing.T) {
+	t.Parallel()
+	// Verify that schema initialization completes successfully
+	// (the context/timeout is internal, we just verify it works)
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, "context_test.db")
+
+	repo, err := New(dbPath)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer repo.Close()
+
+	// Verify schema was created successfully
+	var tableCount int
+	err = repo.db.QueryRow("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('feeds', 'entries', 'schema_version')").Scan(&tableCount)
+	if err != nil {
+		t.Fatalf("Query error: %v", err)
+	}
+	if tableCount != 3 {
+		t.Errorf("Expected 3 tables (feeds, entries, schema_version), got %d", tableCount)
+	}
+}
+
+// =============================================================================
+// Tests for M9: Input Validation in Repository Layer
+// =============================================================================
+
+func TestAddFeed_Validation(t *testing.T) {
+	t.Parallel()
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	tests := []struct {
+		name    string
+		url     string
+		title   string
+		wantErr string
+	}{
+		{
+			name:    "empty URL",
+			url:     "",
+			title:   "Test Feed",
+			wantErr: "empty",
+		},
+		{
+			name:    "whitespace only URL",
+			url:     "   ",
+			title:   "Test Feed",
+			wantErr: "empty",
+		},
+		{
+			name:    "ftp scheme",
+			url:     "ftp://example.com/feed",
+			title:   "Test Feed",
+			wantErr: "scheme",
+		},
+		{
+			name:    "javascript scheme",
+			url:     "javascript:alert(1)",
+			title:   "Test Feed",
+			wantErr: "scheme",
+		},
+		{
+			name:    "no scheme",
+			url:     "example.com/feed",
+			title:   "Test Feed",
+			wantErr: "scheme",
+		},
+		{
+			name:    "valid http URL",
+			url:     "http://example.com/feed",
+			title:   "Test Feed",
+			wantErr: "",
+		},
+		{
+			name:    "valid https URL",
+			url:     "https://example.com/feed",
+			title:   "Test Feed",
+			wantErr: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := repo.AddFeed(context.Background(), tt.url, tt.title)
+			if tt.wantErr == "" {
+				if err != nil {
+					t.Errorf("AddFeed() unexpected error: %v", err)
+				}
+			} else {
+				if err == nil {
+					t.Errorf("AddFeed() expected error containing %q, got nil", tt.wantErr)
+				} else if !strings.Contains(strings.ToLower(err.Error()), tt.wantErr) {
+					t.Errorf("AddFeed() error = %v, want error containing %q", err, tt.wantErr)
+				}
+			}
+		})
+	}
+}
+
+func TestUpdateFeedURL_Validation(t *testing.T) {
+	t.Parallel()
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	if err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
+
+	tests := []struct {
+		name    string
+		newURL  string
+		wantErr string
+	}{
+		{
+			name:    "empty URL",
+			newURL:  "",
+			wantErr: "empty",
+		},
+		{
+			name:    "ftp scheme",
+			newURL:  "ftp://example.com/feed2",
+			wantErr: "scheme",
+		},
+		{
+			name:    "data scheme",
+			newURL:  "data:text/html,<h1>test</h1>",
+			wantErr: "scheme",
+		},
+		{
+			name:    "valid https URL",
+			newURL:  "https://example.com/new-feed",
+			wantErr: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := repo.UpdateFeedURL(context.Background(), feedID, tt.newURL)
+			if tt.wantErr == "" {
+				if err != nil {
+					t.Errorf("UpdateFeedURL() unexpected error: %v", err)
+				}
+			} else {
+				if err == nil {
+					t.Errorf("UpdateFeedURL() expected error containing %q, got nil", tt.wantErr)
+				} else if !strings.Contains(strings.ToLower(err.Error()), tt.wantErr) {
+					t.Errorf("UpdateFeedURL() error = %v, want error containing %q", err, tt.wantErr)
+				}
+			}
+		})
+	}
+}
+
+func TestUpsertEntry_Validation(t *testing.T) {
+	t.Parallel()
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	if err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
+
+	now := time.Now()
+
+	tests := []struct {
+		name    string
+		entry   *Entry
+		wantErr string
+	}{
+		{
+			name: "empty entry_id",
+			entry: &Entry{
+				FeedID:    feedID,
+				EntryID:   "",
+				Title:     "Test",
+				Published: now,
+				Updated:   now,
+				FirstSeen: now,
+			},
+			wantErr: "entry_id",
+		},
+		{
+			name: "whitespace only entry_id",
+			entry: &Entry{
+				FeedID:    feedID,
+				EntryID:   "   ",
+				Title:     "Test",
+				Published: now,
+				Updated:   now,
+				FirstSeen: now,
+			},
+			wantErr: "entry_id",
+		},
+		{
+			name: "zero feed_id",
+			entry: &Entry{
+				FeedID:    0,
+				EntryID:   "entry-1",
+				Title:     "Test",
+				Published: now,
+				Updated:   now,
+				FirstSeen: now,
+			},
+			wantErr: "feed_id",
+		},
+		{
+			name: "valid entry",
+			entry: &Entry{
+				FeedID:    feedID,
+				EntryID:   "entry-valid",
+				Title:     "Test",
+				Published: now,
+				Updated:   now,
+				FirstSeen: now,
+			},
+			wantErr: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := repo.UpsertEntry(context.Background(), tt.entry)
+			if tt.wantErr == "" {
+				if err != nil {
+					t.Errorf("UpsertEntry() unexpected error: %v", err)
+				}
+			} else {
+				if err == nil {
+					t.Errorf("UpsertEntry() expected error containing %q, got nil", tt.wantErr)
+				} else if !strings.Contains(strings.ToLower(err.Error()), tt.wantErr) {
+					t.Errorf("UpsertEntry() error = %v, want error containing %q", err, tt.wantErr)
+				}
+			}
+		})
+	}
+}
+
+// =============================================================================
+// Tests for M8: Batch Transactions for Entry Operations
+// =============================================================================
+
+func TestUpsertEntriesBatch_EmptySlice(t *testing.T) {
+	t.Parallel()
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	count, err := repo.UpsertEntriesBatch(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("UpsertEntriesBatch(nil) error = %v", err)
+	}
+	if count != 0 {
+		t.Errorf("UpsertEntriesBatch(nil) count = %d, want 0", count)
+	}
+
+	count, err = repo.UpsertEntriesBatch(context.Background(), []*Entry{})
+	if err != nil {
+		t.Fatalf("UpsertEntriesBatch([]) error = %v", err)
+	}
+	if count != 0 {
+		t.Errorf("UpsertEntriesBatch([]) count = %d, want 0", count)
+	}
+}
+
+func TestUpsertEntriesBatch_SingleEntry(t *testing.T) {
+	t.Parallel()
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	if err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
+
+	now := time.Now()
+	entries := []*Entry{
+		{
+			FeedID:      feedID,
+			EntryID:     "batch-single-1",
+			Title:       "Single Batch Entry",
+			Link:        "https://example.com/single",
+			Published:   now,
+			Updated:     now,
+			Content:     "<p>Content</p>",
+			ContentType: "html",
+			FirstSeen:   now,
+		},
+	}
+
+	count, err := repo.UpsertEntriesBatch(context.Background(), entries)
+	if err != nil {
+		t.Fatalf("UpsertEntriesBatch() error = %v", err)
+	}
+	if count != 1 {
+		t.Errorf("UpsertEntriesBatch() count = %d, want 1", count)
+	}
+
+	// Verify entry exists
+	total, err := repo.CountEntries(context.Background())
+	if err != nil {
+		t.Fatalf("CountEntries() error = %v", err)
+	}
+	if total != 1 {
+		t.Errorf("CountEntries() = %d, want 1", total)
+	}
+}
+
+func TestUpsertEntriesBatch_MultipleEntries(t *testing.T) {
+	t.Parallel()
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	if err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
+
+	now := time.Now()
+	entries := make([]*Entry, 10)
+	for i := 0; i < 10; i++ {
+		entries[i] = &Entry{
+			FeedID:      feedID,
+			EntryID:     fmt.Sprintf("batch-multi-%d", i),
+			Title:       fmt.Sprintf("Batch Entry %d", i),
+			Link:        fmt.Sprintf("https://example.com/batch/%d", i),
+			Published:   now.Add(time.Duration(-i) * time.Hour),
+			Updated:     now,
+			Content:     fmt.Sprintf("<p>Content %d</p>", i),
+			ContentType: "html",
+			FirstSeen:   now,
+		}
+	}
+
+	count, err := repo.UpsertEntriesBatch(context.Background(), entries)
+	if err != nil {
+		t.Fatalf("UpsertEntriesBatch() error = %v", err)
+	}
+	if count != 10 {
+		t.Errorf("UpsertEntriesBatch() count = %d, want 10", count)
+	}
+
+	// Verify all entries exist
+	total, err := repo.CountEntries(context.Background())
+	if err != nil {
+		t.Fatalf("CountEntries() error = %v", err)
+	}
+	if total != 10 {
+		t.Errorf("CountEntries() = %d, want 10", total)
+	}
+}
+
+func TestUpsertEntriesBatch_Atomicity(t *testing.T) {
+	t.Parallel()
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	if err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
+
+	now := time.Now()
+
+	// First, insert some valid entries
+	validEntries := []*Entry{
+		{
+			FeedID:    feedID,
+			EntryID:   "existing-1",
+			Title:     "Existing Entry",
+			Published: now,
+			Updated:   now,
+			FirstSeen: now,
+		},
+	}
+	_, err = repo.UpsertEntriesBatch(context.Background(), validEntries)
+	if err != nil {
+		t.Fatalf("UpsertEntriesBatch() setup error = %v", err)
+	}
+
+	// Now try a batch with a validation error (empty entry_id should fail)
+	badBatch := []*Entry{
+		{
+			FeedID:    feedID,
+			EntryID:   "good-entry",
+			Title:     "Good Entry",
+			Published: now,
+			Updated:   now,
+			FirstSeen: now,
+		},
+		{
+			FeedID:    feedID,
+			EntryID:   "", // Invalid - empty entry_id
+			Title:     "Bad Entry",
+			Published: now,
+			Updated:   now,
+			FirstSeen: now,
+		},
+	}
+
+	_, err = repo.UpsertEntriesBatch(context.Background(), badBatch)
+	if err == nil {
+		t.Fatal("UpsertEntriesBatch() should fail with invalid entry in batch")
+	}
+
+	// Verify none of the bad batch entries were persisted (rollback)
+	total, err := repo.CountEntries(context.Background())
+	if err != nil {
+		t.Fatalf("CountEntries() error = %v", err)
+	}
+	if total != 1 {
+		t.Errorf("CountEntries() = %d, want 1 (only the pre-existing entry)", total)
+	}
+}
+
+func TestUpsertEntriesBatch_UpdatesExisting(t *testing.T) {
+	t.Parallel()
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	if err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
+
+	now := time.Now()
+
+	// Insert initial entries
+	initial := []*Entry{
+		{
+			FeedID:    feedID,
+			EntryID:   "entry-1",
+			Title:     "Original Title 1",
+			Published: now,
+			Updated:   now,
+			FirstSeen: now,
+		},
+		{
+			FeedID:    feedID,
+			EntryID:   "entry-2",
+			Title:     "Original Title 2",
+			Published: now,
+			Updated:   now,
+			FirstSeen: now,
+		},
+	}
+
+	count, err := repo.UpsertEntriesBatch(context.Background(), initial)
+	if err != nil {
+		t.Fatalf("UpsertEntriesBatch() initial error = %v", err)
+	}
+	if count != 2 {
+		t.Errorf("Initial count = %d, want 2", count)
+	}
+
+	// Update existing entries via batch
+	updated := []*Entry{
+		{
+			FeedID:    feedID,
+			EntryID:   "entry-1",
+			Title:     "Updated Title 1",
+			Published: now,
+			Updated:   now.Add(time.Hour),
+			FirstSeen: now,
+		},
+		{
+			FeedID:    feedID,
+			EntryID:   "entry-2",
+			Title:     "Updated Title 2",
+			Published: now,
+			Updated:   now.Add(time.Hour),
+			FirstSeen: now,
+		},
+		{
+			FeedID:    feedID,
+			EntryID:   "entry-3",
+			Title:     "New Entry 3",
+			Published: now,
+			Updated:   now,
+			FirstSeen: now,
+		},
+	}
+
+	count, err = repo.UpsertEntriesBatch(context.Background(), updated)
+	if err != nil {
+		t.Fatalf("UpsertEntriesBatch() update error = %v", err)
+	}
+	if count != 3 {
+		t.Errorf("Update count = %d, want 3", count)
+	}
+
+	// Verify total count is 3 (2 updated + 1 new)
+	total, err := repo.CountEntries(context.Background())
+	if err != nil {
+		t.Fatalf("CountEntries() error = %v", err)
+	}
+	if total != 3 {
+		t.Errorf("CountEntries() = %d, want 3", total)
+	}
+
+	// Verify updates took effect
+	var title string
+	err = repo.db.QueryRow("SELECT title FROM entries WHERE entry_id = 'entry-1'").Scan(&title)
+	if err != nil {
+		t.Fatalf("Query error: %v", err)
+	}
+	if title != "Updated Title 1" {
+		t.Errorf("Entry 1 title = %q, want %q", title, "Updated Title 1")
+	}
+}
+
+func TestUpsertEntriesBatch_ContextCancellation(t *testing.T) {
+	t.Parallel()
+	repo, _ := setupTestDB(t)
+	defer repo.Close()
+
+	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	if err != nil {
+		t.Fatalf("AddFeed() error = %v", err)
+	}
+
+	now := time.Now()
+	entries := make([]*Entry, 5)
+	for i := 0; i < 5; i++ {
+		entries[i] = &Entry{
+			FeedID:    feedID,
+			EntryID:   fmt.Sprintf("ctx-entry-%d", i),
+			Title:     fmt.Sprintf("Entry %d", i),
+			Published: now,
+			Updated:   now,
+			FirstSeen: now,
+		}
+	}
+
+	// Use an already-cancelled context
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err = repo.UpsertEntriesBatch(ctx, entries)
+	if err == nil {
+		t.Error("UpsertEntriesBatch() should fail with cancelled context")
 	}
 }

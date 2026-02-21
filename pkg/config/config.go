@@ -52,7 +52,8 @@ const (
 	MaxRateLimitBurst    = 50
 
 	// Content limits
-	MinDays = 1 // At least 1 day of content
+	MinDays = 1   // At least 1 day of content
+	MaxDays = 365 // Maximum 1 year of content
 )
 
 // Config represents the application configuration
@@ -243,8 +244,8 @@ func (c *Config) setPlanet(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("invalid days value: %s", value)
 		}
-		if days < MinDays {
-			return fmt.Errorf("days must be >= %d", MinDays)
+		if days < MinDays || days > MaxDays {
+			return fmt.Errorf("days must be between %d and %d", MinDays, MaxDays)
 		}
 		c.Planet.Days = days
 	case "log_level":
@@ -319,8 +320,8 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("planet name is required")
 	}
 
-	if c.Planet.Days < 1 {
-		return fmt.Errorf("days must be >= 1")
+	if c.Planet.Days < MinDays || c.Planet.Days > MaxDays {
+		return fmt.Errorf("days must be between %d and %d", MinDays, MaxDays)
 	}
 
 	if c.Planet.ConcurrentFetch < 1 || c.Planet.ConcurrentFetch > 50 {

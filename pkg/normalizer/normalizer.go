@@ -7,6 +7,7 @@
 package normalizer
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -18,6 +19,7 @@ import (
 
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/mmcdole/gofeed"
+	"golang.org/x/net/html"
 )
 
 var (
@@ -30,6 +32,10 @@ const (
 	MaxEntryContentSize = 1024 * 1024 // 1MB
 	// MaxEntriesPerFeed is the maximum number of entries to process from a single feed
 	MaxEntriesPerFeed = 500
+	// FutureDateTolerance is the maximum amount of time in the future a date can be
+	// before it is clamped to fetchTime. Dates more than this duration in the future
+	// relative to fetchTime are clamped.
+	FutureDateTolerance = 1 * time.Hour
 )
 
 // Entry represents a normalized feed entry
@@ -157,9 +163,11 @@ func (n *Normalizer) normalizeEntry(item *gofeed.Item, feed *gofeed.Feed, feedUR
 	// Extract author
 	entry.Author = n.extractAuthor(item, feed)
 
-	// Extract dates
+	// Extract dates and clamp future dates
 	entry.Published = n.extractPublished(item, feed, fetchTime)
+	entry.Published = clampFutureDate(entry.Published, fetchTime)
 	entry.Updated = n.extractUpdated(item, entry.Published)
+	entry.Updated = clampFutureDate(entry.Updated, fetchTime)
 
 	// Extract content (prefer full content over summary)
 	// Truncate before sanitization to prevent memory exhaustion
@@ -211,15 +219,19 @@ func (n *Normalizer) extractID(item *gofeed.Item, feedURL string) string {
 		if item.PublishedParsed != nil {
 			hash.Write([]byte(item.PublishedParsed.String()))
 		}
-		return hex.EncodeToString(hash.Sum(nil))[:16]
+		return hex.EncodeToString(hash.Sum(nil))
 	}
 
-	// Last resort: hash of content
+	// Last resort: hash of content + link + date to prevent collisions
 	hash := sha256.New()
 	hash.Write([]byte(feedURL))
 	hash.Write([]byte(item.Description))
 	hash.Write([]byte(item.Content))
-	return hex.EncodeToString(hash.Sum(nil))[:16]
+	hash.Write([]byte(item.Link))
+	if item.PublishedParsed != nil {
+		hash.Write([]byte(item.PublishedParsed.String()))
+	}
+	return hex.EncodeToString(hash.Sum(nil))
 }
 
 // extractAuthor gets the author name from entry or feed level
@@ -271,15 +283,88 @@ func (n *Normalizer) extractUpdated(item *gofeed.Item, published time.Time) time
 	return published
 }
 
-// sanitizeHTML sanitizes HTML content and resolves relative URLs
-func (n *Normalizer) sanitizeHTML(html string, baseURL string) string {
-	// First, resolve relative URLs (simplified - real implementation would use html parser)
-	// For now, just sanitize
+// clampFutureDate returns fetchTime if the given date is more than
+// FutureDateTolerance in the future relative to fetchTime.
+// This prevents content ordering manipulation via far-future dates.
+func clampFutureDate(date time.Time, fetchTime time.Time) time.Time {
+	if date.After(fetchTime.Add(FutureDateTolerance)) {
+		return fetchTime
+	}
+	return date
+}
 
+// sanitizeHTML sanitizes HTML content and resolves relative URLs
+func (n *Normalizer) sanitizeHTML(rawHTML string, baseURL string) string {
 	// Sanitize HTML to remove dangerous content
-	sanitized := n.sanitizer.Sanitize(html)
+	sanitized := n.sanitizer.Sanitize(rawHTML)
+
+	// Resolve relative URLs after sanitization
+	sanitized = resolveRelativeURLs(sanitized, baseURL)
 
 	return strings.TrimSpace(sanitized)
+}
+
+// resolveRelativeURLs parses HTML content, finds src and href attributes,
+// and resolves relative URLs to absolute using the provided base URL.
+// If baseURL is empty or invalid, the original HTML is returned unchanged.
+// If the HTML is malformed, it attempts best-effort resolution.
+func resolveRelativeURLs(htmlContent string, baseURL string) string {
+	if baseURL == "" {
+		return htmlContent
+	}
+
+	base, err := url.Parse(baseURL)
+	if err != nil || base.Scheme == "" {
+		return htmlContent
+	}
+
+	doc, err := html.Parse(strings.NewReader(htmlContent))
+	if err != nil {
+		return htmlContent
+	}
+
+	// Walk the HTML tree and resolve relative URLs in href and src attributes
+	var resolve func(*html.Node)
+	resolve = func(n *html.Node) {
+		if n.Type == html.ElementNode {
+			for i, attr := range n.Attr {
+				if attr.Key == "href" || attr.Key == "src" {
+					if attr.Val == "" {
+						continue
+					}
+					ref, err := url.Parse(attr.Val)
+					if err != nil {
+						continue
+					}
+					// Only resolve if the URL is relative (no scheme)
+					if ref.Scheme == "" {
+						n.Attr[i].Val = base.ResolveReference(ref).String()
+					}
+				}
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			resolve(c)
+		}
+	}
+	resolve(doc)
+
+	// Re-serialize the HTML
+	var buf bytes.Buffer
+	if err := html.Render(&buf, doc); err != nil {
+		return htmlContent
+	}
+
+	// html.Parse wraps content in <html><head></head><body>...</body></html>
+	// We need to extract just the body content
+	rendered := buf.String()
+	bodyStart := strings.Index(rendered, "<body>")
+	bodyEnd := strings.LastIndex(rendered, "</body>")
+	if bodyStart >= 0 && bodyEnd > bodyStart {
+		rendered = rendered[bodyStart+len("<body>") : bodyEnd]
+	}
+
+	return rendered
 }
 
 // sanitizeTitle strips all HTML tags from titles.

@@ -269,6 +269,49 @@ func TestValidate(t *testing.T) {
 		}
 	})
 
+	t.Run("days at minimum boundary", func(t *testing.T) {
+		config := Default()
+		config.Planet.Days = 1
+
+		err := config.Validate()
+		if err != nil {
+			t.Errorf("Validate() error = %v, want nil for days = 1", err)
+		}
+	})
+
+	t.Run("days at maximum boundary", func(t *testing.T) {
+		config := Default()
+		config.Planet.Days = MaxDays // 365
+
+		err := config.Validate()
+		if err != nil {
+			t.Errorf("Validate() error = %v, want nil for days = %d", err, MaxDays)
+		}
+	})
+
+	t.Run("days exceeds maximum", func(t *testing.T) {
+		config := Default()
+		config.Planet.Days = MaxDays + 1 // 366
+
+		err := config.Validate()
+		if err == nil {
+			t.Errorf("Expected error for days = %d (exceeds MaxDays=%d)", MaxDays+1, MaxDays)
+		}
+		if err != nil && !strings.Contains(err.Error(), "between") {
+			t.Errorf("Expected 'between' in error message, got: %v", err)
+		}
+	})
+
+	t.Run("days extremely large value", func(t *testing.T) {
+		config := Default()
+		config.Planet.Days = 999999
+
+		err := config.Validate()
+		if err == nil {
+			t.Error("Expected error for days = 999999")
+		}
+	})
+
 	t.Run("invalid concurrent_fetches low", func(t *testing.T) {
 		config := Default()
 		config.Planet.ConcurrentFetch = 0
@@ -508,6 +551,26 @@ func TestSetPlanet(t *testing.T) {
 			name:    "set days zero",
 			key:     "days",
 			value:   "0",
+			wantErr: true,
+		},
+		{
+			name:  "set days at max boundary",
+			key:   "days",
+			value: "365",
+			checkFunc: func(c *Config) bool {
+				return c.Planet.Days == 365
+			},
+		},
+		{
+			name:    "set days exceeds max",
+			key:     "days",
+			value:   "366",
+			wantErr: true,
+		},
+		{
+			name:    "set days extreme value",
+			key:     "days",
+			value:   "999999",
 			wantErr: true,
 		},
 		{

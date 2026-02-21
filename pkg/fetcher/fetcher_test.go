@@ -1427,3 +1427,190 @@ func TestFetchFeed_ParseErrorWithDBRecordingFailure(t *testing.T) {
 		t.Error("Expected error result for parse failure")
 	}
 }
+
+// Tests for sanitizeErrorMessage
+
+func TestSanitizeErrorMessage_RedactsIPAddresses(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		input    string
+		contains string
+		excludes string
+	}{
+		{
+			name:     "IPv4 address",
+			input:    "connection refused to 192.168.1.100:8080",
+			contains: "[REDACTED_IP]",
+			excludes: "192.168.1.100",
+		},
+		{
+			name:     "multiple IPs",
+			input:    "failed connecting from 10.0.0.1 to 172.16.0.50",
+			contains: "[REDACTED_IP]",
+			excludes: "10.0.0.1",
+		},
+		{
+			name:     "localhost IP",
+			input:    "connection to 127.0.0.1 refused",
+			contains: "[REDACTED_IP]",
+			excludes: "127.0.0.1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			result := sanitizeErrorMessage(errors.New(tt.input))
+			if !strings.Contains(result, tt.contains) {
+				t.Errorf("Expected sanitized message to contain %q, got %q", tt.contains, result)
+			}
+			if strings.Contains(result, tt.excludes) {
+				t.Errorf("Sanitized message should not contain %q, got %q", tt.excludes, result)
+			}
+		})
+	}
+}
+
+func TestSanitizeErrorMessage_RedactsFilePaths(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		input    string
+		excludes string
+	}{
+		{
+			name:     "unix absolute path",
+			input:    "open /home/user/.config/rogue-planet/config.ini: no such file",
+			excludes: "/home/user/.config/rogue-planet/config.ini",
+		},
+		{
+			name:     "path with spaces",
+			input:    "open /var/lib/data/feeds.db: permission denied",
+			excludes: "/var/lib/data/feeds.db",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			result := sanitizeErrorMessage(errors.New(tt.input))
+			if strings.Contains(result, tt.excludes) {
+				t.Errorf("Sanitized message should not contain file path %q, got %q", tt.excludes, result)
+			}
+			// Should contain a redaction marker
+			if !strings.Contains(result, "[REDACTED_PATH]") {
+				t.Errorf("Sanitized message should contain [REDACTED_PATH], got %q", result)
+			}
+		})
+	}
+}
+
+func TestSanitizeErrorMessage_PreservesErrorCategory(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		input    string
+		contains string
+	}{
+		{
+			name:     "timeout",
+			input:    "connection to 10.0.0.1 timed out",
+			contains: "timed out",
+		},
+		{
+			name:     "connection refused",
+			input:    "dial tcp 192.168.1.1:443: connection refused",
+			contains: "connection refused",
+		},
+		{
+			name:     "no such host",
+			input:    "no such host example.com",
+			contains: "no such host",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			result := sanitizeErrorMessage(errors.New(tt.input))
+			if !strings.Contains(result, tt.contains) {
+				t.Errorf("Sanitized message should preserve error category %q, got %q", tt.contains, result)
+			}
+		})
+	}
+}
+
+func TestSanitizeErrorMessage_TruncatesLongMessages(t *testing.T) {
+	t.Parallel()
+
+	// Create a very long error message (>500 characters)
+	longMsg := strings.Repeat("a very long error message ", 30) // 780 chars
+	result := sanitizeErrorMessage(errors.New(longMsg))
+
+	if len(result) > 500 {
+		t.Errorf("Sanitized message should be at most 500 characters, got %d", len(result))
+	}
+}
+
+func TestSanitizeErrorMessage_NilSafe(t *testing.T) {
+	t.Parallel()
+	// Should not panic on nil error
+	result := sanitizeErrorMessage(nil)
+	if result != "" {
+		t.Errorf("Expected empty string for nil error, got %q", result)
+	}
+}
+
+func TestFetchFeed_ErrorMessagesSanitized(t *testing.T) {
+	t.Parallel()
+
+	// Setup - error containing IP and path
+	mc := &mockCrawler{
+		err: errors.New("dial tcp 192.168.1.100:443: connect: connection refused from /etc/hosts"),
+	}
+
+	mn := &mockNormalizer{}
+	mr := &mockRepository{}
+	ml := &mockLogger{}
+
+	f := New(mc, mn, mr, nil, ml, 3)
+
+	feed := repository.Feed{
+		ID:  1,
+		URL: "http://example.com/feed",
+	}
+
+	// Execute
+	result := f.FetchFeed(context.Background(), feed)
+
+	// Verify there was an error
+	if result.Error == nil {
+		t.Fatal("Expected error, got nil")
+	}
+
+	// Verify the stored error message was sanitized
+	if !mr.updateFeedErrorCalled {
+		t.Fatal("Expected UpdateFeedError to be called")
+	}
+
+	storedMsg := mr.updateFeedErrorMsg
+
+	// Should NOT contain the raw IP address
+	if strings.Contains(storedMsg, "192.168.1.100") {
+		t.Errorf("Stored error message should not contain IP address, got %q", storedMsg)
+	}
+
+	// Should NOT contain the file path
+	if strings.Contains(storedMsg, "/etc/hosts") {
+		t.Errorf("Stored error message should not contain file path, got %q", storedMsg)
+	}
+
+	// Should still contain useful error info
+	if !strings.Contains(storedMsg, "connection refused") {
+		t.Errorf("Stored error message should preserve error category 'connection refused', got %q", storedMsg)
+	}
+}

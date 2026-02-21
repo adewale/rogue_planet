@@ -249,8 +249,8 @@ func TestIDGeneration(t *testing.T) {
 			t.Error("ID should not be empty")
 		}
 
-		if len(id) != 16 {
-			t.Errorf("Generated ID length = %d, want 16", len(id))
+		if len(id) != 64 {
+			t.Errorf("Generated ID length = %d, want 64 (full SHA256)", len(id))
 		}
 	})
 
@@ -430,8 +430,8 @@ func TestNormalizeEntry_MissingFields(t *testing.T) {
 			wantLink:   "",
 			wantAuthor: "",
 			checkIDFunc: func(t *testing.T, id string) {
-				if len(id) != 16 {
-					t.Errorf("Expected 16-char hash ID, got %q (len %d)", id, len(id))
+				if len(id) != 64 {
+					t.Errorf("Expected 64-char hash ID (full SHA256), got %q (len %d)", id, len(id))
 				}
 			},
 		},
