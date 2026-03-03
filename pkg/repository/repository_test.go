@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -46,7 +45,7 @@ func TestAddFeed(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	id, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	id, err := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 	if err != nil {
 		t.Fatalf("AddFeed() error = %v", err)
 	}
@@ -56,7 +55,7 @@ func TestAddFeed(t *testing.T) {
 	}
 
 	// Verify feed was added
-	feed, err := repo.GetFeedByURL(context.Background(), "https://example.com/feed")
+	feed, err := repo.GetFeedByURL(t.Context(), "https://example.com/feed")
 	if err != nil {
 		t.Fatalf("GetFeedByURL() error = %v", err)
 	}
@@ -75,13 +74,13 @@ func TestAddDuplicateFeed(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	_, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	_, err := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 	if err != nil {
 		t.Fatalf("AddFeed() error = %v", err)
 	}
 
 	// Try to add duplicate
-	_, err = repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed 2")
+	_, err = repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed 2")
 	if err == nil {
 		t.Error("Expected error for duplicate feed, got nil")
 	}
@@ -92,15 +91,15 @@ func TestUpdateFeed(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	id, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Old Title")
+	id, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Old Title")
 
 	updated := time.Now()
-	err := repo.UpdateFeed(context.Background(), id, "New Title", "https://example.com", updated)
+	err := repo.UpdateFeed(t.Context(), id, "New Title", "https://example.com", updated)
 	if err != nil {
 		t.Fatalf("UpdateFeed() error = %v", err)
 	}
 
-	feed, _ := repo.GetFeedByURL(context.Background(), "https://example.com/feed")
+	feed, _ := repo.GetFeedByURL(t.Context(), "https://example.com/feed")
 
 	if feed.Title != "New Title" {
 		t.Errorf("Title = %q, want %q", feed.Title, "New Title")
@@ -116,15 +115,15 @@ func TestUpdateFeedCache(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	id, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	id, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
 	fetchTime := time.Now()
-	err := repo.UpdateFeedCache(context.Background(), id, `"etag123"`, "Mon, 02 Jan 2006 15:04:05 GMT", fetchTime)
+	err := repo.UpdateFeedCache(t.Context(), id, `"etag123"`, "Mon, 02 Jan 2006 15:04:05 GMT", fetchTime)
 	if err != nil {
 		t.Fatalf("UpdateFeedCache() error = %v", err)
 	}
 
-	feed, _ := repo.GetFeedByURL(context.Background(), "https://example.com/feed")
+	feed, _ := repo.GetFeedByURL(t.Context(), "https://example.com/feed")
 
 	if feed.ETag != `"etag123"` {
 		t.Errorf("ETag = %q, want %q", feed.ETag, `"etag123"`)
@@ -140,14 +139,14 @@ func TestGetFeeds(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	if _, err := repo.AddFeed(context.Background(), "https://example.com/feed1", "Feed 1"); err != nil {
+	if _, err := repo.AddFeed(t.Context(), "https://example.com/feed1", "Feed 1"); err != nil {
 		t.Fatalf("AddFeed() error = %v", err)
 	}
-	if _, err := repo.AddFeed(context.Background(), "https://example.com/feed2", "Feed 2"); err != nil {
+	if _, err := repo.AddFeed(t.Context(), "https://example.com/feed2", "Feed 2"); err != nil {
 		t.Fatalf("AddFeed() error = %v", err)
 	}
 
-	feeds, err := repo.GetFeeds(context.Background(), false)
+	feeds, err := repo.GetFeeds(t.Context(), false)
 	if err != nil {
 		t.Fatalf("GetFeeds() error = %v", err)
 	}
@@ -162,11 +161,11 @@ func TestGetFeedByURL(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	if _, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed"); err != nil {
+	if _, err := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed"); err != nil {
 		t.Fatalf("AddFeed() error = %v", err)
 	}
 
-	feed, err := repo.GetFeedByURL(context.Background(), "https://example.com/feed")
+	feed, err := repo.GetFeedByURL(t.Context(), "https://example.com/feed")
 	if err != nil {
 		t.Fatalf("GetFeedByURL() error = %v", err)
 	}
@@ -176,7 +175,7 @@ func TestGetFeedByURL(t *testing.T) {
 	}
 
 	// Test non-existent feed
-	_, err = repo.GetFeedByURL(context.Background(), "https://example.com/nonexistent")
+	_, err = repo.GetFeedByURL(t.Context(), "https://example.com/nonexistent")
 	if err != ErrFeedNotFound {
 		t.Errorf("Expected ErrFeedNotFound, got %v", err)
 	}
@@ -187,15 +186,15 @@ func TestRemoveFeed(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	id, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	id, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
-	err := repo.RemoveFeed(context.Background(), id)
+	err := repo.RemoveFeed(t.Context(), id)
 	if err != nil {
 		t.Fatalf("RemoveFeed() error = %v", err)
 	}
 
 	// Verify feed was removed
-	_, err = repo.GetFeedByURL(context.Background(), "https://example.com/feed")
+	_, err = repo.GetFeedByURL(t.Context(), "https://example.com/feed")
 	if err != ErrFeedNotFound {
 		t.Error("Feed should have been removed")
 	}
@@ -206,7 +205,7 @@ func TestUpsertEntry(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	feedID, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
 	entry := &Entry{
 		FeedID:      feedID,
@@ -222,14 +221,14 @@ func TestUpsertEntry(t *testing.T) {
 		FirstSeen:   time.Now(),
 	}
 
-	err := repo.UpsertEntry(context.Background(), entry)
+	err := repo.UpsertEntry(t.Context(), entry)
 	if err != nil {
 		t.Fatalf("UpsertEntry() error = %v", err)
 	}
 
 	// Test update
 	entry.Title = "Updated Title"
-	err = repo.UpsertEntry(context.Background(), entry)
+	err = repo.UpsertEntry(t.Context(), entry)
 	if err != nil {
 		t.Fatalf("UpsertEntry() update error = %v", err)
 	}
@@ -254,7 +253,7 @@ func TestUniqueConstraintHandling(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	feedID, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
 	// Create an entry
 	entry1 := &Entry{
@@ -270,7 +269,7 @@ func TestUniqueConstraintHandling(t *testing.T) {
 		FirstSeen:   time.Now().Add(-1 * time.Hour),
 	}
 
-	err := repo.UpsertEntry(context.Background(), entry1)
+	err := repo.UpsertEntry(t.Context(), entry1)
 	if err != nil {
 		t.Fatalf("UpsertEntry() error = %v", err)
 	}
@@ -290,7 +289,7 @@ func TestUniqueConstraintHandling(t *testing.T) {
 		FirstSeen:   time.Now(),
 	}
 
-	err = repo.UpsertEntry(context.Background(), entry2)
+	err = repo.UpsertEntry(t.Context(), entry2)
 	if err != nil {
 		t.Fatalf("UpsertEntry() should handle unique constraint gracefully, got error: %v", err)
 	}
@@ -331,7 +330,7 @@ func TestGetRecentEntries(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	feedID, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
 	// Add recent entry
 	recentEntry := &Entry{
@@ -342,7 +341,7 @@ func TestGetRecentEntries(t *testing.T) {
 		Updated:   time.Now(),
 		FirstSeen: time.Now(),
 	}
-	if err := repo.UpsertEntry(context.Background(), recentEntry); err != nil {
+	if err := repo.UpsertEntry(t.Context(), recentEntry); err != nil {
 		t.Fatalf("UpsertEntry() error = %v", err)
 	}
 
@@ -355,12 +354,12 @@ func TestGetRecentEntries(t *testing.T) {
 		Updated:   time.Now().AddDate(0, 0, -10),
 		FirstSeen: time.Now().AddDate(0, 0, -10),
 	}
-	if err := repo.UpsertEntry(context.Background(), oldEntry); err != nil {
+	if err := repo.UpsertEntry(t.Context(), oldEntry); err != nil {
 		t.Fatalf("UpsertEntry() error = %v", err)
 	}
 
 	// Get recent entries (last 7 days)
-	entries, err := repo.GetRecentEntries(context.Background(), 7)
+	entries, err := repo.GetRecentEntries(t.Context(), 7)
 	if err != nil {
 		t.Fatalf("GetRecentEntries() error = %v", err)
 	}
@@ -379,7 +378,7 @@ func TestPruneOldEntries(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	feedID, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
 	// Add recent entry
 	recentEntry := &Entry{
@@ -390,7 +389,7 @@ func TestPruneOldEntries(t *testing.T) {
 		Updated:   time.Now(),
 		FirstSeen: time.Now(),
 	}
-	if err := repo.UpsertEntry(context.Background(), recentEntry); err != nil {
+	if err := repo.UpsertEntry(t.Context(), recentEntry); err != nil {
 		t.Fatalf("UpsertEntry() error = %v", err)
 	}
 
@@ -403,12 +402,12 @@ func TestPruneOldEntries(t *testing.T) {
 		Updated:   time.Now().AddDate(0, 0, -100),
 		FirstSeen: time.Now().AddDate(0, 0, -100),
 	}
-	if err := repo.UpsertEntry(context.Background(), oldEntry); err != nil {
+	if err := repo.UpsertEntry(t.Context(), oldEntry); err != nil {
 		t.Fatalf("UpsertEntry() error = %v", err)
 	}
 
 	// Prune entries older than 90 days
-	deleted, err := repo.PruneOldEntries(context.Background(), 90)
+	deleted, err := repo.PruneOldEntries(t.Context(), 90)
 	if err != nil {
 		t.Fatalf("PruneOldEntries() error = %v", err)
 	}
@@ -437,7 +436,7 @@ func TestRemoveFeedCascade(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	feedID, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
 	// Add entry
 	entry := &Entry{
@@ -448,12 +447,12 @@ func TestRemoveFeedCascade(t *testing.T) {
 		Updated:   time.Now(),
 		FirstSeen: time.Now(),
 	}
-	if err := repo.UpsertEntry(context.Background(), entry); err != nil {
+	if err := repo.UpsertEntry(t.Context(), entry); err != nil {
 		t.Fatalf("UpsertEntry() error = %v", err)
 	}
 
 	// Remove feed
-	if err := repo.RemoveFeed(context.Background(), feedID); err != nil {
+	if err := repo.RemoveFeed(t.Context(), feedID); err != nil {
 		t.Fatalf("RemoveFeed() error = %v", err)
 	}
 
@@ -479,7 +478,7 @@ func TestDatabasePersistence(t *testing.T) {
 		t.Fatalf("Failed to create repository: %v", err)
 	}
 
-	if _, err := repo1.AddFeed(context.Background(), "https://example.com/feed", "Test Feed"); err != nil {
+	if _, err := repo1.AddFeed(t.Context(), "https://example.com/feed", "Test Feed"); err != nil {
 		t.Fatalf("AddFeed() error = %v", err)
 	}
 	repo1.Close()
@@ -492,7 +491,7 @@ func TestDatabasePersistence(t *testing.T) {
 	defer repo2.Close()
 
 	// Verify data persisted
-	feeds, _ := repo2.GetFeeds(context.Background(), false)
+	feeds, _ := repo2.GetFeeds(t.Context(), false)
 	if len(feeds) != 1 {
 		t.Errorf("Data did not persist: len(feeds) = %d, want 1", len(feeds))
 	}
@@ -515,14 +514,14 @@ func TestGetRecentEntriesFallback(t *testing.T) {
 	defer repo.Close()
 
 	// Add a feed
-	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	feedID, err := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 	if err != nil {
 		t.Fatalf("Failed to add feed: %v", err)
 	}
 
 	// Add entries with old publish dates (100 days ago)
 	oldDate := time.Now().AddDate(0, 0, -100)
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		entry := &Entry{
 			FeedID:    feedID,
 			EntryID:   fmt.Sprintf("entry-%d", i),
@@ -532,14 +531,14 @@ func TestGetRecentEntriesFallback(t *testing.T) {
 			Updated:   oldDate.Add(time.Duration(i) * time.Hour),
 			FirstSeen: time.Now(),
 		}
-		if err := repo.UpsertEntry(context.Background(), entry); err != nil {
+		if err := repo.UpsertEntry(t.Context(), entry); err != nil {
 			t.Fatalf("Failed to upsert entry: %v", err)
 		}
 	}
 
 	// Test 1: Requesting entries from last 7 days should return 0 (within window)
 	// But with fallback, should return the old entries
-	entries, err := repo.GetRecentEntries(context.Background(), 7)
+	entries, err := repo.GetRecentEntries(t.Context(), 7)
 	if err != nil {
 		t.Fatalf("GetRecentEntries failed: %v", err)
 	}
@@ -573,14 +572,14 @@ func TestGetRecentEntriesWithinWindow(t *testing.T) {
 	defer repo.Close()
 
 	// Add a feed
-	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	feedID, err := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 	if err != nil {
 		t.Fatalf("Failed to add feed: %v", err)
 	}
 
 	// Add recent entries (within last 7 days)
 	now := time.Now()
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		entry := &Entry{
 			FeedID:    feedID,
 			EntryID:   fmt.Sprintf("recent-%d", i),
@@ -590,14 +589,14 @@ func TestGetRecentEntriesWithinWindow(t *testing.T) {
 			Updated:   now.Add(time.Duration(-i) * 24 * time.Hour),
 			FirstSeen: now,
 		}
-		if err := repo.UpsertEntry(context.Background(), entry); err != nil {
+		if err := repo.UpsertEntry(t.Context(), entry); err != nil {
 			t.Fatalf("Failed to upsert entry: %v", err)
 		}
 	}
 
 	// Add old entries (100 days ago)
 	oldDate := time.Now().AddDate(0, 0, -100)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		entry := &Entry{
 			FeedID:    feedID,
 			EntryID:   fmt.Sprintf("old-%d", i),
@@ -607,13 +606,13 @@ func TestGetRecentEntriesWithinWindow(t *testing.T) {
 			Updated:   oldDate.Add(time.Duration(i) * time.Hour),
 			FirstSeen: now,
 		}
-		if err := repo.UpsertEntry(context.Background(), entry); err != nil {
+		if err := repo.UpsertEntry(t.Context(), entry); err != nil {
 			t.Fatalf("Failed to upsert entry: %v", err)
 		}
 	}
 
 	// Request entries from last 7 days
-	entries, err := repo.GetRecentEntries(context.Background(), 7)
+	entries, err := repo.GetRecentEntries(t.Context(), 7)
 	if err != nil {
 		t.Fatalf("GetRecentEntries failed: %v", err)
 	}
@@ -636,14 +635,14 @@ func TestUpdateFeedError(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	id, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	id, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
-	err := repo.UpdateFeedError(context.Background(), id, "Connection timeout")
+	err := repo.UpdateFeedError(t.Context(), id, "Connection timeout")
 	if err != nil {
 		t.Fatalf("UpdateFeedError() error = %v", err)
 	}
 
-	feed, _ := repo.GetFeedByURL(context.Background(), "https://example.com/feed")
+	feed, _ := repo.GetFeedByURL(t.Context(), "https://example.com/feed")
 
 	if feed.FetchError != "Connection timeout" {
 		t.Errorf("FetchError = %q, want %q", feed.FetchError, "Connection timeout")
@@ -654,10 +653,10 @@ func TestUpdateFeedError(t *testing.T) {
 	}
 
 	// Call again to increment error count
-	if err := repo.UpdateFeedError(context.Background(), id, "Another error"); err != nil {
+	if err := repo.UpdateFeedError(t.Context(), id, "Another error"); err != nil {
 		t.Fatalf("UpdateFeedError() error = %v", err)
 	}
-	feed, _ = repo.GetFeedByURL(context.Background(), "https://example.com/feed")
+	feed, _ = repo.GetFeedByURL(t.Context(), "https://example.com/feed")
 
 	if feed.FetchErrorCount != 2 {
 		t.Errorf("FetchErrorCount = %d, want 2", feed.FetchErrorCount)
@@ -670,7 +669,7 @@ func TestCountEntries(t *testing.T) {
 	defer repo.Close()
 
 	// Initially should be 0
-	count, err := repo.CountEntries(context.Background())
+	count, err := repo.CountEntries(t.Context())
 	if err != nil {
 		t.Fatalf("CountEntries() error = %v", err)
 	}
@@ -679,8 +678,8 @@ func TestCountEntries(t *testing.T) {
 	}
 
 	// Add some entries
-	feedID, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
-	for i := 0; i < 5; i++ {
+	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
+	for i := range 5 {
 		entry := &Entry{
 			FeedID:    feedID,
 			EntryID:   fmt.Sprintf("entry-%d", i),
@@ -689,12 +688,12 @@ func TestCountEntries(t *testing.T) {
 			Updated:   time.Now(),
 			FirstSeen: time.Now(),
 		}
-		if err := repo.UpsertEntry(context.Background(), entry); err != nil {
+		if err := repo.UpsertEntry(t.Context(), entry); err != nil {
 			t.Fatalf("UpsertEntry() error = %v", err)
 		}
 	}
 
-	count, err = repo.CountEntries(context.Background())
+	count, err = repo.CountEntries(t.Context())
 	if err != nil {
 		t.Fatalf("CountEntries() error = %v", err)
 	}
@@ -708,11 +707,11 @@ func TestCountRecentEntries(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	feedID, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
 	// Add recent entries (last 3 days)
 	now := time.Now()
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		entry := &Entry{
 			FeedID:    feedID,
 			EntryID:   fmt.Sprintf("recent-%d", i),
@@ -721,14 +720,14 @@ func TestCountRecentEntries(t *testing.T) {
 			Updated:   now,
 			FirstSeen: now,
 		}
-		if err := repo.UpsertEntry(context.Background(), entry); err != nil {
+		if err := repo.UpsertEntry(t.Context(), entry); err != nil {
 			t.Fatalf("UpsertEntry() error = %v", err)
 		}
 	}
 
 	// Add old entries (100 days ago)
 	oldDate := now.AddDate(0, 0, -100)
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		entry := &Entry{
 			FeedID:    feedID,
 			EntryID:   fmt.Sprintf("old-%d", i),
@@ -737,13 +736,13 @@ func TestCountRecentEntries(t *testing.T) {
 			Updated:   oldDate,
 			FirstSeen: now,
 		}
-		if err := repo.UpsertEntry(context.Background(), entry); err != nil {
+		if err := repo.UpsertEntry(t.Context(), entry); err != nil {
 			t.Fatalf("UpsertEntry() error = %v", err)
 		}
 	}
 
 	// Count recent entries (last 7 days)
-	count, err := repo.CountRecentEntries(context.Background(), 7)
+	count, err := repo.CountRecentEntries(t.Context(), 7)
 	if err != nil {
 		t.Fatalf("CountRecentEntries() error = %v", err)
 	}
@@ -752,7 +751,7 @@ func TestCountRecentEntries(t *testing.T) {
 	}
 
 	// Count last 200 days (should include all)
-	count, err = repo.CountRecentEntries(context.Background(), 200)
+	count, err = repo.CountRecentEntries(t.Context(), 200)
 	if err != nil {
 		t.Fatalf("CountRecentEntries() error = %v", err)
 	}
@@ -776,7 +775,7 @@ func TestGetRecentEntriesFilterByFirstSeen(t *testing.T) {
 	defer repo.Close()
 
 	// Add a feed
-	feedID, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
 	// Create entries with different published and first_seen dates
 	// Use current time as base for testing
@@ -792,7 +791,7 @@ func TestGetRecentEntriesFilterByFirstSeen(t *testing.T) {
 	}
 
 	for i, e := range entries {
-		err := repo.UpsertEntry(context.Background(), &Entry{
+		err := repo.UpsertEntry(t.Context(), &Entry{
 			FeedID:    feedID,
 			EntryID:   fmt.Sprintf("entry-%d", i),
 			Title:     fmt.Sprintf("Entry %d", i),
@@ -806,7 +805,7 @@ func TestGetRecentEntriesFilterByFirstSeen(t *testing.T) {
 
 	// Test 1: Filter by published (default behavior)
 	// Should return entries 1 and 2 (published within 7 days)
-	publishedFiltered, err := repo.GetRecentEntriesWithOptions(context.Background(), 7, false, "published")
+	publishedFiltered, err := repo.GetRecentEntriesWithOptions(t.Context(), 7, false, "published")
 	if err != nil {
 		t.Fatalf("GetRecentEntriesWithOptions() error = %v", err)
 	}
@@ -816,7 +815,7 @@ func TestGetRecentEntriesFilterByFirstSeen(t *testing.T) {
 
 	// Test 2: Filter by first_seen
 	// Should return entries 0 and 1 (first_seen within 7 days)
-	firstSeenFiltered, err := repo.GetRecentEntriesWithOptions(context.Background(), 7, true, "published")
+	firstSeenFiltered, err := repo.GetRecentEntriesWithOptions(t.Context(), 7, true, "published")
 	if err != nil {
 		t.Fatalf("GetRecentEntriesWithOptions() error = %v", err)
 	}
@@ -843,7 +842,7 @@ func TestGetRecentEntriesSortByFirstSeen(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	feedID, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 	baseTime := time.Now()
 
 	// Create entries where first_seen order differs from published order
@@ -858,7 +857,7 @@ func TestGetRecentEntriesSortByFirstSeen(t *testing.T) {
 	}
 
 	for i, e := range entries {
-		err := repo.UpsertEntry(context.Background(), &Entry{
+		err := repo.UpsertEntry(t.Context(), &Entry{
 			FeedID:    feedID,
 			EntryID:   fmt.Sprintf("entry-%d", i),
 			Title:     e.title,
@@ -871,13 +870,13 @@ func TestGetRecentEntriesSortByFirstSeen(t *testing.T) {
 	}
 
 	// Sort by published (default)
-	byPublished, _ := repo.GetRecentEntriesWithOptions(context.Background(), 7, false, "published")
+	byPublished, _ := repo.GetRecentEntriesWithOptions(t.Context(), 7, false, "published")
 	if byPublished[0].Title != "Entry A" {
 		t.Errorf("Sort by published: first entry = %s, want Entry A", byPublished[0].Title)
 	}
 
 	// Sort by first_seen
-	byFirstSeen, _ := repo.GetRecentEntriesWithOptions(context.Background(), 7, false, "first_seen")
+	byFirstSeen, _ := repo.GetRecentEntriesWithOptions(t.Context(), 7, false, "first_seen")
 	if byFirstSeen[0].Title != "Entry C" {
 		t.Errorf("Sort by first_seen: first entry = %s, want Entry C", byFirstSeen[0].Title)
 	}
@@ -894,7 +893,7 @@ func TestGetRecentEntriesFilterAndSortByFirstSeen(t *testing.T) {
 	repo, _ := setupTestDB(t)
 	defer repo.Close()
 
-	feedID, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 	baseTime := time.Now()
 
 	entries := []struct {
@@ -908,7 +907,7 @@ func TestGetRecentEntriesFilterAndSortByFirstSeen(t *testing.T) {
 	}
 
 	for i, e := range entries {
-		if err := repo.UpsertEntry(context.Background(), &Entry{
+		if err := repo.UpsertEntry(t.Context(), &Entry{
 			FeedID:    feedID,
 			EntryID:   fmt.Sprintf("entry-%d", i),
 			Title:     e.title,
@@ -920,7 +919,7 @@ func TestGetRecentEntriesFilterAndSortByFirstSeen(t *testing.T) {
 	}
 
 	// Filter by first_seen AND sort by first_seen
-	results, _ := repo.GetRecentEntriesWithOptions(context.Background(), 7, true, "first_seen")
+	results, _ := repo.GetRecentEntriesWithOptions(t.Context(), 7, true, "first_seen")
 
 	// Should have 2 entries (first_seen within 7 days)
 	if len(results) != 2 {
@@ -942,19 +941,19 @@ func TestGetEntryCountForFeed(t *testing.T) {
 	defer repo.Close()
 
 	// Add a feed
-	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	feedID, err := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 	if err != nil {
 		t.Fatalf("AddFeed() error = %v", err)
 	}
 
 	// Add another feed
-	feed2ID, err := repo.AddFeed(context.Background(), "https://example.com/feed2", "Test Feed 2")
+	feed2ID, err := repo.AddFeed(t.Context(), "https://example.com/feed2", "Test Feed 2")
 	if err != nil {
 		t.Fatalf("AddFeed() error = %v", err)
 	}
 
 	// Initially should be 0 entries
-	count, err := repo.GetEntryCountForFeed(context.Background(), feedID)
+	count, err := repo.GetEntryCountForFeed(t.Context(), feedID)
 	if err != nil {
 		t.Fatalf("GetEntryCountForFeed() error = %v", err)
 	}
@@ -964,7 +963,7 @@ func TestGetEntryCountForFeed(t *testing.T) {
 
 	// Add 3 entries to first feed
 	now := time.Now()
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		entry := &Entry{
 			FeedID:      feedID,
 			EntryID:     fmt.Sprintf("entry%d", i),
@@ -976,13 +975,13 @@ func TestGetEntryCountForFeed(t *testing.T) {
 			Content:     "Test content",
 			ContentType: "html",
 		}
-		if err := repo.UpsertEntry(context.Background(), entry); err != nil {
+		if err := repo.UpsertEntry(t.Context(), entry); err != nil {
 			t.Fatalf("UpsertEntry() error = %v", err)
 		}
 	}
 
 	// Add 2 entries to second feed
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		entry := &Entry{
 			FeedID:      feed2ID,
 			EntryID:     fmt.Sprintf("entry%d", i),
@@ -994,13 +993,13 @@ func TestGetEntryCountForFeed(t *testing.T) {
 			Content:     "Test content",
 			ContentType: "html",
 		}
-		if err := repo.UpsertEntry(context.Background(), entry); err != nil {
+		if err := repo.UpsertEntry(t.Context(), entry); err != nil {
 			t.Fatalf("UpsertEntry() error = %v", err)
 		}
 	}
 
 	// Should have 3 entries for first feed
-	count, err = repo.GetEntryCountForFeed(context.Background(), feedID)
+	count, err = repo.GetEntryCountForFeed(t.Context(), feedID)
 	if err != nil {
 		t.Fatalf("GetEntryCountForFeed() error = %v", err)
 	}
@@ -1009,7 +1008,7 @@ func TestGetEntryCountForFeed(t *testing.T) {
 	}
 
 	// Should have 2 entries for second feed
-	count, err = repo.GetEntryCountForFeed(context.Background(), feed2ID)
+	count, err = repo.GetEntryCountForFeed(t.Context(), feed2ID)
 	if err != nil {
 		t.Fatalf("GetEntryCountForFeed() error = %v", err)
 	}
@@ -1018,7 +1017,7 @@ func TestGetEntryCountForFeed(t *testing.T) {
 	}
 
 	// Non-existent feed should return 0
-	count, err = repo.GetEntryCountForFeed(context.Background(), 999)
+	count, err = repo.GetEntryCountForFeed(t.Context(), 999)
 	if err != nil {
 		t.Fatalf("GetEntryCountForFeed() error = %v", err)
 	}
@@ -1033,18 +1032,18 @@ func TestUpdateFeedURL(t *testing.T) {
 	defer repo.Close()
 
 	// Add a feed with ETag and Last-Modified
-	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	feedID, err := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 	if err != nil {
 		t.Fatalf("AddFeed() error = %v", err)
 	}
 
 	// Set cache headers
-	if err := repo.UpdateFeedCache(context.Background(), feedID, "\"abc123\"", "Mon, 01 Jan 2024 00:00:00 GMT", time.Now()); err != nil {
+	if err := repo.UpdateFeedCache(t.Context(), feedID, "\"abc123\"", "Mon, 01 Jan 2024 00:00:00 GMT", time.Now()); err != nil {
 		t.Fatalf("UpdateFeedCache() error = %v", err)
 	}
 
 	// Verify cache headers are set
-	feed, err := repo.GetFeedByURL(context.Background(), "https://example.com/feed")
+	feed, err := repo.GetFeedByURL(t.Context(), "https://example.com/feed")
 	if err != nil {
 		t.Fatalf("GetFeedByURL() error = %v", err)
 	}
@@ -1057,18 +1056,18 @@ func TestUpdateFeedURL(t *testing.T) {
 
 	// Update URL (simulating 301 redirect)
 	newURL := "https://example.com/new-feed"
-	if err := repo.UpdateFeedURL(context.Background(), feedID, newURL); err != nil {
+	if err := repo.UpdateFeedURL(t.Context(), feedID, newURL); err != nil {
 		t.Fatalf("UpdateFeedURL() error = %v", err)
 	}
 
 	// Old URL should not exist
-	_, err = repo.GetFeedByURL(context.Background(), "https://example.com/feed")
+	_, err = repo.GetFeedByURL(t.Context(), "https://example.com/feed")
 	if err != ErrFeedNotFound {
 		t.Errorf("GetFeedByURL(old URL) error = %v, want ErrFeedNotFound", err)
 	}
 
 	// New URL should exist
-	updatedFeed, err := repo.GetFeedByURL(context.Background(), newURL)
+	updatedFeed, err := repo.GetFeedByURL(t.Context(), newURL)
 	if err != nil {
 		t.Fatalf("GetFeedByURL(new URL) error = %v", err)
 	}
@@ -1096,14 +1095,14 @@ func TestRemoveFeedCascadeDelete(t *testing.T) {
 	defer repo.Close()
 
 	// Add a feed
-	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
+	feedID, err := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 	if err != nil {
 		t.Fatalf("AddFeed() error = %v", err)
 	}
 
 	// Add entries
 	now := time.Now()
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		entry := &Entry{
 			FeedID:      feedID,
 			EntryID:     fmt.Sprintf("entry%d", i),
@@ -1115,13 +1114,13 @@ func TestRemoveFeedCascadeDelete(t *testing.T) {
 			Content:     "Test content",
 			ContentType: "html",
 		}
-		if err := repo.UpsertEntry(context.Background(), entry); err != nil {
+		if err := repo.UpsertEntry(t.Context(), entry); err != nil {
 			t.Fatalf("UpsertEntry() error = %v", err)
 		}
 	}
 
 	// Verify entries exist
-	count, err := repo.GetEntryCountForFeed(context.Background(), feedID)
+	count, err := repo.GetEntryCountForFeed(t.Context(), feedID)
 	if err != nil {
 		t.Fatalf("GetEntryCountForFeed() error = %v", err)
 	}
@@ -1130,18 +1129,18 @@ func TestRemoveFeedCascadeDelete(t *testing.T) {
 	}
 
 	// Remove feed
-	if err := repo.RemoveFeed(context.Background(), feedID); err != nil {
+	if err := repo.RemoveFeed(t.Context(), feedID); err != nil {
 		t.Fatalf("RemoveFeed() error = %v", err)
 	}
 
 	// Feed should be gone
-	_, err = repo.GetFeedByURL(context.Background(), "https://example.com/feed")
+	_, err = repo.GetFeedByURL(t.Context(), "https://example.com/feed")
 	if err != ErrFeedNotFound {
 		t.Errorf("GetFeedByURL() after delete: got error %v, want ErrFeedNotFound", err)
 	}
 
 	// Entries should be cascade deleted
-	count, err = repo.GetEntryCountForFeed(context.Background(), feedID)
+	count, err = repo.GetEntryCountForFeed(t.Context(), feedID)
 	if err != nil {
 		t.Fatalf("GetEntryCountForFeed() after feed delete: error = %v", err)
 	}
@@ -1165,17 +1164,17 @@ func TestGetFeeds_ActiveOnly(t *testing.T) {
 	defer repo.Close()
 
 	// Add some feeds with different active statuses
-	id1, err := repo.AddFeed(context.Background(), "http://example.com/feed1", "Active Feed 1")
+	id1, err := repo.AddFeed(t.Context(), "http://example.com/feed1", "Active Feed 1")
 	if err != nil {
 		t.Fatalf("AddFeed() error = %v", err)
 	}
 
-	id2, err := repo.AddFeed(context.Background(), "http://example.com/feed2", "Active Feed 2")
+	id2, err := repo.AddFeed(t.Context(), "http://example.com/feed2", "Active Feed 2")
 	if err != nil {
 		t.Fatalf("AddFeed() error = %v", err)
 	}
 
-	id3, err := repo.AddFeed(context.Background(), "http://example.com/feed3", "Inactive Feed")
+	id3, err := repo.AddFeed(t.Context(), "http://example.com/feed3", "Inactive Feed")
 	if err != nil {
 		t.Fatalf("AddFeed() error = %v", err)
 	}
@@ -1187,7 +1186,7 @@ func TestGetFeeds_ActiveOnly(t *testing.T) {
 	}
 
 	// Test with activeOnly = false (should get all 3 feeds)
-	allFeeds, err := repo.GetFeeds(context.Background(), false)
+	allFeeds, err := repo.GetFeeds(t.Context(), false)
 	if err != nil {
 		t.Fatalf("GetFeeds(false) error = %v", err)
 	}
@@ -1196,7 +1195,7 @@ func TestGetFeeds_ActiveOnly(t *testing.T) {
 	}
 
 	// Test with activeOnly = true (should get only 2 active feeds)
-	activeFeeds, err := repo.GetFeeds(context.Background(), true)
+	activeFeeds, err := repo.GetFeeds(t.Context(), true)
 	if err != nil {
 		t.Fatalf("GetFeeds(true) error = %v", err)
 	}

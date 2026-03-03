@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -205,7 +204,7 @@ func TestHTMLGeneration(t *testing.T) {
 		ConfigPath: configPath,
 		Output:     os.Stdout,
 	}
-	if err := cmdGenerate(context.Background(), generateOpts); err != nil {
+	if err := cmdGenerate(t.Context(), generateOpts); err != nil {
 		t.Fatalf("Failed to generate HTML: %v", err)
 	}
 
@@ -300,7 +299,7 @@ path = ` + dbPath
 		t.Fatalf("Failed to open config and repo: %v", err)
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Get the feed by old URL
 	feed, err := repo.GetFeedByURL(ctx, oldURL)

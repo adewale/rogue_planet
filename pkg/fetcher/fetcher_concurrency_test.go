@@ -16,24 +16,24 @@ import (
 // mockSlowCrawler simulates slow HTTP fetching
 type mockSlowCrawler struct {
 	delay         time.Duration
-	concurrentOps *int32                                // Tracks concurrent operations
-	maxConcurrent *int32                                // Tracks maximum concurrent operations observed
+	concurrentOps *atomic.Int32                         // Tracks concurrent operations
+	maxConcurrent *atomic.Int32                         // Tracks maximum concurrent operations observed
 	responseFunc  func() (*crawler.FeedResponse, error) // Optional dynamic response
 }
 
 func (m *mockSlowCrawler) FetchWithRetry(ctx context.Context, feedURL string, cache crawler.FeedCache, maxRetries int) (*crawler.FeedResponse, error) {
 	// Track concurrent operations if pointers are provided
 	if m.concurrentOps != nil && m.maxConcurrent != nil {
-		current := atomic.AddInt32(m.concurrentOps, 1)
-		defer atomic.AddInt32(m.concurrentOps, -1)
+		current := m.concurrentOps.Add(1)
+		defer m.concurrentOps.Add(-1)
 
 		// Update max concurrent if this is higher
 		for {
-			oldMax := atomic.LoadInt32(m.maxConcurrent)
+			oldMax := m.maxConcurrent.Load()
 			if current <= oldMax {
 				break
 			}
-			if atomic.CompareAndSwapInt32(m.maxConcurrent, oldMax, current) {
+			if m.maxConcurrent.CompareAndSwap(oldMax, current) {
 				break
 			}
 		}
@@ -70,8 +70,8 @@ func TestFetchFeed_Concurrency(t *testing.T) {
 		minConcurrent = 2                      // Should see at least 2 concurrent
 	)
 
-	var concurrentOps int32
-	var maxConcurrent int32
+	var concurrentOps atomic.Int32
+	var maxConcurrent atomic.Int32
 
 	mc := &mockSlowCrawler{
 		delay:         fetchDelay,
@@ -99,7 +99,7 @@ func TestFetchFeed_Concurrency(t *testing.T) {
 
 	// Create test feeds
 	feeds := make([]repository.Feed, numFeeds)
-	for i := 0; i < numFeeds; i++ {
+	for i := range numFeeds {
 		feeds[i] = repository.Feed{
 			ID:  int64(i + 1),
 			URL: "http://example.com/feed" + string(rune('0'+i)),
@@ -120,7 +120,7 @@ func TestFetchFeed_Concurrency(t *testing.T) {
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			result := fetcher.FetchFeed(context.Background(), f)
+			result := fetcher.FetchFeed(t.Context(), f)
 			if result.Error != nil {
 				t.Errorf("Unexpected error: %v", result.Error)
 			}
@@ -136,7 +136,7 @@ func TestFetchFeed_Concurrency(t *testing.T) {
 	}
 
 	// Verify we actually achieved concurrency
-	maxSeen := atomic.LoadInt32(&maxConcurrent)
+	maxSeen := maxConcurrent.Load()
 	if maxSeen < minConcurrent {
 		t.Errorf("Max concurrent operations was %d, expected at least %d. Feeds appear to be serialized!", maxSeen, minConcurrent)
 	}
@@ -150,10 +150,10 @@ func TestFetchFeed_MutexProtectsDatabase(t *testing.T) {
 	t.Parallel()
 	const numFeeds = 10
 
-	var concurrentFetches int32
-	var concurrentDBWrites int32
-	var maxConcurrentFetches int32
-	var maxConcurrentDBWrites int32
+	var concurrentFetches atomic.Int32
+	var maxConcurrentFetches atomic.Int32
+	var concurrentDBWrites atomic.Int32
+	var maxConcurrentDBWrites atomic.Int32
 
 	mc := &mockSlowCrawler{
 		delay:         10 * time.Millisecond,
@@ -186,7 +186,7 @@ func TestFetchFeed_MutexProtectsDatabase(t *testing.T) {
 
 	// Create test feeds
 	feeds := make([]repository.Feed, numFeeds)
-	for i := 0; i < numFeeds; i++ {
+	for i := range numFeeds {
 		feeds[i] = repository.Feed{
 			ID:  int64(i + 1),
 			URL: "http://example.com/feed" + string(rune('0'+i)),
@@ -199,7 +199,7 @@ func TestFetchFeed_MutexProtectsDatabase(t *testing.T) {
 		wg.Add(1)
 		go func(f repository.Feed) {
 			defer wg.Done()
-			result := fetcher.FetchFeed(context.Background(), f)
+			result := fetcher.FetchFeed(t.Context(), f)
 			if result.Error != nil {
 				t.Errorf("Unexpected error: %v", result.Error)
 			}
@@ -209,13 +209,13 @@ func TestFetchFeed_MutexProtectsDatabase(t *testing.T) {
 	wg.Wait()
 
 	// Verify concurrent fetching occurred
-	maxFetches := atomic.LoadInt32(&maxConcurrentFetches)
+	maxFetches := maxConcurrentFetches.Load()
 	if maxFetches < 2 {
 		t.Errorf("Max concurrent fetches was %d, expected at least 2", maxFetches)
 	}
 
 	// Verify database operations were serialized (mutex working)
-	maxDBWrites := atomic.LoadInt32(&maxConcurrentDBWrites)
+	maxDBWrites := maxConcurrentDBWrites.Load()
 	if maxDBWrites > 1 {
 		t.Errorf("Max concurrent DB writes was %d, expected 1 (mutex should serialize)", maxDBWrites)
 	}
@@ -227,20 +227,20 @@ func TestFetchFeed_MutexProtectsDatabase(t *testing.T) {
 // mockRepositoryWithConcurrency tracks concurrent database operations
 type mockRepositoryWithConcurrency struct {
 	mockRepository
-	concurrentOps    *int32
-	maxConcurrentOps *int32
+	concurrentOps    *atomic.Int32
+	maxConcurrentOps *atomic.Int32
 }
 
 func (m *mockRepositoryWithConcurrency) trackOperation() func() {
-	current := atomic.AddInt32(m.concurrentOps, 1)
+	current := m.concurrentOps.Add(1)
 
 	// Update max if needed
 	for {
-		oldMax := atomic.LoadInt32(m.maxConcurrentOps)
+		oldMax := m.maxConcurrentOps.Load()
 		if current <= oldMax {
 			break
 		}
-		if atomic.CompareAndSwapInt32(m.maxConcurrentOps, oldMax, current) {
+		if m.maxConcurrentOps.CompareAndSwap(oldMax, current) {
 			break
 		}
 	}
@@ -249,7 +249,7 @@ func (m *mockRepositoryWithConcurrency) trackOperation() func() {
 	time.Sleep(5 * time.Millisecond)
 
 	return func() {
-		atomic.AddInt32(m.concurrentOps, -1)
+		m.concurrentOps.Add(-1)
 	}
 }
 
@@ -301,8 +301,7 @@ func BenchmarkFetchFeed_Sequential(b *testing.B) {
 
 	feed := repository.Feed{ID: 1, URL: "http://example.com/feed"}
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		f.FetchFeed(context.Background(), feed)
 	}
 }
@@ -350,14 +349,14 @@ func TestFetchFeed_ConcurrentErrorHandling(t *testing.T) {
 
 	// All requests will fail with different errors
 	errorMessages := make([]string, numFeeds)
-	for i := 0; i < numFeeds; i++ {
+	for i := range numFeeds {
 		errorMessages[i] = "Network error " + string(rune('A'+i))
 	}
 
-	requestCount := int32(0)
+	var requestCount atomic.Int32
 	mc := &mockCrawler{
 		responseFunc: func() (*crawler.FeedResponse, error) {
-			idx := atomic.AddInt32(&requestCount, 1) - 1
+			idx := requestCount.Add(1) - 1
 			return nil, errors.New(errorMessages[idx])
 		},
 	}
@@ -373,12 +372,12 @@ func TestFetchFeed_ConcurrentErrorHandling(t *testing.T) {
 	var wg sync.WaitGroup
 	results := make([]FetchResult, numFeeds)
 
-	for i := 0; i < numFeeds; i++ {
+	for i := range numFeeds {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
 			feed := repository.Feed{ID: int64(idx + 1), URL: "http://example.com/feed" + string(rune('0'+idx))}
-			results[idx] = fetcher.FetchFeed(context.Background(), feed)
+			results[idx] = fetcher.FetchFeed(t.Context(), feed)
 		}(i)
 	}
 
@@ -407,7 +406,7 @@ func TestFetchFeed_ContextCancellationDuringConcurrentFetches(t *testing.T) {
 	const numFeeds = 20
 	const fetchDelay = 500 * time.Millisecond
 
-	var activeRequests int32
+	var activeRequests atomic.Int32
 
 	mc := &mockSlowCrawler{
 		delay:         fetchDelay,
@@ -425,14 +424,14 @@ func TestFetchFeed_ContextCancellationDuringConcurrentFetches(t *testing.T) {
 	var mu sync.Mutex
 	fetcher := New(mc, mn, mr, &mu, ml, 3)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 
 	// Launch concurrent fetches
 	var wg sync.WaitGroup
-	completedCount := int32(0)
-	errorCount := int32(0)
+	var completedCount atomic.Int32
+	var errorCount atomic.Int32
 
-	for i := 0; i < numFeeds; i++ {
+	for i := range numFeeds {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
@@ -440,9 +439,9 @@ func TestFetchFeed_ContextCancellationDuringConcurrentFetches(t *testing.T) {
 			result := fetcher.FetchFeed(ctx, feed)
 
 			if result.Error != nil {
-				atomic.AddInt32(&errorCount, 1)
+				errorCount.Add(1)
 			} else {
-				atomic.AddInt32(&completedCount, 1)
+				completedCount.Add(1)
 			}
 		}(i)
 	}
@@ -457,8 +456,8 @@ func TestFetchFeed_ContextCancellationDuringConcurrentFetches(t *testing.T) {
 	wg.Wait()
 
 	// Verify all goroutines completed without deadlock
-	errors := atomic.LoadInt32(&errorCount)
-	completed := atomic.LoadInt32(&completedCount)
+	errors := errorCount.Load()
+	completed := completedCount.Load()
 
 	t.Logf("✓ Concurrent fetch with cancellation: %d completed, %d errored", completed, errors)
 
@@ -480,12 +479,12 @@ func TestFetchFeed_ConcurrentAccessToSameFeed(t *testing.T) {
 	const numConcurrent = 5
 	const fetchDelay = 50 * time.Millisecond
 
-	var requestCount int32
+	var requestCount atomic.Int32
 
 	mc := &mockSlowCrawler{
 		delay: fetchDelay,
 		responseFunc: func() (*crawler.FeedResponse, error) {
-			count := atomic.AddInt32(&requestCount, 1)
+			count := requestCount.Add(1)
 			return &crawler.FeedResponse{
 				Body:       []byte("<feed>data " + string(rune('0'+count-1)) + "</feed>"),
 				StatusCode: 200,
@@ -512,11 +511,11 @@ func TestFetchFeed_ConcurrentAccessToSameFeed(t *testing.T) {
 	results := make([]FetchResult, numConcurrent)
 
 	// Launch concurrent fetches of the SAME feed
-	for i := 0; i < numConcurrent; i++ {
+	for i := range numConcurrent {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
-			results[idx] = fetcher.FetchFeed(context.Background(), sameFeed)
+			results[idx] = fetcher.FetchFeed(t.Context(), sameFeed)
 		}(i)
 	}
 
@@ -530,7 +529,7 @@ func TestFetchFeed_ConcurrentAccessToSameFeed(t *testing.T) {
 	}
 
 	// Should have made numConcurrent requests (one per goroutine)
-	totalRequests := atomic.LoadInt32(&requestCount)
+	totalRequests := requestCount.Load()
 	if totalRequests != numConcurrent {
 		t.Errorf("Expected %d concurrent requests, got %d", numConcurrent, totalRequests)
 	}

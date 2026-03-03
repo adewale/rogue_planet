@@ -150,25 +150,25 @@ type mockLogger struct {
 	errorCalls []string
 }
 
-func (m *mockLogger) Debug(format string, args ...interface{}) {
+func (m *mockLogger) Debug(format string, args ...any) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.debugCalls = append(m.debugCalls, format)
 }
 
-func (m *mockLogger) Info(format string, args ...interface{}) {
+func (m *mockLogger) Info(format string, args ...any) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.infoCalls = append(m.infoCalls, format)
 }
 
-func (m *mockLogger) Warn(format string, args ...interface{}) {
+func (m *mockLogger) Warn(format string, args ...any) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.warnCalls = append(m.warnCalls, format)
 }
 
-func (m *mockLogger) Error(format string, args ...interface{}) {
+func (m *mockLogger) Error(format string, args ...any) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.errorCalls = append(m.errorCalls, format)
@@ -224,7 +224,7 @@ func TestFetchFeed_Success(t *testing.T) {
 	}
 
 	// Execute
-	result := f.FetchFeed(context.Background(), feed)
+	result := f.FetchFeed(t.Context(), feed)
 
 	// Verify
 	if result.Error != nil {
@@ -271,7 +271,7 @@ func TestFetchFeed_FetchError(t *testing.T) {
 	}
 
 	// Execute
-	result := f.FetchFeed(context.Background(), feed)
+	result := f.FetchFeed(t.Context(), feed)
 
 	// Verify
 	if result.Error == nil {
@@ -328,7 +328,7 @@ func TestFetchFeed_301Redirect(t *testing.T) {
 	}
 
 	// Execute
-	result := f.FetchFeed(context.Background(), feed)
+	result := f.FetchFeed(t.Context(), feed)
 
 	// Verify
 	if result.Error != nil {
@@ -375,7 +375,7 @@ func TestFetchFeed_304NotModified(t *testing.T) {
 	}
 
 	// Execute
-	result := f.FetchFeed(context.Background(), feed)
+	result := f.FetchFeed(t.Context(), feed)
 
 	// Verify
 	if result.Error != nil {
@@ -429,7 +429,7 @@ func TestFetchFeed_ParseError(t *testing.T) {
 	}
 
 	// Execute
-	result := f.FetchFeed(context.Background(), feed)
+	result := f.FetchFeed(t.Context(), feed)
 
 	// Verify
 	if result.Error == nil {
@@ -495,7 +495,7 @@ func TestFetchFeed_EntryStorageError(t *testing.T) {
 	}
 
 	// Execute
-	result := f.FetchFeed(context.Background(), feed)
+	result := f.FetchFeed(t.Context(), feed)
 
 	// Verify - should continue despite entry storage errors
 	if result.Error != nil {
@@ -546,7 +546,7 @@ func TestFetchFeed_UpdateFeedURLError(t *testing.T) {
 	}
 
 	// Execute
-	result := f.FetchFeed(context.Background(), feed)
+	result := f.FetchFeed(t.Context(), feed)
 
 	// IMPROVEMENT #1: Stronger assertions - verify graceful degradation
 	if result.Error != nil {
@@ -606,7 +606,7 @@ func TestFetchFeed_UpdateFeedCacheError_On304(t *testing.T) {
 	feed := repository.Feed{ID: 1, URL: "http://example.com/feed"}
 
 	// Execute
-	result := f.FetchFeed(context.Background(), feed)
+	result := f.FetchFeed(t.Context(), feed)
 
 	// Verify
 	if !result.NotModified {
@@ -663,7 +663,7 @@ func TestFetchFeed_UpdateFeedMetadataError(t *testing.T) {
 	feed := repository.Feed{ID: 1, URL: "http://example.com/feed"}
 
 	// Execute
-	result := f.FetchFeed(context.Background(), feed)
+	result := f.FetchFeed(t.Context(), feed)
 
 	// Verify - should continue despite metadata update failure
 	if result.Error != nil {
@@ -719,7 +719,7 @@ func TestFetchFeed_UpdateFeedCacheError_AfterParse(t *testing.T) {
 	feed := repository.Feed{ID: 1, URL: "http://example.com/feed"}
 
 	// Execute
-	result := f.FetchFeed(context.Background(), feed)
+	result := f.FetchFeed(t.Context(), feed)
 
 	// Verify - should complete successfully despite cache error
 	if result.Error != nil {
@@ -762,7 +762,7 @@ func TestFetchFeed_UpdateFeedErrorFailure(t *testing.T) {
 	feed := repository.Feed{ID: 1, URL: "http://example.com/feed"}
 
 	// Execute
-	result := f.FetchFeed(context.Background(), feed)
+	result := f.FetchFeed(t.Context(), feed)
 
 	// Verify
 	if result.Error == nil {
@@ -826,7 +826,7 @@ func TestFetchFeed_MultipleSimultaneousErrors(t *testing.T) {
 	feed := repository.Feed{ID: 1, URL: "http://example.com/feed"}
 
 	// Execute
-	result := f.FetchFeed(context.Background(), feed)
+	result := f.FetchFeed(t.Context(), feed)
 
 	// Should still return an error (not panic)
 	if result.Error == nil {
@@ -896,7 +896,7 @@ func TestFetchFeed_MultipleDBErrorsDuringSuccess(t *testing.T) {
 	feed := repository.Feed{ID: 1, URL: "http://example.com/feed"}
 
 	// Execute
-	result := f.FetchFeed(context.Background(), feed)
+	result := f.FetchFeed(t.Context(), feed)
 
 	// Should not return fatal error - graceful degradation
 	if result.Error != nil {
@@ -1013,7 +1013,7 @@ func TestFetchFeed_Invariants(t *testing.T) {
 			f := New(mc, mn, mr, nil, ml, 3)
 
 			feed := repository.Feed{ID: 1, URL: "http://example.com/feed"}
-			result := f.FetchFeed(context.Background(), feed)
+			result := f.FetchFeed(t.Context(), feed)
 
 			// INVARIANT #1: Should never panic
 			// (test passes if we reach this point)
@@ -1097,7 +1097,7 @@ func TestFetchFeed_Integration_RedirectThenSuccess(t *testing.T) {
 	defer repo.Close()
 
 	// Add feed with original URL
-	feedID, err := repo.AddFeed(context.Background(), server.URL, "Test Feed")
+	feedID, err := repo.AddFeed(t.Context(), server.URL, "Test Feed")
 	if err != nil {
 		t.Fatalf("Failed to add feed: %v", err)
 	}
@@ -1110,12 +1110,12 @@ func TestFetchFeed_Integration_RedirectThenSuccess(t *testing.T) {
 	fetcher := New(crawler, normalizer, repo, nil, logger, 3)
 
 	// Execute: Fetch the feed
-	feed, err := repo.GetFeedByURL(context.Background(), server.URL)
+	feed, err := repo.GetFeedByURL(t.Context(), server.URL)
 	if err != nil {
 		t.Fatalf("Failed to get feed: %v", err)
 	}
 
-	result := fetcher.FetchFeed(context.Background(), *feed)
+	result := fetcher.FetchFeed(t.Context(), *feed)
 
 	// IMPROVEMENT #2: State verification - verify actual database state
 
@@ -1137,7 +1137,7 @@ func TestFetchFeed_Integration_RedirectThenSuccess(t *testing.T) {
 
 	// STATE VERIFICATION #1: Feed URL was updated after 301 redirect
 	expectedNewURL := serverURL + "/new-location"
-	updatedFeed, err := repo.GetFeedByURL(context.Background(), expectedNewURL)
+	updatedFeed, err := repo.GetFeedByURL(t.Context(), expectedNewURL)
 	if err != nil {
 		t.Fatalf("Failed to get feed by new URL after redirect: %v", err)
 	}
@@ -1149,13 +1149,13 @@ func TestFetchFeed_Integration_RedirectThenSuccess(t *testing.T) {
 	}
 
 	// Verify old URL no longer exists
-	oldFeed, err := repo.GetFeedByURL(context.Background(), serverURL)
+	oldFeed, err := repo.GetFeedByURL(t.Context(), serverURL)
 	if err == nil && oldFeed != nil {
 		t.Error("Old URL should not exist after 301 redirect and URL update")
 	}
 
 	// STATE VERIFICATION #2: Can retrieve entries (proves they were stored correctly)
-	entries, err := repo.GetRecentEntries(context.Background(), 7)
+	entries, err := repo.GetRecentEntries(t.Context(), 7)
 	if err != nil {
 		t.Fatalf("Failed to get recent entries: %v", err)
 	}
@@ -1176,7 +1176,7 @@ func TestFetchFeed_Integration_RedirectThenSuccess(t *testing.T) {
 	}
 
 	// STATE VERIFICATION #3: Entry count is correct
-	entryCount, err := repo.CountEntries(context.Background())
+	entryCount, err := repo.CountEntries(t.Context())
 	if err != nil {
 		t.Fatalf("Failed to count entries: %v", err)
 	}
@@ -1185,7 +1185,7 @@ func TestFetchFeed_Integration_RedirectThenSuccess(t *testing.T) {
 	}
 
 	// STATE VERIFICATION #4: Feed has no fetch errors
-	allFeeds, err := repo.GetFeeds(context.Background(), false)
+	allFeeds, err := repo.GetFeeds(t.Context(), false)
 	if err != nil {
 		t.Fatalf("Failed to get feeds: %v", err)
 	}
@@ -1247,7 +1247,7 @@ func TestFetchFeed_PartialEntryStorageFailure(t *testing.T) {
 		logger:     ml,
 	}
 
-	result := f.FetchFeed(context.Background(), repository.Feed{ID: 1, URL: "https://example.com/feed"})
+	result := f.FetchFeed(t.Context(), repository.Feed{ID: 1, URL: "https://example.com/feed"})
 
 	// Should have attempted all 3 upserts
 	if upsertAttempts != 3 {
@@ -1303,7 +1303,7 @@ func TestFetchFeed_CascadeDBFailures(t *testing.T) {
 		logger:     ml,
 	}
 
-	result := f.FetchFeed(context.Background(), repository.Feed{ID: 1, URL: "https://example.com/feed"})
+	result := f.FetchFeed(t.Context(), repository.Feed{ID: 1, URL: "https://example.com/feed"})
 
 	// Should have logged multiple errors
 	if len(ml.errorCalls) < 2 {
@@ -1342,7 +1342,7 @@ func TestFetchFeed_IntermittentNetworkError(t *testing.T) {
 		logger:     ml,
 	}
 
-	result := f.FetchFeed(context.Background(), repository.Feed{ID: 1, URL: "https://example.com/feed"})
+	result := f.FetchFeed(t.Context(), repository.Feed{ID: 1, URL: "https://example.com/feed"})
 
 	// Should record the error
 	if !mr.updateFeedErrorCalled {
@@ -1397,7 +1397,7 @@ func TestFetchFeed_ParseErrorWithDBRecordingFailure(t *testing.T) {
 		logger:     ml,
 	}
 
-	result := f.FetchFeed(context.Background(), repository.Feed{ID: 1, URL: "https://example.com/feed"})
+	result := f.FetchFeed(t.Context(), repository.Feed{ID: 1, URL: "https://example.com/feed"})
 
 	// Should have logged BOTH the parse error AND the recording failure
 	if len(ml.errorCalls) < 2 {

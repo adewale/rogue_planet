@@ -199,11 +199,11 @@ func TestFakeClock_ConcurrentAccess(t *testing.T) {
 	iterations := 100
 
 	// Concurrent readers
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for j := 0; j < iterations; j++ {
+			for range iterations {
 				_ = clock.Now()
 				_ = clock.Since(time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC))
 			}
@@ -211,22 +211,22 @@ func TestFakeClock_ConcurrentAccess(t *testing.T) {
 	}
 
 	// Concurrent writers
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for j := 0; j < iterations; j++ {
+			for range iterations {
 				clock.Advance(1 * time.Second)
 			}
 		}()
 	}
 
 	// Concurrent SetTime calls
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		wg.Add(1)
 		go func(offset int) {
 			defer wg.Done()
-			for j := 0; j < iterations; j++ {
+			for j := range iterations {
 				newTime := time.Date(2025, 1, 1, 12, offset, j, 0, time.UTC)
 				clock.SetTime(newTime)
 			}

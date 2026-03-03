@@ -17,8 +17,7 @@ func BenchmarkSanitizeHTML(b *testing.B) {
 <div onclick="alert('xss')">Click me</div>
 <p>More content with <em>emphasis</em> and <code>code blocks</code>.</p>`
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = n.sanitizeHTML(html, "https://example.com")
 	}
 }
@@ -29,7 +28,7 @@ func BenchmarkSanitizeHTMLLarge(b *testing.B) {
 	// Create a large HTML document
 	var sb strings.Builder
 	sb.WriteString("<article>")
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		sb.WriteString("<p>This is paragraph ")
 		sb.WriteString(string(rune(i)))
 		sb.WriteString(" with <strong>formatting</strong> and <a href=\"https://example.com/")
@@ -39,8 +38,7 @@ func BenchmarkSanitizeHTMLLarge(b *testing.B) {
 	sb.WriteString("</article>")
 	html := sb.String()
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = n.sanitizeHTML(html, "https://example.com")
 	}
 }
@@ -67,8 +65,7 @@ func BenchmarkParse(b *testing.B) {
 	feedURL := "https://example.com/feed"
 	fetchTime := time.Now()
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_, _, _ = n.Parse(context.Background(), []byte(feedXML), feedURL, fetchTime)
 	}
 }
@@ -82,8 +79,7 @@ func BenchmarkExtractID(b *testing.B) {
 		Link: "https://example.com/entry/12345",
 	}
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = n.extractID(item, "https://example.com/feed")
 	}
 }

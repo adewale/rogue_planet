@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"io"
 	"os"
 	"path/filepath"
@@ -49,7 +48,7 @@ path = ./data/planet.db
 	}
 	defer repo.Close()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// Simulate adding a feed with old entries
 	feedID, _ := repo.AddFeed(ctx, "https://example.com/feed", "Example Feed")
@@ -98,7 +97,7 @@ path = ./data/planet.db
 		ConfigPath: "./config.ini",
 		Output:     io.Discard,
 	}
-	if err := cmdGenerate(context.Background(), genOpts); err != nil {
+	if err := cmdGenerate(t.Context(), genOpts); err != nil {
 		t.Fatalf("cmdGenerate() error = %v", err)
 	}
 
@@ -141,7 +140,7 @@ func TestBackwardsCompatibility(t *testing.T) {
 	repo, _ := repository.New(filepath.Join(dir, "data/planet.db"))
 	defer repo.Close()
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	feedID, _ := repo.AddFeed(ctx, "https://example.com/feed", "Example Feed")
 	baseTime := time.Now()
@@ -158,7 +157,7 @@ func TestBackwardsCompatibility(t *testing.T) {
 	}
 
 	// Generate with default config (should filter by published)
-	if err := cmdGenerate(context.Background(), GenerateOptions{ConfigPath: "./config.ini", Output: io.Discard}); err != nil {
+	if err := cmdGenerate(t.Context(), GenerateOptions{ConfigPath: "./config.ini", Output: io.Discard}); err != nil {
 		t.Fatalf("cmdGenerate() error = %v", err)
 	}
 

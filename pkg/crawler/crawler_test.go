@@ -61,7 +61,7 @@ func TestFetch(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		resp, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+		resp, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 
 		if err != nil {
 			t.Fatalf("Fetch() error = %v", err)
@@ -110,7 +110,7 @@ func TestFetch(t *testing.T) {
 			LastFetched:  time.Now(),
 		}
 
-		resp, err := crawler.Fetch(context.Background(), server.URL, cache)
+		resp, err := crawler.Fetch(t.Context(), server.URL, cache)
 
 		if err != nil {
 			t.Fatalf("Fetch() error = %v", err)
@@ -144,7 +144,7 @@ func TestFetch(t *testing.T) {
 		defer redirectServer.Close()
 
 		crawler := NewForTesting()
-		resp, err := crawler.Fetch(context.Background(), redirectServer.URL, FeedCache{})
+		resp, err := crawler.Fetch(t.Context(), redirectServer.URL, FeedCache{})
 
 		if err != nil {
 			t.Fatalf("Fetch() error = %v", err)
@@ -172,7 +172,7 @@ func TestFetch(t *testing.T) {
 		}
 
 		for _, url := range dangerousURLs {
-			_, err := crawler.Fetch(context.Background(), url, FeedCache{})
+			_, err := crawler.Fetch(t.Context(), url, FeedCache{})
 			if err == nil {
 				t.Errorf("Expected error for dangerous URL %s, got nil", url)
 			}
@@ -189,7 +189,7 @@ func TestFetch(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		ctx, cancel := context.WithTimeout(t.Context(), 100*time.Millisecond)
 		defer cancel()
 
 		_, err := crawler.Fetch(ctx, server.URL, FeedCache{})
@@ -212,7 +212,7 @@ func TestFetch(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		_, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+		_, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 
 		if err == nil {
 			t.Error("Expected max size error, got nil")
@@ -241,7 +241,7 @@ func TestFetchWithRetry(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		resp, err := crawler.FetchWithRetry(context.Background(), server.URL, FeedCache{}, 3)
+		resp, err := crawler.FetchWithRetry(t.Context(), server.URL, FeedCache{}, 3)
 
 		if err != nil {
 			t.Fatalf("FetchWithRetry() error = %v", err)
@@ -258,7 +258,7 @@ func TestFetchWithRetry(t *testing.T) {
 
 	t.Run("no retry on SSRF error", func(t *testing.T) {
 		crawler := New()
-		_, err := crawler.FetchWithRetry(context.Background(), "http://localhost/feed", FeedCache{}, 3)
+		_, err := crawler.FetchWithRetry(t.Context(), "http://localhost/feed", FeedCache{}, 3)
 
 		if err == nil {
 			t.Error("Expected SSRF error, got nil")
@@ -280,7 +280,7 @@ func TestFetchInvalidContentType(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		resp, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+		resp, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 
 		// The crawler doesn't validate content-type (intentional - many feeds have incorrect headers)
 		// It just fetches the data and lets the parser handle it
@@ -309,7 +309,7 @@ func TestFetchInvalidContentType(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		resp, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+		resp, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 
 		// The crawler accepts any content-type
 		if err != nil {
@@ -340,8 +340,8 @@ func TestConnectionPooling(t *testing.T) {
 	// Verify connection pooling settings
 	tests := []struct {
 		name     string
-		got      interface{}
-		want     interface{}
+		got      any
+		want     any
 		testFunc func() bool
 	}{
 		{
@@ -432,8 +432,8 @@ func TestConnectionReuseIntegration(t *testing.T) {
 	crawler := NewForTesting()
 
 	// Make multiple requests to the same server
-	for i := 0; i < 5; i++ {
-		resp, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+	for i := range 5 {
+		resp, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 		if err != nil {
 			t.Fatalf("Fetch #%d error: %v", i+1, err)
 		}
@@ -549,7 +549,7 @@ func TestFetchWithRetry_RespectsRetryAfter(t *testing.T) {
 	defer server.Close()
 
 	crawler := NewForTesting()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	startTime := time.Now()
 	resp, err := crawler.FetchWithRetry(ctx, server.URL, FeedCache{}, 3)
@@ -583,7 +583,7 @@ func TestFetch_CapturesRetryAfter(t *testing.T) {
 	defer server.Close()
 
 	crawler := NewForTesting()
-	resp, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+	resp, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 
 	if err == nil {
 		t.Fatal("Expected error for 429 response")
@@ -625,7 +625,7 @@ func TestFetch_Tracks301PermanentRedirect(t *testing.T) {
 	defer server.Close()
 
 	crawler := NewForTesting()
-	resp, err := crawler.Fetch(context.Background(), server.URL+"/old-feed", FeedCache{})
+	resp, err := crawler.Fetch(t.Context(), server.URL+"/old-feed", FeedCache{})
 
 	if err != nil {
 		t.Fatalf("Fetch error: %v", err)
@@ -668,7 +668,7 @@ func TestFetch_Distinguishes301From302(t *testing.T) {
 	defer server.Close()
 
 	crawler := NewForTesting()
-	resp, err := crawler.Fetch(context.Background(), server.URL+"/temp-redirect", FeedCache{})
+	resp, err := crawler.Fetch(t.Context(), server.URL+"/temp-redirect", FeedCache{})
 
 	if err != nil {
 		t.Fatalf("Fetch error: %v", err)
@@ -719,7 +719,7 @@ func TestNewWithConfig_ZeroTimeouts(t *testing.T) {
 	}))
 	defer server.Close()
 
-	resp, err := testCrawler.Fetch(context.Background(), server.URL, FeedCache{})
+	resp, err := testCrawler.Fetch(t.Context(), server.URL, FeedCache{})
 	if err != nil {
 		t.Errorf("Fetch with zero timeouts failed: %v", err)
 	}
@@ -754,7 +754,7 @@ func TestNewWithConfig_EmptyUserAgent(t *testing.T) {
 	}))
 	defer server.Close()
 
-	_, err := testCrawler.Fetch(context.Background(), server.URL, FeedCache{})
+	_, err := testCrawler.Fetch(t.Context(), server.URL, FeedCache{})
 	if err != nil {
 		t.Errorf("Fetch with empty user agent failed: %v", err)
 	}
@@ -782,7 +782,7 @@ func TestFetch_TooManyRedirects(t *testing.T) {
 	serverURL = server.URL
 
 	crawler := NewForTesting()
-	_, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+	_, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 
 	if err == nil {
 		t.Error("Expected error for too many redirects")
@@ -847,7 +847,7 @@ func TestFetch_MaxSizeExceeded(t *testing.T) {
 	defer server.Close()
 
 	crawler := NewForTesting()
-	_, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+	_, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 
 	if err == nil {
 		t.Error("Expected error for size exceeded")
@@ -871,7 +871,7 @@ func TestFetch_SuccessfulStatus(t *testing.T) {
 	defer server.Close()
 
 	crawler := NewForTesting()
-	resp, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+	resp, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 
 	if err != nil {
 		t.Errorf("Unexpected error for 200: %v", err)
@@ -892,7 +892,7 @@ func TestFetchWithRetry_InvalidURL(t *testing.T) {
 	crawler := New() // Use regular constructor (not ForTesting) to enable SSRF checks
 
 	// Try to fetch a localhost URL (should be rejected by validation)
-	_, err := crawler.FetchWithRetry(context.Background(), "http://localhost/feed", FeedCache{}, 3)
+	_, err := crawler.FetchWithRetry(t.Context(), "http://localhost/feed", FeedCache{}, 3)
 
 	if err == nil {
 		t.Error("Expected error for invalid URL")
@@ -918,7 +918,7 @@ func TestFetch_ContextAlreadyCancelled(t *testing.T) {
 	}))
 	defer server.Close()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel() // Cancel immediately
 
 	c := NewForTesting()
@@ -951,7 +951,7 @@ func TestFetch_ContextCancelledDuringRequest(t *testing.T) {
 	}))
 	defer server.Close()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	c := NewForTesting()
@@ -995,7 +995,7 @@ func TestFetch_ContextDeadlineExceeded(t *testing.T) {
 	defer server.Close()
 
 	// Create context with very short deadline
-	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
 	defer cancel()
 
 	c := NewForTesting()
@@ -1029,7 +1029,7 @@ func TestFetchWithRetry_ContextCancelledBetweenRetries(t *testing.T) {
 	}))
 	defer server.Close()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 
 	c := NewForTesting()
 
@@ -1076,7 +1076,7 @@ func TestFetch_ZeroContextTimeout(t *testing.T) {
 	defer server.Close()
 
 	// Create context with deadline in the past
-	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-1*time.Hour))
+	ctx, cancel := context.WithDeadline(t.Context(), time.Now().Add(-1*time.Hour))
 	defer cancel()
 
 	c := NewForTesting()
@@ -1113,7 +1113,7 @@ func TestFetch_Tracks308PermanentRedirect(t *testing.T) {
 	defer server.Close()
 
 	crawler := NewForTesting()
-	resp, err := crawler.Fetch(context.Background(), server.URL+"/old-feed", FeedCache{})
+	resp, err := crawler.Fetch(t.Context(), server.URL+"/old-feed", FeedCache{})
 
 	if err != nil {
 		t.Fatalf("Fetch error: %v", err)
@@ -1156,7 +1156,7 @@ func TestFetchWithRetry_JitterApplied(t *testing.T) {
 	defer server.Close()
 
 	crawler := NewForTesting()
-	_, err := crawler.FetchWithRetry(context.Background(), server.URL, FeedCache{}, 3)
+	_, err := crawler.FetchWithRetry(t.Context(), server.URL, FeedCache{}, 3)
 
 	if err != nil {
 		t.Fatalf("FetchWithRetry error: %v", err)
@@ -1210,7 +1210,7 @@ func TestFetchWithRetry_JitterVariability(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		_, _ = crawler.FetchWithRetry(context.Background(), server.URL, FeedCache{}, 3)
+		_, _ = crawler.FetchWithRetry(t.Context(), server.URL, FeedCache{}, 3)
 
 		if len(attemptTimes) >= 2 {
 			return attemptTimes[1].Sub(attemptTimes[0])
@@ -1220,7 +1220,7 @@ func TestFetchWithRetry_JitterVariability(t *testing.T) {
 
 	// Collect delays from 5 runs
 	delays := make([]time.Duration, 5)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		delays[i] = collectDelay()
 	}
 

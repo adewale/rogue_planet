@@ -1,7 +1,6 @@
 package normalizer
 
 import (
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -28,7 +27,7 @@ func TestParse(t *testing.T) {
 </rss>`
 
 		n := New()
-		metadata, entries, err := n.Parse(context.Background(), []byte(feedData), "https://example.com/feed", time.Now())
+		metadata, entries, err := n.Parse(t.Context(), []byte(feedData), "https://example.com/feed", time.Now())
 
 		if err != nil {
 			t.Fatalf("Parse() error = %v", err)
@@ -67,7 +66,7 @@ func TestParse(t *testing.T) {
 </feed>`
 
 		n := New()
-		metadata, entries, err := n.Parse(context.Background(), []byte(feedData), "https://example.com/feed", time.Now())
+		metadata, entries, err := n.Parse(t.Context(), []byte(feedData), "https://example.com/feed", time.Now())
 
 		if err != nil {
 			t.Fatalf("Parse() error = %v", err)
@@ -96,7 +95,7 @@ func TestParse(t *testing.T) {
 </rss>`
 
 		n := New()
-		metadata, entries, err := n.Parse(context.Background(), []byte(feedData), "https://example.com/feed", time.Now())
+		metadata, entries, err := n.Parse(t.Context(), []byte(feedData), "https://example.com/feed", time.Now())
 
 		if err != nil {
 			t.Fatalf("Parse() error = %v", err)
@@ -115,7 +114,7 @@ func TestParse(t *testing.T) {
 		feedData := `not a valid feed`
 
 		n := New()
-		_, _, err := n.Parse(context.Background(), []byte(feedData), "https://example.com/feed", time.Now())
+		_, _, err := n.Parse(t.Context(), []byte(feedData), "https://example.com/feed", time.Now())
 
 		if err == nil {
 			t.Error("Expected error for invalid feed, got nil")
@@ -348,7 +347,7 @@ func TestParse_MalformedFeed(t *testing.T) {
 	feedData := `this is not valid XML at all!`
 
 	n := New()
-	metadata, entries, err := n.Parse(context.Background(), []byte(feedData), "https://example.com/feed", time.Now())
+	metadata, entries, err := n.Parse(t.Context(), []byte(feedData), "https://example.com/feed", time.Now())
 
 	if err == nil {
 		t.Error("Expected error for malformed feed")
@@ -458,7 +457,7 @@ func TestNormalizeEntry_MissingFields(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			n := New()
-			_, entries, err := n.Parse(context.Background(), []byte(tt.feedXML), "https://example.com/feed", time.Now())
+			_, entries, err := n.Parse(t.Context(), []byte(tt.feedXML), "https://example.com/feed", time.Now())
 
 			if err != nil {
 				t.Fatalf("Parse() error = %v", err)
@@ -510,7 +509,7 @@ func TestNormalizeEntry_WithPublishedDate(t *testing.T) {
 </rss>`
 
 	n := New()
-	_, entries, err := n.Parse(context.Background(), []byte(feedData), "https://example.com/feed", time.Now())
+	_, entries, err := n.Parse(t.Context(), []byte(feedData), "https://example.com/feed", time.Now())
 
 	if err != nil {
 		t.Fatalf("Parse() error = %v", err)
@@ -547,7 +546,7 @@ func TestExtractPublished_ZeroTime(t *testing.T) {
 
 	fetchTime := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
 	n := New()
-	_, entries, err := n.Parse(context.Background(), []byte(feedData), "https://example.com/feed", fetchTime)
+	_, entries, err := n.Parse(t.Context(), []byte(feedData), "https://example.com/feed", fetchTime)
 
 	if err != nil {
 		t.Fatalf("Parse() error = %v", err)
