@@ -2,7 +2,6 @@ package generator
 
 import (
 	"bytes"
-	"context"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -49,7 +48,7 @@ func TestGenerate(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := gen.Generate(context.Background(), &buf, data)
+	err := gen.Generate(t.Context(), &buf, data)
 
 	if err != nil {
 		t.Fatalf("Generate() error = %v", err)
@@ -118,7 +117,7 @@ func TestGenerateGroupByDate(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := gen.Generate(context.Background(), &buf, data)
+	err := gen.Generate(t.Context(), &buf, data)
 
 	if err != nil {
 		t.Fatalf("Generate() error = %v", err)
@@ -157,7 +156,7 @@ func TestGenerateToFile(t *testing.T) {
 		},
 	}
 
-	err := gen.GenerateToFile(context.Background(), outputPath, data)
+	err := gen.GenerateToFile(t.Context(), outputPath, data)
 	if err != nil {
 		t.Fatalf("GenerateToFile() error = %v", err)
 	}
@@ -215,7 +214,7 @@ func TestNewWithTemplate(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err = gen.Generate(context.Background(), &buf, data)
+	err = gen.Generate(t.Context(), &buf, data)
 	if err != nil {
 		t.Fatalf("Generate() error = %v", err)
 	}
@@ -526,7 +525,7 @@ func TestHTMLSanitization(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := gen.Generate(context.Background(), &buf, data)
+	err := gen.Generate(t.Context(), &buf, data)
 	if err != nil {
 		t.Fatalf("Generate() error = %v", err)
 	}
@@ -549,7 +548,7 @@ func TestCSPHeader(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := gen.Generate(context.Background(), &buf, data); err != nil {
+	if err := gen.Generate(t.Context(), &buf, data); err != nil {
 		t.Fatalf("Generate() error = %v", err)
 	}
 
@@ -585,7 +584,7 @@ func TestResponsiveDesign(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := gen.Generate(context.Background(), &buf, data); err != nil {
+	if err := gen.Generate(t.Context(), &buf, data); err != nil {
 		t.Fatalf("Generate() error = %v", err)
 	}
 
@@ -628,7 +627,7 @@ func TestGenerateWithFeeds(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := gen.Generate(context.Background(), &buf, data)
+	err := gen.Generate(t.Context(), &buf, data)
 	if err != nil {
 		t.Fatalf("Generate() error = %v", err)
 	}
@@ -669,7 +668,7 @@ func TestGenerateWithOwnerInfo(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := gen.Generate(context.Background(), &buf, data)
+	err := gen.Generate(t.Context(), &buf, data)
 	if err != nil {
 		t.Fatalf("Generate() error = %v", err)
 	}
@@ -702,7 +701,7 @@ func TestTemplateFuncs(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := gen.Generate(context.Background(), &buf, data)
+	err := gen.Generate(t.Context(), &buf, data)
 	if err != nil {
 		t.Fatalf("Generate() error = %v", err)
 	}
@@ -805,7 +804,7 @@ func TestNewWithTemplateBadSyntax(t *testing.T) {
 		// Try to execute - should fail
 		data := TemplateData{Title: "Test"}
 		var buf bytes.Buffer
-		err = gen.Generate(context.Background(), &buf, data)
+		err = gen.Generate(t.Context(), &buf, data)
 		if err == nil {
 			t.Error("Expected error for undefined function, got nil")
 		}
@@ -830,7 +829,7 @@ func TestNewWithTemplateBadSyntax(t *testing.T) {
 		// Execute with empty data
 		data := TemplateData{Title: "Test"}
 		var buf bytes.Buffer
-		err = gen.Generate(context.Background(), &buf, data)
+		err = gen.Generate(t.Context(), &buf, data)
 		if err == nil {
 			t.Error("Expected error for accessing non-existent field, got nil")
 		}
@@ -879,7 +878,7 @@ func TestCopyStaticAssets(t *testing.T) {
 	}
 
 	// Copy static assets
-	if err := gen.CopyStaticAssets(context.Background(), outputDir); err != nil {
+	if err := gen.CopyStaticAssets(t.Context(), outputDir); err != nil {
 		t.Fatalf("CopyStaticAssets() error = %v", err)
 	}
 
@@ -923,7 +922,7 @@ func TestCopyStaticAssetsNoStaticDir(t *testing.T) {
 	}
 
 	// Should not error when no static directory exists
-	if err := gen.CopyStaticAssets(context.Background(), outputDir); err != nil {
+	if err := gen.CopyStaticAssets(t.Context(), outputDir); err != nil {
 		t.Errorf("CopyStaticAssets() should not error when static dir doesn't exist: %v", err)
 	}
 }
@@ -935,7 +934,7 @@ func TestCopyStaticAssetsDefaultTemplate(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	// Should not copy anything for default template
-	err := gen.CopyStaticAssets(context.Background(), tmpDir)
+	err := gen.CopyStaticAssets(t.Context(), tmpDir)
 	if err != nil {
 		t.Errorf("CopyStaticAssets() should not error for default template: %v", err)
 	}
@@ -972,7 +971,7 @@ func TestGenerateToFileWithStaticAssets(t *testing.T) {
 	data := TemplateData{Title: "Test"}
 
 	// Generate to file (should also copy static assets)
-	if err := gen.GenerateToFile(context.Background(), outputPath, data); err != nil {
+	if err := gen.GenerateToFile(t.Context(), outputPath, data); err != nil {
 		t.Fatalf("GenerateToFile() error = %v", err)
 	}
 
@@ -1000,7 +999,7 @@ func TestGenerateWithSubtitle(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := gen.Generate(context.Background(), &buf, data)
+	err := gen.Generate(t.Context(), &buf, data)
 	if err != nil {
 		t.Fatalf("Generate() error = %v", err)
 	}

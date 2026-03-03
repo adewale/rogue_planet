@@ -642,8 +642,8 @@ path = ./data/planet.db
 	// Verify all planet fields
 	tests := []struct {
 		name string
-		got  interface{}
-		want interface{}
+		got  any
+		want any
 	}{
 		{"name", config.Planet.Name, "My Planet"},
 		{"link", config.Planet.Link, "https://planet.example.com"},

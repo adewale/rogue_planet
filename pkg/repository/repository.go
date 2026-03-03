@@ -667,7 +667,7 @@ func nullBool(ni sql.NullInt64) bool {
 	return ni.Valid && ni.Int64 == 1
 }
 
-func scanFeed(row interface{ Scan(...interface{}) error }, feed *Feed) error {
+func scanFeed(row interface{ Scan(...any) error }, feed *Feed) error {
 	var title, link, updated, lastFetched, etag, lastModified, fetchError, nextFetch sql.NullString
 	var active sql.NullInt64
 

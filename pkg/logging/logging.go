@@ -6,10 +6,10 @@ import "log"
 // Logger is the interface for structured logging with levels.
 // Implementations should format messages consistently and respect the configured level.
 type Logger interface {
-	Debug(format string, args ...interface{})
-	Info(format string, args ...interface{})
-	Warn(format string, args ...interface{})
-	Error(format string, args ...interface{})
+	Debug(format string, args ...any)
+	Info(format string, args ...any)
+	Warn(format string, args ...any)
+	Error(format string, args ...any)
 }
 
 // Level represents the logging level
@@ -70,28 +70,28 @@ func (l *StandardLogger) SetLevel(levelStr string) {
 }
 
 // Error logs an error message.
-func (l *StandardLogger) Error(format string, args ...interface{}) {
+func (l *StandardLogger) Error(format string, args ...any) {
 	if l.level >= LevelError {
 		log.Printf("ERROR: "+format, args...)
 	}
 }
 
 // Warn logs a warning message.
-func (l *StandardLogger) Warn(format string, args ...interface{}) {
+func (l *StandardLogger) Warn(format string, args ...any) {
 	if l.level >= LevelWarn {
 		log.Printf("WARN: "+format, args...)
 	}
 }
 
 // Info logs an info message.
-func (l *StandardLogger) Info(format string, args ...interface{}) {
+func (l *StandardLogger) Info(format string, args ...any) {
 	if l.level >= LevelInfo {
 		log.Printf("INFO: "+format, args...)
 	}
 }
 
 // Debug logs a debug message.
-func (l *StandardLogger) Debug(format string, args ...interface{}) {
+func (l *StandardLogger) Debug(format string, args ...any) {
 	if l.level >= LevelDebug {
 		log.Printf("DEBUG: "+format, args...)
 	}

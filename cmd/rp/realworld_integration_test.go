@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -55,7 +54,7 @@ func TestRealWorldFeedsFullPipeline(t *testing.T) {
 			defer repo.Close()
 
 			// Add feed
-			ctx := context.Background()
+			ctx := t.Context()
 
 			feedID, err := repo.AddFeed(ctx, tt.feedURL, "")
 			if err != nil {

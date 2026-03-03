@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"context"
 	"html/template"
 	"net/http"
 	"net/http/httptest"
@@ -47,7 +46,7 @@ func TestEndToEndHTMLGeneration(t *testing.T) {
 	defer repo.Close()
 
 	// Add feed
-	ctx := context.Background()
+	ctx := t.Context()
 	feedID, err := repo.AddFeed(ctx, server.URL, "Test Blog")
 	if err != nil {
 		t.Fatalf("Failed to add feed: %v", err)
@@ -192,7 +191,7 @@ func TestHTMLGenerationWithNoEntries(t *testing.T) {
 		t.Fatalf("Failed to create generator: %v", err)
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	outputPath := filepath.Join(tmpDir, "index.html")
 	data := TemplateData{
 		Title:       "Empty Planet",
@@ -295,7 +294,7 @@ func TestGeneratedHTMLStructure(t *testing.T) {
 		t.Fatalf("Failed to create generator: %v", err)
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	// Create test entry
 	now := time.Now()
 	entries := []EntryData{

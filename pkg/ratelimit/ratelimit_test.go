@@ -126,7 +126,7 @@ func TestAllow(t *testing.T) {
 	url := "https://example.com/feed.xml"
 
 	// First 5 requests should be allowed immediately (burst)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		if !m.Allow(url) {
 			t.Errorf("Request %d should be allowed (within burst)", i+1)
 		}
@@ -149,10 +149,10 @@ func TestWait(t *testing.T) {
 	m := New(600, 5) // 10 req/sec, burst of 5
 
 	url := "https://example.com/feed.xml"
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// First 5 should not block
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		start := time.Now()
 		if err := m.Wait(ctx, url); err != nil {
 			t.Fatalf("Wait() error on request %d: %v", i+1, err)
@@ -183,7 +183,7 @@ func TestWaitWithCancelledContext(t *testing.T) {
 	m := New(60, 10)
 
 	// Create an already-cancelled context
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel() // Cancel immediately
 
 	// Wait should respect the cancelled context
@@ -294,7 +294,7 @@ func TestInvalidURL(t *testing.T) {
 		t.Error("Invalid URL should be allowed (fail open)")
 	}
 
-	err := m.Wait(context.Background(), "also not a url")
+	err := m.Wait(t.Context(), "also not a url")
 	if err != nil {
 		t.Errorf("Wait() with invalid URL should not error, got: %v", err)
 	}
@@ -311,11 +311,11 @@ func TestConcurrentAccess(t *testing.T) {
 	// Run concurrent goroutines that all access the same domain
 	done := make(chan bool)
 	errors := make(chan error, concurrency*iterations)
-	for i := 0; i < concurrency; i++ {
+	for range concurrency {
 		go func() {
-			for j := 0; j < iterations; j++ {
+			for range iterations {
 				m.Allow(url)
-				if err := m.Wait(context.Background(), url); err != nil {
+				if err := m.Wait(t.Context(), url); err != nil {
 					errors <- err
 				}
 			}
@@ -324,7 +324,7 @@ func TestConcurrentAccess(t *testing.T) {
 	}
 
 	// Wait for all goroutines to complete
-	for i := 0; i < concurrency; i++ {
+	for range concurrency {
 		<-done
 	}
 

@@ -15,9 +15,11 @@ func BenchmarkAddFeed(b *testing.B) {
 	defer repo.Close()
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	i := 0
+	for b.Loop() {
 		url := "https://example.com/feed/" + string(rune(i%1000))
 		_, _ = repo.AddFeed(context.Background(), url, "Test Feed")
+		i++
 	}
 }
 
@@ -51,9 +53,11 @@ func BenchmarkUpsertEntry(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	i := 0
+	for b.Loop() {
 		entry.EntryID = "entry-" + string(rune(i%1000))
 		_ = repo.UpsertEntry(context.Background(), entry)
+		i++
 	}
 }
 
@@ -68,7 +72,7 @@ func BenchmarkGetRecentEntries(b *testing.B) {
 	// Add test data
 	feedID, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
 	now := time.Now()
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		entry := &Entry{
 			FeedID:      feedID,
 			EntryID:     "entry-" + string(rune(i)),
@@ -86,7 +90,7 @@ func BenchmarkGetRecentEntries(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_, _ = repo.GetRecentEntries(context.Background(), 30)
 	}
 }
@@ -100,12 +104,12 @@ func BenchmarkGetFeeds(b *testing.B) {
 	defer repo.Close()
 
 	// Add test feeds
-	for i := 0; i < 50; i++ {
+	for i := range 50 {
 		_, _ = repo.AddFeed(context.Background(), "https://example.com/feed/"+string(rune(i)), "Test Feed "+string(rune(i)))
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_, _ = repo.GetFeeds(context.Background(), true)
 	}
 }
@@ -121,9 +125,11 @@ func BenchmarkUpdateFeedCache(b *testing.B) {
 	feedID, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	i := 0
+	for b.Loop() {
 		etag := "etag-" + string(rune(i%100))
 		lastModified := "Mon, 01 Jan 2024 00:00:00 GMT"
 		_ = repo.UpdateFeedCache(context.Background(), feedID, etag, lastModified, time.Now())
+		i++
 	}
 }

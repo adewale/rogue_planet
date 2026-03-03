@@ -48,7 +48,7 @@ func TestLiveFetchRealWorldFeeds(t *testing.T) {
 			c := New()
 
 			// Fetch feed with timeout
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
 			defer cancel()
 
 			resp, err := c.Fetch(ctx, tt.url, FeedCache{})
@@ -135,7 +135,7 @@ func TestLiveFetchConditionalRequest(t *testing.T) {
 	c := New()
 
 	// First fetch
-	ctx1, cancel1 := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx1, cancel1 := context.WithTimeout(t.Context(), 30*time.Second)
 	defer cancel1()
 
 	resp1, err := c.Fetch(ctx1, url, FeedCache{})
@@ -144,7 +144,7 @@ func TestLiveFetchConditionalRequest(t *testing.T) {
 	}
 
 	// Second fetch with cache headers
-	ctx2, cancel2 := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx2, cancel2 := context.WithTimeout(t.Context(), 30*time.Second)
 	defer cancel2()
 
 	cache := FeedCache{
@@ -206,7 +206,7 @@ func testLiveEndToEnd(t *testing.T, url, expectedTitle string, minEntries int) {
 
 	// Fetch feed
 	c := New()
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
 	defer cancel()
 
 	resp, err := c.Fetch(ctx, url, FeedCache{})

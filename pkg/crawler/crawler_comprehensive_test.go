@@ -107,7 +107,7 @@ func TestFetch_ConditionalRequests_ETagFormats(t *testing.T) {
 				LastFetched: time.Now(),
 			}
 
-			_, err := crawler.Fetch(context.Background(), server.URL, cache)
+			_, err := crawler.Fetch(t.Context(), server.URL, cache)
 			if err != nil {
 				t.Fatalf("Fetch() error = %v", err)
 			}
@@ -185,7 +185,7 @@ func TestFetch_ConditionalRequests_Combinations(t *testing.T) {
 			defer server.Close()
 
 			crawler := NewForTesting()
-			_, err := crawler.Fetch(context.Background(), server.URL, tt.cache)
+			_, err := crawler.Fetch(t.Context(), server.URL, tt.cache)
 			if err != nil {
 				t.Fatalf("Fetch() error = %v", err)
 			}
@@ -216,7 +216,7 @@ func TestFetch_GzipDecompression(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		resp, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+		resp, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 
 		if err != nil {
 			t.Fatalf("Fetch() error = %v", err)
@@ -236,7 +236,7 @@ func TestFetch_GzipDecompression(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		resp, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+		resp, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 
 		if err != nil {
 			t.Fatalf("Fetch() error = %v", err)
@@ -278,7 +278,7 @@ func TestFetch_HTTPStatusCodes(t *testing.T) {
 			defer server.Close()
 
 			crawler := NewForTesting()
-			resp, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+			resp, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 
 			if tt.wantErr && err == nil {
 				t.Error("Expected error, got nil")
@@ -320,7 +320,7 @@ func TestFetch_SizeLimits(t *testing.T) {
 			defer server.Close()
 
 			crawler := NewForTesting()
-			_, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+			_, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 
 			if tt.wantErr && err == nil {
 				t.Error("Expected size limit error, got nil")
@@ -350,7 +350,7 @@ func TestFetch_Redirects(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		resp, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+		resp, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 
 		if err != nil {
 			t.Fatalf("Fetch() error = %v", err)
@@ -370,7 +370,7 @@ func TestFetch_Redirects(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		_, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+		_, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 
 		if err == nil {
 			t.Error("Expected redirect limit error, got nil")
@@ -391,7 +391,7 @@ func TestFetch_Redirects(t *testing.T) {
 		defer redirectServer.Close()
 
 		crawler := NewForTesting()
-		resp, err := crawler.Fetch(context.Background(), redirectServer.URL, FeedCache{})
+		resp, err := crawler.Fetch(t.Context(), redirectServer.URL, FeedCache{})
 
 		if err != nil {
 			t.Fatalf("Fetch() error = %v", err)
@@ -416,7 +416,7 @@ func TestFetchWithRetry_Comprehensive(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		_, err := crawler.FetchWithRetry(context.Background(), server.URL, FeedCache{}, 3)
+		_, err := crawler.FetchWithRetry(t.Context(), server.URL, FeedCache{}, 3)
 
 		if err != nil {
 			t.Fatalf("FetchWithRetry() error = %v", err)
@@ -441,7 +441,7 @@ func TestFetchWithRetry_Comprehensive(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		_, err := crawler.FetchWithRetry(context.Background(), server.URL, FeedCache{}, 3)
+		_, err := crawler.FetchWithRetry(t.Context(), server.URL, FeedCache{}, 3)
 
 		if err != nil {
 			t.Fatalf("FetchWithRetry() error = %v", err)
@@ -458,7 +458,7 @@ func TestFetchWithRetry_Comprehensive(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		_, err := crawler.FetchWithRetry(context.Background(), server.URL, FeedCache{}, 2)
+		_, err := crawler.FetchWithRetry(t.Context(), server.URL, FeedCache{}, 2)
 
 		if err == nil {
 			t.Error("Expected max retries error, got nil")
@@ -470,7 +470,7 @@ func TestFetchWithRetry_Comprehensive(t *testing.T) {
 
 	t.Run("no retry on ErrInvalidURL", func(t *testing.T) {
 		crawler := New()
-		_, err := crawler.FetchWithRetry(context.Background(), "ftp://example.com/feed", FeedCache{}, 3)
+		_, err := crawler.FetchWithRetry(t.Context(), "ftp://example.com/feed", FeedCache{}, 3)
 
 		if err == nil {
 			t.Error("Expected invalid scheme error, got nil")
@@ -482,7 +482,7 @@ func TestFetchWithRetry_Comprehensive(t *testing.T) {
 
 	t.Run("no retry on ErrPrivateIP", func(t *testing.T) {
 		crawler := New()
-		_, err := crawler.FetchWithRetry(context.Background(), "http://127.0.0.1/feed", FeedCache{}, 3)
+		_, err := crawler.FetchWithRetry(t.Context(), "http://127.0.0.1/feed", FeedCache{}, 3)
 
 		if err == nil {
 			t.Error("Expected private IP error, got nil")
@@ -501,7 +501,7 @@ func TestFetchWithRetry_Comprehensive(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		_, err := crawler.FetchWithRetry(context.Background(), server.URL, FeedCache{}, 3)
+		_, err := crawler.FetchWithRetry(t.Context(), server.URL, FeedCache{}, 3)
 
 		if err == nil {
 			t.Error("Expected 404 error, got nil")
@@ -526,7 +526,7 @@ func TestFetchWithRetry_Comprehensive(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		_, err := crawler.FetchWithRetry(context.Background(), server.URL, FeedCache{}, 3)
+		_, err := crawler.FetchWithRetry(t.Context(), server.URL, FeedCache{}, 3)
 
 		if err != nil {
 			t.Fatalf("FetchWithRetry() error = %v", err)
@@ -543,7 +543,7 @@ func TestFetchWithRetry_Comprehensive(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel() // Cancel immediately
 
 		_, err := crawler.FetchWithRetry(ctx, server.URL, FeedCache{}, 3)
@@ -617,7 +617,7 @@ func TestFetch_CacheUpdate(t *testing.T) {
 			LastFetched:  time.Now().Add(-1 * time.Hour),
 		}
 
-		resp, err := crawler.Fetch(context.Background(), server.URL, oldCache)
+		resp, err := crawler.Fetch(t.Context(), server.URL, oldCache)
 
 		if err != nil {
 			t.Fatalf("Fetch() error = %v", err)
@@ -648,7 +648,7 @@ func TestFetch_CacheUpdate(t *testing.T) {
 			LastFetched:  time.Now().Add(-1 * time.Hour),
 		}
 
-		resp, err := crawler.Fetch(context.Background(), server.URL, oldCache)
+		resp, err := crawler.Fetch(t.Context(), server.URL, oldCache)
 
 		if err != nil {
 			t.Fatalf("Fetch() error = %v", err)
@@ -679,7 +679,7 @@ func TestFetch_UserAgent(t *testing.T) {
 		defer server.Close()
 
 		crawler := NewForTesting()
-		_, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+		_, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 		if err != nil {
 			t.Fatalf("Fetch() error = %v", err)
 		}
@@ -700,7 +700,7 @@ func TestFetch_UserAgent(t *testing.T) {
 
 		crawler := NewForTesting()
 		crawler.userAgent = customUA
-		_, err := crawler.Fetch(context.Background(), server.URL, FeedCache{})
+		_, err := crawler.Fetch(t.Context(), server.URL, FeedCache{})
 		if err != nil {
 			t.Fatalf("Fetch() error = %v", err)
 		}
