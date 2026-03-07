@@ -12,7 +12,7 @@ const version = "0.4.0"
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -68,7 +68,7 @@ func run() error {
 		printUsage()
 		return nil
 	default:
-		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)
+		_, _ = fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)
 		printUsage()
 		return fmt.Errorf("unknown command: %s", command)
 	}
@@ -150,7 +150,7 @@ func runInit() error {
 func runAddFeed() error {
 	opts, err := parseAddFeedFlags(os.Args[2:])
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Usage: rp add-feed <url>")
+		_, _ = fmt.Fprintln(os.Stderr, "Usage: rp add-feed <url>")
 		return err
 	}
 	opts.Output = os.Stdout
@@ -160,7 +160,7 @@ func runAddFeed() error {
 func runAddAll() error {
 	opts, err := parseAddAllFlags(os.Args[2:])
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Usage: rp add-all -f <feeds-file>")
+		_, _ = fmt.Fprintln(os.Stderr, "Usage: rp add-all -f <feeds-file>")
 		return err
 	}
 	opts.Output = os.Stdout
@@ -170,7 +170,7 @@ func runAddAll() error {
 func runRemoveFeed() error {
 	opts, err := parseRemoveFeedFlags(os.Args[2:])
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Usage: rp remove-feed <url> [--force]")
+		_, _ = fmt.Fprintln(os.Stderr, "Usage: rp remove-feed <url> [--force]")
 		return err
 	}
 	opts.Output = os.Stdout
@@ -253,7 +253,7 @@ func runVerify() error {
 func runImportOPML() error {
 	opts, err := parseImportOPMLFlags(os.Args[2:])
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Usage: rp import-opml <opml-file> [--dry-run]")
+		_, _ = fmt.Fprintln(os.Stderr, "Usage: rp import-opml <opml-file> [--dry-run]")
 		return err
 	}
 	opts.Output = os.Stdout

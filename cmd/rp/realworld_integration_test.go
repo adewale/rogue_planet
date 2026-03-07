@@ -51,7 +51,7 @@ func TestRealWorldFeedsFullPipeline(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to create repository: %v", err)
 			}
-			defer repo.Close()
+			defer func() { _ = repo.Close() }()
 
 			// Add feed
 			ctx := t.Context()
@@ -195,7 +195,7 @@ func parseHTMLFile(path string) (*html.Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	return html.Parse(f)
 }

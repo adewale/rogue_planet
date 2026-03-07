@@ -167,4 +167,3 @@ func TestParse_ContentRelativeURLsResolved(t *testing.T) {
 		t.Errorf("Summary should have resolved relative URL, got: %s", entry.Summary)
 	}
 }
-

@@ -43,7 +43,7 @@ func cmdVerify(opts VerifyOptions) error {
 			if err != nil {
 				errors = append(errors, fmt.Sprintf("Database schema error: %v", err))
 			}
-			repo.Close()
+			_ = repo.Close()
 		}
 	}
 
@@ -56,7 +56,7 @@ func cmdVerify(opts VerifyOptions) error {
 		if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
 			errors = append(errors, fmt.Sprintf("Output directory not writable → chmod 755 %s", cfg.Planet.OutputDir))
 		} else {
-			os.Remove(testFile)
+			_ = os.Remove(testFile)
 		}
 	}
 
@@ -69,25 +69,25 @@ func cmdVerify(opts VerifyOptions) error {
 
 	// 5. Report results
 	if len(errors) > 0 {
-		fmt.Fprintln(opts.Output, "✗ Configuration validation failed")
-		fmt.Fprintln(opts.Output)
+		_, _ = fmt.Fprintln(opts.Output, "✗ Configuration validation failed")
+		_, _ = fmt.Fprintln(opts.Output)
 		for _, e := range errors {
-			fmt.Fprintf(opts.Output, "- %s\n", e)
+			_, _ = fmt.Fprintf(opts.Output, "- %s\n", e)
 		}
-		fmt.Fprintln(opts.Output)
-		fmt.Fprintf(opts.Output, "Found %d errors.\n", len(errors))
+		_, _ = fmt.Fprintln(opts.Output)
+		_, _ = fmt.Fprintf(opts.Output, "Found %d errors.\n", len(errors))
 		return fmt.Errorf("validation failed")
 	}
 
 	// Success - get feed/entry counts if database exists
 	repo, err := repository.New(cfg.Database.Path)
 	if err == nil {
-		defer repo.Close()
+		defer func() { _ = repo.Close() }()
 		feeds, _ := repo.GetFeeds(ctx, false)
 		entries, _ := repo.CountEntries(ctx)
-		fmt.Fprintf(opts.Output, "✓ Configuration valid (%d feeds, %d entries)\n", len(feeds), entries)
+		_, _ = fmt.Fprintf(opts.Output, "✓ Configuration valid (%d feeds, %d entries)\n", len(feeds), entries)
 	} else {
-		fmt.Fprintln(opts.Output, "✓ Configuration valid")
+		_, _ = fmt.Fprintln(opts.Output, "✓ Configuration valid")
 	}
 
 	return nil

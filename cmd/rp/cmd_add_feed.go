@@ -31,6 +31,6 @@ func cmdAddFeed(opts AddFeedOptions) error {
 		return fmt.Errorf("failed to add feed: %w", err)
 	}
 
-	fmt.Fprintf(opts.Output, "✓ Added feed: %s (ID: %d)\n", opts.URL, id)
+	_, _ = fmt.Fprintf(opts.Output, "✓ Added feed: %s (ID: %d)\n", opts.URL, id)
 	return nil
 }

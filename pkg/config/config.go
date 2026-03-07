@@ -150,7 +150,7 @@ func LoadFromFile(path string) (config *Config, err error) {
 		return nil, fmt.Errorf("open config file: %w", openErr)
 	}
 	// Close file when done. Close errors during read are rarely actionable.
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	config = Default()
 	scanner := bufio.NewScanner(file)

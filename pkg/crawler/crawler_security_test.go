@@ -325,7 +325,7 @@ func TestDNSRebindingProtection_DialContext(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("should not reach here"))
+		_, _ = w.Write([]byte("should not reach here"))
 	}))
 	defer server.Close()
 
@@ -355,7 +355,7 @@ func TestDNSRebindingProtection_TestingCrawlerAllows(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`<rss version="2.0"><channel></channel></rss>`))
+		_, _ = w.Write([]byte(`<rss version="2.0"><channel></channel></rss>`))
 	}))
 	defer server.Close()
 
@@ -375,7 +375,7 @@ func TestDNSRebindingProtection_NewWithConfigTestingMode(t *testing.T) {
 	// Verify that NewWithConfig also works when skipSSRFCheck is enabled
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`<rss version="2.0"><channel></channel></rss>`))
+		_, _ = w.Write([]byte(`<rss version="2.0"><channel></channel></rss>`))
 	}))
 	defer server.Close()
 

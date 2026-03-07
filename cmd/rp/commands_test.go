@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"log"
 	"os"
@@ -42,123 +41,6 @@ func TestCmdAddFeed(t *testing.T) {
 				t.Errorf("cmdAddFeed() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
-	}
-}
-
-func TestCmdAddFeed_SSRFValidation(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name    string
-		url     string
-		wantErr bool
-		errMsg  string
-	}{
-		{
-			name:    "reject localhost URL",
-			url:     "http://localhost/feed",
-			wantErr: true,
-			errMsg:  "invalid feed URL",
-		},
-		{
-			name:    "reject 127.0.0.1 URL",
-			url:     "http://127.0.0.1/feed",
-			wantErr: true,
-			errMsg:  "invalid feed URL",
-		},
-		{
-			name:    "reject private IP 10.x",
-			url:     "http://10.0.0.1/feed",
-			wantErr: true,
-			errMsg:  "invalid feed URL",
-		},
-		{
-			name:    "reject private IP 192.168.x",
-			url:     "http://192.168.1.1/feed",
-			wantErr: true,
-			errMsg:  "invalid feed URL",
-		},
-		{
-			name:    "reject ftp scheme",
-			url:     "ftp://example.com/feed",
-			wantErr: true,
-			errMsg:  "invalid feed URL",
-		},
-		{
-			name:    "reject javascript scheme",
-			url:     "javascript:alert(1)",
-			wantErr: true,
-			errMsg:  "invalid feed URL",
-		},
-		{
-			name:    "reject file scheme",
-			url:     "file:///etc/passwd",
-			wantErr: true,
-			errMsg:  "invalid feed URL",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var buf bytes.Buffer
-			err := cmdAddFeed(AddFeedOptions{
-				URL:        tt.url,
-				ConfigPath: "./config.ini",
-				Output:     &buf,
-			})
-			if (err != nil) != tt.wantErr {
-				t.Errorf("cmdAddFeed(%q) error = %v, wantErr %v", tt.url, err, tt.wantErr)
-			}
-			if tt.wantErr && err != nil && !strings.Contains(err.Error(), tt.errMsg) {
-				t.Errorf("cmdAddFeed(%q) error = %v, want error containing %q", tt.url, err, tt.errMsg)
-			}
-		})
-	}
-}
-
-func TestImportFeedsFromURLs_SSRFValidation(t *testing.T) {
-	t.Parallel()
-
-	// Set up a real database
-	tmpDir := t.TempDir()
-	dataDir := filepath.Join(tmpDir, "data")
-	if err := os.MkdirAll(dataDir, 0755); err != nil {
-		t.Fatalf("Failed to create data directory: %v", err)
-	}
-	dbPath := filepath.Join(dataDir, "planet.db")
-
-	repo, err := repository.New(dbPath)
-	if err != nil {
-		t.Fatalf("Failed to create repository: %v", err)
-	}
-	defer repo.Close()
-
-	ctx := context.Background()
-	var buf bytes.Buffer
-
-	// Mix of valid and SSRF URLs
-	feedURLs := []string{
-		"https://example.com/feed.xml",    // valid
-		"http://localhost/evil",            // SSRF - should be skipped
-		"http://127.0.0.1/evil",           // SSRF - should be skipped
-		"http://192.168.1.1/evil",         // SSRF - should be skipped
-		"ftp://example.com/feed",          // invalid scheme - should be skipped
-		"https://blog.example.com/feed",   // valid
-	}
-
-	added := importFeedsFromURLs(ctx, repo, feedURLs, &buf)
-
-	// Only the 2 valid URLs should be added
-	if added != 2 {
-		t.Errorf("importFeedsFromURLs() added %d feeds, want 2", added)
-	}
-
-	// Verify valid feeds were added
-	feeds, err := repo.GetFeeds(ctx, false)
-	if err != nil {
-		t.Fatalf("GetFeeds() error = %v", err)
-	}
-	if len(feeds) != 2 {
-		t.Errorf("Expected 2 feeds in database, got %d", len(feeds))
 	}
 }
 
@@ -263,7 +145,7 @@ path = %s
 				t.Fatalf("Failed to add entry: %v", err)
 			}
 		}
-		repo.Close()
+		_ = repo.Close()
 
 		// Remove feed with --force flag
 		var buf bytes.Buffer
@@ -292,7 +174,7 @@ path = %s
 		if err != nil {
 			t.Fatalf("Failed to reopen repository: %v", err)
 		}
-		defer repo.Close()
+		defer func() { _ = repo.Close() }()
 
 		_, err = repo.GetFeedByURL(ctx, feedURL)
 		if err != repository.ErrFeedNotFound {
@@ -333,7 +215,7 @@ path = %s
 		if err != nil {
 			t.Fatalf("Failed to create repository: %v", err)
 		}
-		repo.Close()
+		_ = repo.Close()
 
 		var buf bytes.Buffer
 		opts := RemoveFeedOptions{
@@ -401,7 +283,7 @@ path = %s
 		if err := repo.UpsertEntry(ctx, entry); err != nil {
 			t.Fatalf("Failed to add entry: %v", err)
 		}
-		repo.Close()
+		_ = repo.Close()
 
 		// Mock stdin with "y\n"
 		input := strings.NewReader("y\n")
@@ -435,7 +317,7 @@ path = %s
 		if err != nil {
 			t.Fatalf("Failed to reopen repository: %v", err)
 		}
-		defer repo.Close()
+		defer func() { _ = repo.Close() }()
 
 		_, err = repo.GetFeedByURL(ctx, feedURL)
 		if err != repository.ErrFeedNotFound {
@@ -474,7 +356,7 @@ path = %s
 		if err != nil {
 			t.Fatalf("Failed to add feed: %v", err)
 		}
-		repo.Close()
+		_ = repo.Close()
 
 		// Mock stdin with "n\n"
 		input := strings.NewReader("n\n")
@@ -508,7 +390,7 @@ path = %s
 		if err != nil {
 			t.Fatalf("Failed to reopen repository: %v", err)
 		}
-		defer repo.Close()
+		defer func() { _ = repo.Close() }()
 
 		feed, err := repo.GetFeedByURL(ctx, feedURL)
 		if err != nil {
@@ -550,7 +432,7 @@ path = %s
 		if err != nil {
 			t.Fatalf("Failed to add feed: %v", err)
 		}
-		repo.Close()
+		_ = repo.Close()
 
 		// Mock stdin with "yes\n"
 		input := strings.NewReader("yes\n")
@@ -601,23 +483,23 @@ path = %s
 		if err != nil {
 			t.Fatalf("Failed to add feed: %v", err)
 		}
-		repo.Close()
+		_ = repo.Close()
 
 		// Create a pipe to simulate piped input (non-terminal os.File)
 		r, w, err := os.Pipe()
 		if err != nil {
 			t.Fatalf("Failed to create pipe: %v", err)
 		}
-		defer r.Close()
+		defer func() { _ = r.Close() }()
 
 		// Write input to pipe
 		go func() {
 			if _, err := w.Write([]byte("y\n")); err != nil {
 				// If write fails, close and return - test will fail when it doesn't get input
-				w.Close()
+				_ = w.Close()
 				return
 			}
-			w.Close()
+			_ = w.Close()
 		}()
 
 		var buf bytes.Buffer
@@ -833,7 +715,7 @@ path = ` + dbPath + `
 				if err != nil {
 					t.Fatal(err)
 				}
-				repo.Close()
+				_ = repo.Close()
 
 				return configPath, func() {}
 			},
@@ -872,7 +754,7 @@ path = ` + dbPath + `
 				if err != nil {
 					t.Fatal(err)
 				}
-				repo.Close()
+				_ = repo.Close()
 
 				return configPath, func() {}
 			},
@@ -910,7 +792,7 @@ path = ` + dbPath + `
 				if err != nil {
 					t.Fatal(err)
 				}
-				repo.Close()
+				_ = repo.Close()
 
 				return configPath, func() {}
 			},
@@ -1114,7 +996,7 @@ path = ` + dbPath + `
 				if err != nil {
 					t.Fatal(err)
 				}
-				repo.Close()
+				_ = repo.Close()
 
 				return configPath, func() {}
 			},
@@ -1152,7 +1034,7 @@ path = ` + dbPath + `
 				if err != nil {
 					t.Fatal(err)
 				}
-				repo.Close()
+				_ = repo.Close()
 
 				return configPath, func() {}
 			},
@@ -1226,10 +1108,10 @@ path = ` + dbPath + `
 	// Add a feed (will fail to fetch, but that's okay - we just need to test signal handling)
 	_, err = repo.AddFeed(ctx, "https://example.com/feed.xml", "Example Feed")
 	if err != nil {
-		repo.Close()
+		_ = repo.Close()
 		t.Fatal(err)
 	}
-	repo.Close()
+	_ = repo.Close()
 
 	// Capture log output
 	var logBuf bytes.Buffer

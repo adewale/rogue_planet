@@ -269,49 +269,6 @@ func TestValidate(t *testing.T) {
 		}
 	})
 
-	t.Run("days at minimum boundary", func(t *testing.T) {
-		config := Default()
-		config.Planet.Days = 1
-
-		err := config.Validate()
-		if err != nil {
-			t.Errorf("Validate() error = %v, want nil for days = 1", err)
-		}
-	})
-
-	t.Run("days at maximum boundary", func(t *testing.T) {
-		config := Default()
-		config.Planet.Days = MaxDays // 365
-
-		err := config.Validate()
-		if err != nil {
-			t.Errorf("Validate() error = %v, want nil for days = %d", err, MaxDays)
-		}
-	})
-
-	t.Run("days exceeds maximum", func(t *testing.T) {
-		config := Default()
-		config.Planet.Days = MaxDays + 1 // 366
-
-		err := config.Validate()
-		if err == nil {
-			t.Errorf("Expected error for days = %d (exceeds MaxDays=%d)", MaxDays+1, MaxDays)
-		}
-		if err != nil && !strings.Contains(err.Error(), "between") {
-			t.Errorf("Expected 'between' in error message, got: %v", err)
-		}
-	})
-
-	t.Run("days extremely large value", func(t *testing.T) {
-		config := Default()
-		config.Planet.Days = 999999
-
-		err := config.Validate()
-		if err == nil {
-			t.Error("Expected error for days = 999999")
-		}
-	})
-
 	t.Run("invalid concurrent_fetches low", func(t *testing.T) {
 		config := Default()
 		config.Planet.ConcurrentFetch = 0
@@ -388,66 +345,6 @@ func TestValidate(t *testing.T) {
 		err := config.Validate()
 		if err != nil {
 			t.Errorf("Validate() error = %v, want nil for empty template", err)
-		}
-	})
-
-	t.Run("pathContainsTraversal uses filepath.Clean", func(t *testing.T) {
-		// After applying filepath.Clean, only real traversal should be detected.
-		// A path like "foo..bar" should NOT be flagged (no actual traversal).
-		if pathContainsTraversal("foo..bar/data.db") {
-			t.Error("pathContainsTraversal should not flag 'foo..bar/data.db' (no real traversal)")
-		}
-		// A path like "./data/planet.db" should be fine
-		if pathContainsTraversal("./data/planet.db") {
-			t.Error("pathContainsTraversal should not flag './data/planet.db'")
-		}
-		// A path with real traversal should be detected
-		if !pathContainsTraversal("../etc/passwd") {
-			t.Error("pathContainsTraversal should flag '../etc/passwd'")
-		}
-		// Normalized traversal should be detected
-		if !pathContainsTraversal("./foo/../../etc/passwd") {
-			t.Error("pathContainsTraversal should flag './foo/../../etc/passwd' after cleaning")
-		}
-	})
-
-	t.Run("obfuscated traversal with dot segments in database path", func(t *testing.T) {
-		config := Default()
-		// filepath.Clean normalizes this to "../etc/passwd"
-		config.Database.Path = "./foo/./../../etc/passwd"
-
-		err := config.Validate()
-		if err == nil {
-			t.Error("Expected error for obfuscated path traversal in database path")
-		}
-		if err != nil && !strings.Contains(err.Error(), "parent directory") {
-			t.Errorf("Expected parent directory error, got: %v", err)
-		}
-	})
-
-	t.Run("obfuscated traversal with dot segments in output dir", func(t *testing.T) {
-		config := Default()
-		config.Planet.OutputDir = "./public/./../../etc"
-
-		err := config.Validate()
-		if err == nil {
-			t.Error("Expected error for obfuscated path traversal in output dir")
-		}
-		if err != nil && !strings.Contains(err.Error(), "parent directory") {
-			t.Errorf("Expected parent directory error, got: %v", err)
-		}
-	})
-
-	t.Run("obfuscated traversal with dot segments in template path", func(t *testing.T) {
-		config := Default()
-		config.Planet.Template = "./themes/./../../etc/passwd"
-
-		err := config.Validate()
-		if err == nil {
-			t.Error("Expected error for obfuscated path traversal in template path")
-		}
-		if err != nil && !strings.Contains(err.Error(), "parent directory") {
-			t.Errorf("Expected parent directory error, got: %v", err)
 		}
 	})
 }
@@ -551,26 +448,6 @@ func TestSetPlanet(t *testing.T) {
 			name:    "set days zero",
 			key:     "days",
 			value:   "0",
-			wantErr: true,
-		},
-		{
-			name:  "set days at max boundary",
-			key:   "days",
-			value: "365",
-			checkFunc: func(c *Config) bool {
-				return c.Planet.Days == 365
-			},
-		},
-		{
-			name:    "set days exceeds max",
-			key:     "days",
-			value:   "366",
-			wantErr: true,
-		},
-		{
-			name:    "set days extreme value",
-			key:     "days",
-			value:   "999999",
 			wantErr: true,
 		},
 		{

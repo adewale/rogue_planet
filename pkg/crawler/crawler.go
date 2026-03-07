@@ -28,9 +28,9 @@ var blockedCIDRs []*net.IPNet
 
 func init() {
 	cidrs := []string{
-		"100.64.0.0/10",  // CGNAT / Shared Address Space (RFC 6598)
-		"198.18.0.0/15",  // Benchmarking (RFC 2544)
-		"0.0.0.0/8",      // "This network" (RFC 1122)
+		"100.64.0.0/10", // CGNAT / Shared Address Space (RFC 6598)
+		"198.18.0.0/15", // Benchmarking (RFC 2544)
+		"0.0.0.0/8",     // "This network" (RFC 1122)
 	}
 	for _, cidr := range cidrs {
 		_, network, err := net.ParseCIDR(cidr)
@@ -447,7 +447,7 @@ func (c *Crawler) Fetch(ctx context.Context, feedURL string, cache FeedCache) (*
 	if err != nil {
 		return nil, fmt.Errorf("fetch failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Prepare response
 	fetchTime := time.Now()
@@ -489,7 +489,7 @@ func (c *Crawler) Fetch(ctx context.Context, feedURL string, cache FeedCache) (*
 		if err != nil {
 			return nil, fmt.Errorf("create gzip reader: %w", err)
 		}
-		defer gzReader.Close()
+		defer func() { _ = gzReader.Close() }()
 		reader = gzReader
 	}
 

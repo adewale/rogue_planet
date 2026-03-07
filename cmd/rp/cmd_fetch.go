@@ -13,11 +13,11 @@ func cmdFetch(ctx context.Context, opts FetchOptions) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	fmt.Fprintln(opts.Output, "Fetching feeds...")
+	_, _ = fmt.Fprintln(opts.Output, "Fetching feeds...")
 	if err := fetchFeeds(ctx, cfg, opts.Logger); err != nil {
 		return fmt.Errorf("failed to fetch feeds: %w", err)
 	}
 
-	fmt.Fprintln(opts.Output, "✓ Fetch complete")
+	_, _ = fmt.Fprintln(opts.Output, "✓ Fetch complete")
 	return nil
 }

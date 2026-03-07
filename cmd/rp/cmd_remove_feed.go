@@ -56,12 +56,12 @@ func cmdRemoveFeed(opts RemoveFeedOptions) error {
 			feedTitle = "(no title)"
 		}
 
-		fmt.Fprintf(opts.Output, "Feed: %s\n", feed.URL)
-		fmt.Fprintf(opts.Output, "Title: %s\n", feedTitle)
-		fmt.Fprintf(opts.Output, "Entries: %d\n\n", entryCount)
+		_, _ = fmt.Fprintf(opts.Output, "Feed: %s\n", feed.URL)
+		_, _ = fmt.Fprintf(opts.Output, "Title: %s\n", feedTitle)
+		_, _ = fmt.Fprintf(opts.Output, "Entries: %d\n\n", entryCount)
 
 		// Prompt for confirmation (matches spec exactly)
-		fmt.Fprintf(opts.Output, "Remove this feed and all %d entries? (y/N): ", entryCount)
+		_, _ = fmt.Fprintf(opts.Output, "Remove this feed and all %d entries? (y/N): ", entryCount)
 
 		// Read user input
 		reader := bufio.NewReader(opts.Input)
@@ -73,7 +73,7 @@ func cmdRemoveFeed(opts RemoveFeedOptions) error {
 		// Parse response
 		response = strings.TrimSpace(strings.ToLower(response))
 		if response != "y" && response != "yes" {
-			fmt.Fprintln(opts.Output, "Cancelled.")
+			_, _ = fmt.Fprintln(opts.Output, "Cancelled.")
 			return &ErrUserCancelled{"operation cancelled by user"}
 		}
 	}
@@ -83,6 +83,6 @@ func cmdRemoveFeed(opts RemoveFeedOptions) error {
 		return fmt.Errorf("failed to remove feed: %w", err)
 	}
 
-	fmt.Fprintf(opts.Output, "✓ Removed feed: %s (%d entries deleted)\n", opts.URL, entryCount)
+	_, _ = fmt.Fprintf(opts.Output, "✓ Removed feed: %s (%d entries deleted)\n", opts.URL, entryCount)
 	return nil
 }

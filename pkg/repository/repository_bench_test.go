@@ -12,7 +12,7 @@ func BenchmarkAddFeed(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Failed to create repository: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	b.ResetTimer()
 	i := 0
@@ -29,7 +29,7 @@ func BenchmarkUpsertEntry(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Failed to create repository: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Add a test feed
 	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
@@ -67,7 +67,7 @@ func BenchmarkGetRecentEntries(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Failed to create repository: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Add test data
 	feedID, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
@@ -101,7 +101,7 @@ func BenchmarkGetFeeds(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Failed to create repository: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Add test feeds
 	for i := range 50 {
@@ -120,7 +120,7 @@ func BenchmarkUpdateFeedCache(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Failed to create repository: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	feedID, _ := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
 

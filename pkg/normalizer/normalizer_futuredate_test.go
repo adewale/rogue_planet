@@ -16,38 +16,38 @@ func TestFutureDateClamping(t *testing.T) {
 	fetchTime := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		name           string
-		pubDate        string // RFC3339
+		name            string
+		pubDate         string // RFC3339
 		expectedClamped bool
 	}{
 		{
-			name:           "date 1 day in the future is clamped",
-			pubDate:        fetchTime.Add(24 * time.Hour).Format(time.RFC3339),
+			name:            "date 1 day in the future is clamped",
+			pubDate:         fetchTime.Add(24 * time.Hour).Format(time.RFC3339),
 			expectedClamped: true,
 		},
 		{
-			name:           "date 2 hours in the future is clamped",
-			pubDate:        fetchTime.Add(2 * time.Hour).Format(time.RFC3339),
+			name:            "date 2 hours in the future is clamped",
+			pubDate:         fetchTime.Add(2 * time.Hour).Format(time.RFC3339),
 			expectedClamped: true,
 		},
 		{
-			name:           "date 30 minutes in the future is within tolerance",
-			pubDate:        fetchTime.Add(30 * time.Minute).Format(time.RFC3339),
+			name:            "date 30 minutes in the future is within tolerance",
+			pubDate:         fetchTime.Add(30 * time.Minute).Format(time.RFC3339),
 			expectedClamped: false,
 		},
 		{
-			name:           "date in the past is not clamped",
-			pubDate:        fetchTime.Add(-24 * time.Hour).Format(time.RFC3339),
+			name:            "date in the past is not clamped",
+			pubDate:         fetchTime.Add(-24 * time.Hour).Format(time.RFC3339),
 			expectedClamped: false,
 		},
 		{
-			name:           "date exactly at tolerance boundary is not clamped",
-			pubDate:        fetchTime.Add(FutureDateTolerance).Format(time.RFC3339),
+			name:            "date exactly at tolerance boundary is not clamped",
+			pubDate:         fetchTime.Add(FutureDateTolerance).Format(time.RFC3339),
 			expectedClamped: false,
 		},
 		{
-			name:           "date just past tolerance is clamped",
-			pubDate:        fetchTime.Add(FutureDateTolerance + time.Second).Format(time.RFC3339),
+			name:            "date just past tolerance is clamped",
+			pubDate:         fetchTime.Add(FutureDateTolerance + time.Second).Format(time.RFC3339),
 			expectedClamped: true,
 		},
 	}

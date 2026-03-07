@@ -82,7 +82,7 @@ func New(dbPath string) (*Repository, error) {
 	// Force the database file to be created by pinging the connection.
 	// sql.Open is lazy and won't create the file until first use.
 	if err := db.Ping(); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
 
@@ -90,7 +90,7 @@ func New(dbPath string) (*Repository, error) {
 	// Only change permissions on new files; don't alter existing file permissions.
 	if isNewFile {
 		if err := os.Chmod(dbPath, 0600); err != nil {
-			db.Close()
+			_ = db.Close()
 			return nil, fmt.Errorf("set database file permissions: %w", err)
 		}
 	}
@@ -98,32 +98,32 @@ func New(dbPath string) (*Repository, error) {
 	// L7: Set busy timeout before other PRAGMAs to avoid immediate failures
 	// if another process holds the lock during initialization.
 	if _, err := db.Exec("PRAGMA busy_timeout = 5000"); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("set busy timeout: %w", err)
 	}
 
 	// Enable WAL mode for better concurrency
 	if _, err := db.Exec("PRAGMA journal_mode=WAL"); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("enable WAL: %w", err)
 	}
 
 	// Enable foreign keys (required for CASCADE DELETE)
 	if _, err := db.Exec("PRAGMA foreign_keys = ON"); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("enable foreign keys: %w", err)
 	}
 
 	// L7: Security-hardening PRAGMAs
 	// Prevent malicious schema exploitation (e.g., malicious virtual tables)
 	if _, err := db.Exec("PRAGMA trusted_schema = OFF"); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("disable trusted schema: %w", err)
 	}
 
 	// Detect database corruption at the cell level
 	if _, err := db.Exec("PRAGMA cell_size_check = ON"); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("enable cell size check: %w", err)
 	}
 
@@ -131,7 +131,7 @@ func New(dbPath string) (*Repository, error) {
 
 	// Initialize schema
 	if err := repo.initSchema(); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("init schema: %w", err)
 	}
 
@@ -482,7 +482,7 @@ func (r *Repository) GetFeeds(ctx context.Context, activeOnly bool) ([]Feed, err
 	if err != nil {
 		return nil, fmt.Errorf("query feeds: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	return scanFeeds(rows)
 }
@@ -598,7 +598,7 @@ func (r *Repository) UpsertEntriesBatch(ctx context.Context, entries []*Entry) (
 	if err != nil {
 		return 0, fmt.Errorf("prepare upsert statement: %w", err)
 	}
-	defer stmt.Close()
+	defer func() { _ = stmt.Close() }()
 
 	count := 0
 	for _, entry := range entries {
@@ -637,7 +637,7 @@ func (r *Repository) GetRecentEntries(ctx context.Context, days int) ([]Entry, e
 	if err != nil {
 		return nil, fmt.Errorf("query entries: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	entries, err := scanEntries(rows)
 	if err != nil {
@@ -663,7 +663,7 @@ func (r *Repository) GetRecentEntries(ctx context.Context, days int) ([]Entry, e
 	if err != nil {
 		return nil, fmt.Errorf("query fallback entries: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	return scanEntries(rows)
 }
@@ -707,7 +707,7 @@ func (r *Repository) GetRecentEntriesWithOptions(ctx context.Context, days int, 
 	if err != nil {
 		return nil, fmt.Errorf("query entries: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	entries, err := scanEntries(rows)
 	if err != nil {
@@ -734,7 +734,7 @@ func (r *Repository) GetRecentEntriesWithOptions(ctx context.Context, days int, 
 	if err != nil {
 		return nil, fmt.Errorf("query fallback entries: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	return scanEntries(rows)
 }

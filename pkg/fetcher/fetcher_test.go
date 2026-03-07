@@ -1094,7 +1094,7 @@ func TestFetchFeed_Integration_RedirectThenSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create repository: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Add feed with original URL
 	feedID, err := repo.AddFeed(t.Context(), server.URL, "Test Feed")

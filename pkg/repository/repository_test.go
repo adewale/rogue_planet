@@ -30,7 +30,7 @@ func setupTestDB(t *testing.T) (*Repository, string) {
 func TestNew(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Verify schema was created
 	var count int
@@ -47,7 +47,7 @@ func TestNew(t *testing.T) {
 func TestAddFeed(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	id, err := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 	if err != nil {
@@ -76,7 +76,7 @@ func TestAddFeed(t *testing.T) {
 func TestAddDuplicateFeed(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	_, err := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 	if err != nil {
@@ -93,7 +93,7 @@ func TestAddDuplicateFeed(t *testing.T) {
 func TestUpdateFeed(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	id, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Old Title")
 
@@ -117,7 +117,7 @@ func TestUpdateFeed(t *testing.T) {
 func TestUpdateFeedCache(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	id, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
@@ -141,7 +141,7 @@ func TestUpdateFeedCache(t *testing.T) {
 func TestGetFeeds(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	if _, err := repo.AddFeed(t.Context(), "https://example.com/feed1", "Feed 1"); err != nil {
 		t.Fatalf("AddFeed() error = %v", err)
@@ -163,7 +163,7 @@ func TestGetFeeds(t *testing.T) {
 func TestGetFeedByURL(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	if _, err := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed"); err != nil {
 		t.Fatalf("AddFeed() error = %v", err)
@@ -188,7 +188,7 @@ func TestGetFeedByURL(t *testing.T) {
 func TestRemoveFeed(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	id, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
@@ -207,7 +207,7 @@ func TestRemoveFeed(t *testing.T) {
 func TestUpsertEntry(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
@@ -255,7 +255,7 @@ func TestUpsertEntry(t *testing.T) {
 func TestUniqueConstraintHandling(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
@@ -332,7 +332,7 @@ func TestUniqueConstraintHandling(t *testing.T) {
 func TestGetRecentEntries(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
@@ -380,7 +380,7 @@ func TestGetRecentEntries(t *testing.T) {
 func TestPruneOldEntries(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
@@ -438,7 +438,7 @@ func TestPruneOldEntries(t *testing.T) {
 func TestRemoveFeedCascade(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
@@ -485,14 +485,14 @@ func TestDatabasePersistence(t *testing.T) {
 	if _, err := repo1.AddFeed(t.Context(), "https://example.com/feed", "Test Feed"); err != nil {
 		t.Fatalf("AddFeed() error = %v", err)
 	}
-	repo1.Close()
+	_ = repo1.Close()
 
 	// Reopen database
 	repo2, err := New(dbPath)
 	if err != nil {
 		t.Fatalf("Failed to reopen repository: %v", err)
 	}
-	defer repo2.Close()
+	defer func() { _ = repo2.Close() }()
 
 	// Verify data persisted
 	feeds, _ := repo2.GetFeeds(t.Context(), false)
@@ -515,7 +515,7 @@ func TestGetRecentEntriesFallback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create repository: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Add a feed
 	feedID, err := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
@@ -573,7 +573,7 @@ func TestGetRecentEntriesWithinWindow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create repository: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Add a feed
 	feedID, err := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
@@ -637,7 +637,7 @@ func TestGetRecentEntriesWithinWindow(t *testing.T) {
 func TestUpdateFeedError(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	id, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
@@ -670,7 +670,7 @@ func TestUpdateFeedError(t *testing.T) {
 func TestCountEntries(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Initially should be 0
 	count, err := repo.CountEntries(t.Context())
@@ -709,7 +709,7 @@ func TestCountEntries(t *testing.T) {
 func TestCountRecentEntries(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 
@@ -776,7 +776,7 @@ func TestNewErrors(t *testing.T) {
 func TestGetRecentEntriesFilterByFirstSeen(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Add a feed
 	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
@@ -844,7 +844,7 @@ func TestGetRecentEntriesFilterByFirstSeen(t *testing.T) {
 func TestGetRecentEntriesSortByFirstSeen(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 	baseTime := time.Now()
@@ -895,7 +895,7 @@ func TestGetRecentEntriesSortByFirstSeen(t *testing.T) {
 func TestGetRecentEntriesFilterAndSortByFirstSeen(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	feedID, _ := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
 	baseTime := time.Now()
@@ -942,7 +942,7 @@ func TestGetRecentEntriesFilterAndSortByFirstSeen(t *testing.T) {
 func TestGetEntryCountForFeed(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Add a feed
 	feedID, err := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
@@ -1033,7 +1033,7 @@ func TestGetEntryCountForFeed(t *testing.T) {
 func TestUpdateFeedURL(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Add a feed with ETag and Last-Modified
 	feedID, err := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
@@ -1096,7 +1096,7 @@ func TestUpdateFeedURL(t *testing.T) {
 func TestRemoveFeedCascadeDelete(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Add a feed
 	feedID, err := repo.AddFeed(t.Context(), "https://example.com/feed", "Test Feed")
@@ -1165,7 +1165,7 @@ func TestGetFeeds_ActiveOnly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Add some feeds with different active statuses
 	id1, err := repo.AddFeed(t.Context(), "http://example.com/feed1", "Active Feed 1")
@@ -1227,7 +1227,7 @@ func TestGetFeeds_ActiveOnly(t *testing.T) {
 func TestPruneOldEntries_InvalidDays(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Zero days should be rejected (would delete all entries)
 	_, err := repo.PruneOldEntries(context.Background(), 0)
@@ -1278,7 +1278,7 @@ func TestGetSchemaVersion_EmptyTable(t *testing.T) {
 	}
 
 	repo := &Repository{db: db}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	version, err := repo.getSchemaVersion(context.Background())
 	if err != nil {
@@ -1292,7 +1292,7 @@ func TestGetSchemaVersion_EmptyTable(t *testing.T) {
 func TestMaxOpenConnsForPragmaConsistency(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Verify that MaxOpenConns is set to 1 to ensure PRAGMA settings
 	// (like foreign_keys=ON) apply consistently across all operations.
@@ -1326,7 +1326,7 @@ func TestMigrationTransactional(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Verify schema version was set
 	var version int
@@ -1424,14 +1424,14 @@ func TestMigrationFromV1(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Insert test data: %v", err)
 	}
-	db.Close()
+	_ = db.Close()
 
 	// Now open with Repository which should run the v1->v2 migration
 	repo, err := New(dbPath)
 	if err != nil {
 		t.Fatalf("New() on v1 database error = %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Verify migration completed: first_seen column should exist
 	var hasFirstSeen bool
@@ -1475,7 +1475,7 @@ func TestMigrationFromV1(t *testing.T) {
 func TestSecurityPragmas(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Verify trusted_schema = OFF
 	var trustedSchema int
@@ -1527,7 +1527,7 @@ func TestDatabaseFilePermissions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Verify file permissions are 0600 (owner read/write only)
 	info, err := os.Stat(dbPath)
@@ -1551,7 +1551,7 @@ func TestDatabaseFilePermissions_ExistingFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
 	}
-	repo1.Close()
+	_ = repo1.Close()
 
 	// Change permissions to something different
 	if err := os.Chmod(dbPath, 0644); err != nil {
@@ -1563,7 +1563,7 @@ func TestDatabaseFilePermissions_ExistingFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New() reopen error = %v", err)
 	}
-	defer repo2.Close()
+	defer func() { _ = repo2.Close() }()
 
 	info, err := os.Stat(dbPath)
 	if err != nil {
@@ -1591,7 +1591,7 @@ func TestSchemaInitializationWithContext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Verify schema was created successfully
 	var tableCount int
@@ -1611,7 +1611,7 @@ func TestSchemaInitializationWithContext(t *testing.T) {
 func TestAddFeed_Validation(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	tests := []struct {
 		name    string
@@ -1684,7 +1684,7 @@ func TestAddFeed_Validation(t *testing.T) {
 func TestUpdateFeedURL_Validation(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
 	if err != nil {
@@ -1739,7 +1739,7 @@ func TestUpdateFeedURL_Validation(t *testing.T) {
 func TestUpsertEntry_Validation(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
 	if err != nil {
@@ -1828,7 +1828,7 @@ func TestUpsertEntry_Validation(t *testing.T) {
 func TestUpsertEntriesBatch_EmptySlice(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	count, err := repo.UpsertEntriesBatch(context.Background(), nil)
 	if err != nil {
@@ -1850,7 +1850,7 @@ func TestUpsertEntriesBatch_EmptySlice(t *testing.T) {
 func TestUpsertEntriesBatch_SingleEntry(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
 	if err != nil {
@@ -1893,7 +1893,7 @@ func TestUpsertEntriesBatch_SingleEntry(t *testing.T) {
 func TestUpsertEntriesBatch_MultipleEntries(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
 	if err != nil {
@@ -1937,7 +1937,7 @@ func TestUpsertEntriesBatch_MultipleEntries(t *testing.T) {
 func TestUpsertEntriesBatch_Atomicity(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
 	if err != nil {
@@ -2000,7 +2000,7 @@ func TestUpsertEntriesBatch_Atomicity(t *testing.T) {
 func TestUpsertEntriesBatch_UpdatesExisting(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
 	if err != nil {
@@ -2096,7 +2096,7 @@ func TestUpsertEntriesBatch_UpdatesExisting(t *testing.T) {
 func TestUpsertEntriesBatch_ContextCancellation(t *testing.T) {
 	t.Parallel()
 	repo, _ := setupTestDB(t)
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	feedID, err := repo.AddFeed(context.Background(), "https://example.com/feed", "Test Feed")
 	if err != nil {

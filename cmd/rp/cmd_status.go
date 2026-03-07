@@ -40,15 +40,15 @@ func cmdStatus(opts StatusOptions) error {
 	}
 
 	// Display status
-	fmt.Fprintln(opts.Output, "Rogue Planet Status")
-	fmt.Fprintln(opts.Output, "===================")
-	fmt.Fprintln(opts.Output)
-	fmt.Fprintf(opts.Output, "Feeds:           %d total (%d active, %d inactive)\n", len(feeds), activeFeeds, len(feeds)-activeFeeds)
-	fmt.Fprintf(opts.Output, "Entries:         %d total\n", totalEntries)
-	fmt.Fprintf(opts.Output, "Recent entries:  %d (last %d days)\n", recentEntries, cfg.Planet.Days)
-	fmt.Fprintln(opts.Output)
-	fmt.Fprintf(opts.Output, "Output:          %s/index.html\n", cfg.Planet.OutputDir)
-	fmt.Fprintf(opts.Output, "Database:        %s\n", cfg.Database.Path)
+	_, _ = fmt.Fprintln(opts.Output, "Rogue Planet Status")
+	_, _ = fmt.Fprintln(opts.Output, "===================")
+	_, _ = fmt.Fprintln(opts.Output)
+	_, _ = fmt.Fprintf(opts.Output, "Feeds:           %d total (%d active, %d inactive)\n", len(feeds), activeFeeds, len(feeds)-activeFeeds)
+	_, _ = fmt.Fprintf(opts.Output, "Entries:         %d total\n", totalEntries)
+	_, _ = fmt.Fprintf(opts.Output, "Recent entries:  %d (last %d days)\n", recentEntries, cfg.Planet.Days)
+	_, _ = fmt.Fprintln(opts.Output)
+	_, _ = fmt.Fprintf(opts.Output, "Output:          %s/index.html\n", cfg.Planet.OutputDir)
+	_, _ = fmt.Fprintf(opts.Output, "Database:        %s\n", cfg.Database.Path)
 
 	return nil
 }
