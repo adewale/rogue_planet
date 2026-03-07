@@ -2,6 +2,7 @@ package generator
 
 import (
 	"bytes"
+	"context"
 	"html/template"
 	"os"
 	"path/filepath"
