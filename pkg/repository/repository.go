@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -88,7 +89,8 @@ func New(dbPath string) (*Repository, error) {
 
 	// L10: Set restrictive file permissions for newly created database files.
 	// Only change permissions on new files; don't alter existing file permissions.
-	if isNewFile {
+	// Skip on Windows where Unix-style file permissions are not supported.
+	if isNewFile && runtime.GOOS != "windows" {
 		if err := os.Chmod(dbPath, 0600); err != nil {
 			_ = db.Close()
 			return nil, fmt.Errorf("set database file permissions: %w", err)
