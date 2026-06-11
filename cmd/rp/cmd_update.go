@@ -16,13 +16,13 @@ func cmdUpdate(ctx context.Context, opts UpdateOptions) error {
 
 	// Fetch feeds
 	fmt.Fprintln(opts.Output, "Fetching feeds...")
-	if err := fetchFeeds(ctx, cfg, opts.Logger); err != nil {
+	if err := fetchFeeds(ctx, cfg, opts.Logger, opts.Output); err != nil {
 		return fmt.Errorf("failed to fetch feeds: %w", err)
 	}
 
 	// Generate site
 	fmt.Fprintln(opts.Output, "Generating site...")
-	if err := generateSite(ctx, cfg); err != nil {
+	if err := generateSite(ctx, cfg, opts.Output); err != nil {
 		return fmt.Errorf("failed to generate site: %w", err)
 	}
 

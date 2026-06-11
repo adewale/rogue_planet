@@ -11,6 +11,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/adewale/rogue_planet/pkg/version"
 )
 
 // Configuration validation constants define acceptable ranges for config values.
@@ -112,7 +114,7 @@ func Default() *Config {
 			Days:              7,
 			LogLevel:          "info",
 			ConcurrentFetch:   5,
-			UserAgent:         "RoguePlanet/0.4",
+			UserAgent:         version.UserAgent(),
 			GroupByDate:       true,
 			FilterByFirstSeen: false,
 			SortBy:            "published",

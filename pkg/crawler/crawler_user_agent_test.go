@@ -23,7 +23,7 @@ func TestNewWithUserAgent(t *testing.T) {
 		{
 			name:              "empty user agent uses default",
 			userAgent:         "",
-			expectedUserAgent: UserAgent,
+			expectedUserAgent: DefaultUserAgent,
 		},
 		{
 			name:              "custom user agent with URL",

@@ -1,0 +1,29 @@
+# golangci-lint configuration
+# https://golangci-lint.run/usage/configuration/
+
+linters-settings:
+  errcheck:
+    # Ignore fmt.Fprint* return values - writing to stdout/output rarely fails actionably
+    exclude-functions:
+      - fmt.Fprint
+      - fmt.Fprintf
+      - fmt.Fprintln
+      - (io.Closer).Close
+      - (*os.File).Close
+      - (*database/sql.DB).Close
+      - (*database/sql.Rows).Close
+      - (*compress/gzip.Reader).Close
+      - (*compress/gzip.Writer).Close
+      - os.Remove
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+
+issues:
+  # Don't limit the number of issues per linter
+  max-issues-per-linter: 0
+  max-same-issues: 0

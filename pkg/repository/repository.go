@@ -19,10 +19,8 @@ import (
 // are found in the configured time window. This ensures the page always has content.
 const FallbackEntryLimit = 50
 
-var (
-	ErrFeedNotFound  = errors.New("feed not found")
-	ErrEntryNotFound = errors.New("entry not found")
-)
+// ErrFeedNotFound is returned when a feed lookup fails.
+var ErrFeedNotFound = errors.New("feed not found")
 
 // Feed represents a feed in the database
 type Feed struct {

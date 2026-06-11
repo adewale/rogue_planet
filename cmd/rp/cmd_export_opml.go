@@ -8,15 +8,13 @@ import (
 	"github.com/adewale/rogue_planet/pkg/opml"
 )
 
-func cmdExportOPML(opts ExportOPMLOptions) error {
+func cmdExportOPML(ctx context.Context, opts ExportOPMLOptions) error {
 	// Load config
 	cfg, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
-
-	ctx := context.Background()
 
 	// Get all feeds
 	repoFeeds, err := repo.GetFeeds(ctx, false)

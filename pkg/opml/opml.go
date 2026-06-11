@@ -86,13 +86,12 @@ func ParseFile(ctx context.Context, path string) (*OPML, error) {
 
 // ExtractFeeds extracts all feed URLs from OPML (flattens nested outlines)
 func (o *OPML) ExtractFeeds() []Feed {
-	feeds := []Feed{}
-	o.extractOutlines(o.Body.Outlines, &feeds)
-	return feeds
+	return extractOutlines(o.Body.Outlines)
 }
 
 // extractOutlines recursively extracts feeds from outlines
-func (o *OPML) extractOutlines(outlines []Outline, feeds *[]Feed) {
+func extractOutlines(outlines []Outline) []Feed {
+	var feeds []Feed
 	for _, outline := range outlines {
 		// Get feed URL (try xmlUrl first, then url for OPML 1.0 compatibility)
 		feedURL := outline.XMLUrl
@@ -108,7 +107,7 @@ func (o *OPML) extractOutlines(outlines []Outline, feeds *[]Feed) {
 				title = outline.Text
 			}
 
-			*feeds = append(*feeds, Feed{
+			feeds = append(feeds, Feed{
 				Title:   title,
 				FeedURL: feedURL,
 				WebURL:  outline.HTMLUrl,
@@ -117,9 +116,10 @@ func (o *OPML) extractOutlines(outlines []Outline, feeds *[]Feed) {
 
 		// Recursively process nested outlines
 		if len(outline.Outlines) > 0 {
-			o.extractOutlines(outline.Outlines, feeds)
+			feeds = append(feeds, extractOutlines(outline.Outlines)...)
 		}
 	}
+	return feeds
 }
 
 // Generate creates OPML from feed list using the current system time

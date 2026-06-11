@@ -34,7 +34,7 @@ func TestFullWorkflow(t *testing.T) {
 		// Simulate: rp init
 		os.Args = []string{"rp", "init"}
 		// We can't easily test main() directly, so we'll call runInit()
-		if err := runInit(); err != nil {
+		if err := runInit(t.Context()); err != nil {
 			t.Fatalf("runInit() failed: %v", err)
 		}
 
@@ -60,7 +60,7 @@ func TestFullWorkflow(t *testing.T) {
 
 		for _, feedURL := range testFeeds {
 			os.Args = []string{"rp", "add-feed", feedURL}
-			if err := runAddFeed(); err != nil {
+			if err := runAddFeed(t.Context()); err != nil {
 				t.Fatalf("runAddFeed() failed: %v", err)
 			}
 		}
@@ -69,7 +69,7 @@ func TestFullWorkflow(t *testing.T) {
 		os.Args = []string{"rp", "list-feeds"}
 		// runListFeeds() prints to stdout, we'd need to capture it
 		// For now, just verify no panic
-		if err := runListFeeds(); err != nil {
+		if err := runListFeeds(t.Context()); err != nil {
 			t.Fatalf("runListFeeds() failed: %v", err)
 		}
 	})
@@ -77,7 +77,7 @@ func TestFullWorkflow(t *testing.T) {
 	// Test 3: Check status
 	t.Run("status", func(t *testing.T) {
 		os.Args = []string{"rp", "status"}
-		if err := runStatus(); err != nil {
+		if err := runStatus(t.Context()); err != nil {
 			t.Fatalf("runStatus() failed: %v", err)
 		}
 		// Should show 2 feeds, 0 entries
@@ -115,7 +115,7 @@ https://example.com/feed3.xml
 
 	// Initialize with feeds file
 	os.Args = []string{"rp", "init", "-f", feedsPath}
-	if err := runInit(); err != nil {
+	if err := runInit(t.Context()); err != nil {
 		t.Fatalf("runInit() failed: %v", err)
 	}
 
@@ -183,7 +183,7 @@ func TestHTMLGeneration(t *testing.T) {
 		ConfigPath: configPath,
 		Output:     os.Stdout,
 	}
-	if err := cmdInit(initOpts); err != nil {
+	if err := cmdInit(t.Context(), initOpts); err != nil {
 		t.Fatalf("Failed to initialize planet: %v", err)
 	}
 
@@ -193,7 +193,7 @@ func TestHTMLGeneration(t *testing.T) {
 		URL:        server.URL,
 		Output:     os.Stdout,
 	}
-	if err := cmdAddFeed(addOpts); err != nil {
+	if err := cmdAddFeed(t.Context(), addOpts); err != nil {
 		t.Fatalf("Failed to add feed: %v", err)
 	}
 
@@ -288,7 +288,7 @@ path = ` + dbPath
 		Output:     os.Stdout,
 	}
 
-	if err := cmdAddFeed(addOpts); err != nil {
+	if err := cmdAddFeed(t.Context(), addOpts); err != nil {
 		t.Fatalf("Failed to add feed: %v", err)
 	}
 
@@ -329,7 +329,7 @@ path = ` + dbPath
 		Force:      true,
 	}
 
-	err = cmdRemoveFeed(removeOptsOld)
+	err = cmdRemoveFeed(t.Context(), removeOptsOld)
 	if err == nil {
 		t.Fatal("Remove with old URL should fail after URL update (simulated 301)")
 	}
@@ -346,7 +346,7 @@ path = ` + dbPath
 		Force:      true,
 	}
 
-	if err := cmdRemoveFeed(removeOptsNew); err != nil {
+	if err := cmdRemoveFeed(t.Context(), removeOptsNew); err != nil {
 		t.Fatalf("Remove with new URL should succeed after URL update, got error: %v", err)
 	}
 

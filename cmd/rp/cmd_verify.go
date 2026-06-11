@@ -10,7 +10,7 @@ import (
 	"github.com/adewale/rogue_planet/pkg/repository"
 )
 
-func cmdVerify(opts VerifyOptions) error {
+func cmdVerify(ctx context.Context, opts VerifyOptions) error {
 	errors := []string{}
 
 	// 1. Load and validate config file
@@ -26,8 +26,6 @@ func cmdVerify(opts VerifyOptions) error {
 	if err := cfg.Validate(); err != nil {
 		errors = append(errors, fmt.Sprintf("Invalid config value: %v", err))
 	}
-
-	ctx := context.Background()
 
 	// 2. Check database accessibility and schema
 	if _, err := os.Stat(cfg.Database.Path); os.IsNotExist(err) {

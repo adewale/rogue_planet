@@ -8,13 +8,13 @@ import (
 	"github.com/adewale/rogue_planet/pkg/opml"
 )
 
-func cmdImportOPML(opts ImportOPMLOptions) error {
+func cmdImportOPML(ctx context.Context, opts ImportOPMLOptions) error {
 	if opts.OPMLFile == "" {
 		return fmt.Errorf("OPML file is required")
 	}
 
 	// Parse OPML file
-	opmlDoc, err := opml.ParseFile(context.Background(), opts.OPMLFile)
+	opmlDoc, err := opml.ParseFile(ctx, opts.OPMLFile)
 	if err != nil {
 		return fmt.Errorf("failed to parse OPML file: %w", err)
 	}
@@ -26,8 +26,6 @@ func cmdImportOPML(opts ImportOPMLOptions) error {
 		fmt.Fprintln(opts.Output, "No feeds found in OPML file")
 		return nil
 	}
-
-	ctx := context.Background()
 
 	if opts.DryRun {
 		fmt.Fprintf(opts.Output, "DRY RUN: Importing feeds from %s...\n\n", opts.OPMLFile)

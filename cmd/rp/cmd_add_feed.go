@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func cmdAddFeed(opts AddFeedOptions) error {
+func cmdAddFeed(ctx context.Context, opts AddFeedOptions) error {
 	if opts.URL == "" {
 		return fmt.Errorf("URL is required")
 	}
@@ -15,8 +15,6 @@ func cmdAddFeed(opts AddFeedOptions) error {
 		return err
 	}
 	defer cleanup()
-
-	ctx := context.Background()
 
 	// Add feed
 	id, err := repo.AddFeed(ctx, opts.URL, "")

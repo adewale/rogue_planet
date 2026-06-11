@@ -25,10 +25,8 @@ import (
 // while keeping IDs reasonably short.
 const GeneratedIDLength = 16
 
-var (
-	ErrInvalidFeed = errors.New("invalid feed data")
-	ErrNoEntries   = errors.New("feed contains no entries")
-)
+// ErrInvalidFeed is returned when feed data cannot be parsed.
+var ErrInvalidFeed = errors.New("invalid feed data")
 
 // Entry represents a normalized feed entry
 type Entry struct {

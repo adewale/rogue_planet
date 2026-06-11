@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/adewale/rogue_planet/pkg/timeprovider"
+	"github.com/adewale/rogue_planet/pkg/version"
 )
 
 // TemplateData contains all data needed for template rendering
@@ -124,7 +125,7 @@ func (g *Generator) Generate(ctx context.Context, w io.Writer, data TemplateData
 	}
 
 	// Add version info
-	data.Generator = "Rogue Planet v0.1"
+	data.Generator = version.Generator()
 	data.Updated = g.timeProvider.Now()
 
 	// Calculate relative dates using the time provider
