@@ -14,7 +14,7 @@ func cmdFetch(ctx context.Context, opts FetchOptions) error {
 	}
 
 	fmt.Fprintln(opts.Output, "Fetching feeds...")
-	if err := fetchFeeds(ctx, cfg, opts.Logger); err != nil {
+	if err := fetchFeeds(ctx, cfg, opts.Logger, opts.Output); err != nil {
 		return fmt.Errorf("failed to fetch feeds: %w", err)
 	}
 

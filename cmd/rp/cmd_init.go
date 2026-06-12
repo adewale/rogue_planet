@@ -9,7 +9,7 @@ import (
 	"github.com/adewale/rogue_planet/pkg/config"
 )
 
-func cmdInit(opts InitOptions) error {
+func cmdInit(ctx context.Context, opts InitOptions) error {
 	fmt.Fprintln(opts.Output, "Initializing Rogue Planet...")
 
 	// Create directories
@@ -63,8 +63,6 @@ path = ./data/planet.db
 		if err != nil {
 			return fmt.Errorf("failed to load feeds file: %w", err)
 		}
-
-		ctx := context.Background()
 
 		// Add each feed to database
 		addedCount := importFeedsFromURLs(ctx, repo, feedURLs, opts.Output)

@@ -562,8 +562,8 @@ func TestConstructors(t *testing.T) {
 		if crawler == nil {
 			t.Fatal("New() returned nil")
 		}
-		if crawler.userAgent != UserAgent {
-			t.Errorf("userAgent = %s, want %s", crawler.userAgent, UserAgent)
+		if crawler.userAgent != DefaultUserAgent {
+			t.Errorf("userAgent = %s, want %s", crawler.userAgent, DefaultUserAgent)
 		}
 		if crawler.maxSize != MaxFeedSize {
 			t.Errorf("maxSize = %d, want %d", crawler.maxSize, MaxFeedSize)
@@ -583,8 +583,8 @@ func TestConstructors(t *testing.T) {
 
 	t.Run("NewWithUserAgent('') uses default", func(t *testing.T) {
 		crawler := NewWithUserAgent("")
-		if crawler.userAgent != UserAgent {
-			t.Errorf("userAgent = %s, want %s", crawler.userAgent, UserAgent)
+		if crawler.userAgent != DefaultUserAgent {
+			t.Errorf("userAgent = %s, want %s", crawler.userAgent, DefaultUserAgent)
 		}
 	})
 
@@ -669,8 +669,8 @@ func TestFetch_UserAgent(t *testing.T) {
 	t.Run("default user agent", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ua := r.Header.Get("User-Agent")
-			if ua != UserAgent {
-				t.Errorf("User-Agent = %s, want %s", ua, UserAgent)
+			if ua != DefaultUserAgent {
+				t.Errorf("User-Agent = %s, want %s", ua, DefaultUserAgent)
 			}
 			if _, err := w.Write([]byte("content")); err != nil {
 				t.Errorf("Write error: %v", err)

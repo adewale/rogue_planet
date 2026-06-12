@@ -7,7 +7,7 @@ import (
 	"github.com/adewale/rogue_planet/pkg/config"
 )
 
-func cmdAddAll(opts AddAllOptions) error {
+func cmdAddAll(ctx context.Context, opts AddAllOptions) error {
 	if opts.FeedsFile == "" {
 		return fmt.Errorf("feeds file is required")
 	}
@@ -28,8 +28,6 @@ func cmdAddAll(opts AddAllOptions) error {
 		fmt.Fprintln(opts.Output, "No feeds found in file")
 		return nil
 	}
-
-	ctx := context.Background()
 
 	fmt.Fprintf(opts.Output, "Adding %d feeds from %s...\n", len(feedURLs), opts.FeedsFile)
 

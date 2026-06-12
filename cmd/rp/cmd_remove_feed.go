@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func cmdRemoveFeed(opts RemoveFeedOptions) error {
+func cmdRemoveFeed(ctx context.Context, opts RemoveFeedOptions) error {
 	if opts.URL == "" {
 		return fmt.Errorf("URL is required")
 	}
@@ -18,8 +18,6 @@ func cmdRemoveFeed(opts RemoveFeedOptions) error {
 		return err
 	}
 	defer cleanup()
-
-	ctx := context.Background()
 
 	// Find feed
 	feed, err := repo.GetFeedByURL(ctx, opts.URL)

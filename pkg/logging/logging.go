@@ -22,6 +22,24 @@ const (
 	LevelDebug Level = 3
 )
 
+// ParseLevel converts a level string to a Level constant.
+// Valid levels: "error", "warn"/"warning", "info", "debug".
+// Returns LevelInfo for unrecognized values.
+func ParseLevel(levelStr string) Level {
+	switch levelStr {
+	case "error":
+		return LevelError
+	case "warn", "warning":
+		return LevelWarn
+	case "info":
+		return LevelInfo
+	case "debug":
+		return LevelDebug
+	default:
+		return LevelInfo
+	}
+}
+
 // StandardLogger wraps Go's standard logger with level support.
 // Messages are prefixed with their level (ERROR, WARN, INFO, DEBUG).
 type StandardLogger struct {
@@ -32,20 +50,7 @@ type StandardLogger struct {
 // Valid levels: "error", "warn"/"warning", "info", "debug".
 // Defaults to info if level is unrecognized.
 func New(levelStr string) *StandardLogger {
-	var level Level
-	switch levelStr {
-	case "error":
-		level = LevelError
-	case "warn", "warning":
-		level = LevelWarn
-	case "info":
-		level = LevelInfo
-	case "debug":
-		level = LevelDebug
-	default:
-		level = LevelInfo
-	}
-	return &StandardLogger{level: level}
+	return &StandardLogger{level: ParseLevel(levelStr)}
 }
 
 // NewWithLevel creates a new StandardLogger with the specified level constant.
@@ -55,18 +60,7 @@ func NewWithLevel(level Level) *StandardLogger {
 
 // SetLevel changes the logger's level at runtime.
 func (l *StandardLogger) SetLevel(levelStr string) {
-	switch levelStr {
-	case "error":
-		l.level = LevelError
-	case "warn", "warning":
-		l.level = LevelWarn
-	case "info":
-		l.level = LevelInfo
-	case "debug":
-		l.level = LevelDebug
-	default:
-		l.level = LevelInfo
-	}
+	l.level = ParseLevel(levelStr)
 }
 
 // Error logs an error message.

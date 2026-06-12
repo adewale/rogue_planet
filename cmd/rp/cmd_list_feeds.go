@@ -6,14 +6,12 @@ import (
 	"time"
 )
 
-func cmdListFeeds(opts ListFeedsOptions) error {
+func cmdListFeeds(ctx context.Context, opts ListFeedsOptions) error {
 	_, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
-
-	ctx := context.Background()
 
 	// Get feeds
 	feeds, err := repo.GetFeeds(ctx, false)

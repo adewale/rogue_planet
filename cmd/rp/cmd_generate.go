@@ -16,7 +16,7 @@ func cmdGenerate(ctx context.Context, opts GenerateOptions) error {
 	}
 
 	fmt.Fprintln(opts.Output, "Generating site...")
-	if err := generateSite(ctx, cfg); err != nil {
+	if err := generateSite(ctx, cfg, opts.Output); err != nil {
 		return fmt.Errorf("failed to generate site: %w", err)
 	}
 

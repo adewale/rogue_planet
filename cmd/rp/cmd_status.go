@@ -5,14 +5,12 @@ import (
 	"fmt"
 )
 
-func cmdStatus(opts StatusOptions) error {
+func cmdStatus(ctx context.Context, opts StatusOptions) error {
 	cfg, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
-
-	ctx := context.Background()
 
 	// Get feed counts
 	feeds, err := repo.GetFeeds(ctx, false)

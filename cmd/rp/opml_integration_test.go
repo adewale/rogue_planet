@@ -22,7 +22,7 @@ func TestOPMLRoundTrip(t *testing.T) {
 		ConfigPath: configPath,
 		Output:     &bytes.Buffer{},
 	}
-	if err := cmdInit(initOpts); err != nil {
+	if err := cmdInit(t.Context(), initOpts); err != nil {
 		t.Fatalf("cmdInit failed: %v", err)
 	}
 
@@ -42,7 +42,7 @@ func TestOPMLRoundTrip(t *testing.T) {
 			ConfigPath: configPath,
 			Output:     &bytes.Buffer{},
 		}
-		if err := cmdAddFeed(addOpts); err != nil {
+		if err := cmdAddFeed(t.Context(), addOpts); err != nil {
 			t.Fatalf("cmdAddFeed failed for %s: %v", feed.url, err)
 		}
 	}
@@ -54,7 +54,7 @@ func TestOPMLRoundTrip(t *testing.T) {
 		OutputFile: exportPath,
 		Output:     &bytes.Buffer{},
 	}
-	if err := cmdExportOPML(exportOpts); err != nil {
+	if err := cmdExportOPML(t.Context(), exportOpts); err != nil {
 		t.Fatalf("cmdExportOPML failed: %v", err)
 	}
 
@@ -83,7 +83,7 @@ func TestOPMLRoundTrip(t *testing.T) {
 		ConfigPath: configPath2,
 		Output:     &bytes.Buffer{},
 	}
-	if err := cmdInit(initOpts2); err != nil {
+	if err := cmdInit(t.Context(), initOpts2); err != nil {
 		t.Fatalf("cmdInit failed for import test: %v", err)
 	}
 
@@ -94,7 +94,7 @@ func TestOPMLRoundTrip(t *testing.T) {
 		DryRun:     false,
 		Output:     &bytes.Buffer{},
 	}
-	if err := cmdImportOPML(importOpts); err != nil {
+	if err := cmdImportOPML(t.Context(), importOpts); err != nil {
 		t.Fatalf("cmdImportOPML failed: %v", err)
 	}
 
@@ -104,7 +104,7 @@ func TestOPMLRoundTrip(t *testing.T) {
 		ConfigPath: configPath2,
 		Output:     &listBuf,
 	}
-	if err := cmdListFeeds(listOpts); err != nil {
+	if err := cmdListFeeds(t.Context(), listOpts); err != nil {
 		t.Fatalf("cmdListFeeds failed: %v", err)
 	}
 
@@ -130,7 +130,7 @@ func TestOPMLImportRealWorldFile(t *testing.T) {
 		ConfigPath: configPath,
 		Output:     &bytes.Buffer{},
 	}
-	if err := cmdInit(initOpts); err != nil {
+	if err := cmdInit(t.Context(), initOpts); err != nil {
 		t.Fatalf("cmdInit failed: %v", err)
 	}
 
@@ -171,7 +171,7 @@ func TestOPMLImportRealWorldFile(t *testing.T) {
 		DryRun:     false,
 		Output:     &importBuf,
 	}
-	if err := cmdImportOPML(importOpts); err != nil {
+	if err := cmdImportOPML(t.Context(), importOpts); err != nil {
 		t.Fatalf("cmdImportOPML failed: %v", err)
 	}
 
@@ -188,7 +188,7 @@ func TestOPMLImportRealWorldFile(t *testing.T) {
 		ConfigPath: configPath,
 		Output:     &listBuf,
 	}
-	if err := cmdListFeeds(listOpts); err != nil {
+	if err := cmdListFeeds(t.Context(), listOpts); err != nil {
 		t.Fatalf("cmdListFeeds failed: %v", err)
 	}
 
@@ -219,7 +219,7 @@ func TestOPMLImportDryRun(t *testing.T) {
 		ConfigPath: configPath,
 		Output:     &bytes.Buffer{},
 	}
-	if err := cmdInit(initOpts); err != nil {
+	if err := cmdInit(t.Context(), initOpts); err != nil {
 		t.Fatalf("cmdInit failed: %v", err)
 	}
 
@@ -248,7 +248,7 @@ func TestOPMLImportDryRun(t *testing.T) {
 		DryRun:     true,
 		Output:     &dryRunBuf,
 	}
-	if err := cmdImportOPML(dryRunOpts); err != nil {
+	if err := cmdImportOPML(t.Context(), dryRunOpts); err != nil {
 		t.Fatalf("cmdImportOPML dry run failed: %v", err)
 	}
 
@@ -269,7 +269,7 @@ func TestOPMLImportDryRun(t *testing.T) {
 		ConfigPath: configPath,
 		Output:     &listBuf,
 	}
-	if err := cmdListFeeds(listOpts); err != nil {
+	if err := cmdListFeeds(t.Context(), listOpts); err != nil {
 		t.Fatalf("cmdListFeeds failed: %v", err)
 	}
 
@@ -292,7 +292,7 @@ func TestOPMLImportDuplicateDetection(t *testing.T) {
 		ConfigPath: configPath,
 		Output:     &bytes.Buffer{},
 	}
-	if err := cmdInit(initOpts); err != nil {
+	if err := cmdInit(t.Context(), initOpts); err != nil {
 		t.Fatalf("cmdInit failed: %v", err)
 	}
 
@@ -302,7 +302,7 @@ func TestOPMLImportDuplicateDetection(t *testing.T) {
 		ConfigPath: configPath,
 		Output:     &bytes.Buffer{},
 	}
-	if err := cmdAddFeed(addOpts); err != nil {
+	if err := cmdAddFeed(t.Context(), addOpts); err != nil {
 		t.Fatalf("cmdAddFeed failed: %v", err)
 	}
 
@@ -331,7 +331,7 @@ func TestOPMLImportDuplicateDetection(t *testing.T) {
 		DryRun:     false,
 		Output:     &importBuf,
 	}
-	if err := cmdImportOPML(importOpts); err != nil {
+	if err := cmdImportOPML(t.Context(), importOpts); err != nil {
 		t.Fatalf("cmdImportOPML failed: %v", err)
 	}
 
@@ -403,7 +403,7 @@ func TestOPMLExportToStdout(t *testing.T) {
 		ConfigPath: configPath,
 		Output:     &bytes.Buffer{},
 	}
-	if err := cmdInit(initOpts); err != nil {
+	if err := cmdInit(t.Context(), initOpts); err != nil {
 		t.Fatalf("cmdInit failed: %v", err)
 	}
 
@@ -412,7 +412,7 @@ func TestOPMLExportToStdout(t *testing.T) {
 		ConfigPath: configPath,
 		Output:     &bytes.Buffer{},
 	}
-	if err := cmdAddFeed(addOpts); err != nil {
+	if err := cmdAddFeed(t.Context(), addOpts); err != nil {
 		t.Fatalf("cmdAddFeed failed: %v", err)
 	}
 
@@ -423,7 +423,7 @@ func TestOPMLExportToStdout(t *testing.T) {
 		OutputFile: "", // stdout
 		Output:     &exportBuf,
 	}
-	if err := cmdExportOPML(exportOpts); err != nil {
+	if err := cmdExportOPML(t.Context(), exportOpts); err != nil {
 		t.Fatalf("cmdExportOPML failed: %v", err)
 	}
 

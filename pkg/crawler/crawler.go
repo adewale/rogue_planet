@@ -26,9 +26,11 @@ const (
 	DefaultTimeout = 30 * time.Second
 	// MaxRedirects prevents redirect loops
 	MaxRedirects = 5
-	// UserAgent identifies the bot
-	UserAgent = "RoguePlanet/0.4 (+https://github.com/adewale/rogue_planet)"
 )
+
+// DefaultUserAgent is the fallback User-Agent when none is configured.
+// In production, prefer using version.UserAgent() via config.
+var DefaultUserAgent = "RoguePlanet/0.4.0 (+https://github.com/adewale/rogue_planet)"
 
 var (
 	ErrInvalidURL      = errors.New("invalid URL")
@@ -102,7 +104,7 @@ func New() *Crawler {
 				return nil
 			},
 		},
-		userAgent:     UserAgent,
+		userAgent:     DefaultUserAgent,
 		maxSize:       MaxFeedSize,
 		skipSSRFCheck: false,
 	}
@@ -186,7 +188,7 @@ func NewWithConfig(cfg CrawlerConfig) *Crawler {
 
 	userAgent := cfg.UserAgent
 	if userAgent == "" {
-		userAgent = UserAgent
+		userAgent = DefaultUserAgent
 	}
 
 	return &Crawler{

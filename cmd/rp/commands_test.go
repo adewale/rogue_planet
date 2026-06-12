@@ -36,7 +36,7 @@ func TestCmdAddFeed(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := cmdAddFeed(tt.opts)
+			err := cmdAddFeed(t.Context(), tt.opts)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("cmdAddFeed() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -66,7 +66,7 @@ func TestCmdAddAll(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := cmdAddAll(tt.opts)
+			err := cmdAddAll(t.Context(), tt.opts)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("cmdAddAll() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -84,7 +84,7 @@ func TestCmdRemoveFeed(t *testing.T) {
 			Output:     &buf,
 			Force:      true,
 		}
-		err := cmdRemoveFeed(opts)
+		err := cmdRemoveFeed(t.Context(), opts)
 		if err == nil {
 			t.Error("cmdRemoveFeed() expected error for missing URL, got nil")
 		}
@@ -156,7 +156,7 @@ path = %s
 			Force:      true,
 		}
 
-		if err := cmdRemoveFeed(opts); err != nil {
+		if err := cmdRemoveFeed(t.Context(), opts); err != nil {
 			t.Fatalf("cmdRemoveFeed() error = %v", err)
 		}
 
@@ -225,7 +225,7 @@ path = %s
 			Force:      true,
 		}
 
-		err = cmdRemoveFeed(opts)
+		err = cmdRemoveFeed(t.Context(), opts)
 		if err == nil {
 			t.Error("cmdRemoveFeed() expected error for non-existent feed, got nil")
 		}
@@ -297,7 +297,7 @@ path = %s
 			Force:      false,
 		}
 
-		if err := cmdRemoveFeed(opts); err != nil {
+		if err := cmdRemoveFeed(t.Context(), opts); err != nil {
 			t.Fatalf("cmdRemoveFeed() should succeed with 'y' input, got error: %v", err)
 		}
 
@@ -370,7 +370,7 @@ path = %s
 			Force:      false,
 		}
 
-		err = cmdRemoveFeed(opts)
+		err = cmdRemoveFeed(t.Context(), opts)
 		if err == nil {
 			t.Error("cmdRemoveFeed() should return error when user cancels")
 		}
@@ -446,7 +446,7 @@ path = %s
 			Force:      false,
 		}
 
-		if err := cmdRemoveFeed(opts); err != nil {
+		if err := cmdRemoveFeed(t.Context(), opts); err != nil {
 			t.Fatalf("cmdRemoveFeed() should succeed with 'yes' input, got error: %v", err)
 		}
 	})
@@ -512,7 +512,7 @@ path = %s
 			Force:      false,
 		}
 
-		err = cmdRemoveFeed(opts)
+		err = cmdRemoveFeed(t.Context(), opts)
 		if err == nil {
 			t.Error("cmdRemoveFeed() should return error in non-interactive mode without --force")
 		}
@@ -549,7 +549,7 @@ func TestCmdInit(t *testing.T) {
 		Output:     &buf,
 	}
 
-	if err := cmdInit(opts); err != nil {
+	if err := cmdInit(t.Context(), opts); err != nil {
 		t.Fatalf("cmdInit() error = %v", err)
 	}
 
@@ -604,7 +604,7 @@ func TestCmdInitWithFeedsFile(t *testing.T) {
 		Output:     &buf,
 	}
 
-	if err := cmdInit(opts); err != nil {
+	if err := cmdInit(t.Context(), opts); err != nil {
 		t.Fatalf("cmdInit() error = %v", err)
 	}
 
@@ -812,7 +812,7 @@ path = ` + dbPath + `
 				Output:     &buf,
 			}
 
-			err := cmdVerify(opts)
+			err := cmdVerify(t.Context(), opts)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("cmdVerify() error = %v, wantErr %v", err, tt.wantErr)
 			}

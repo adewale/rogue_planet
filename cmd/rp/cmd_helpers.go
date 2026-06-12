@@ -7,10 +7,8 @@ import (
 	"io"
 	"log"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/adewale/rogue_planet/pkg/config"
@@ -72,7 +70,7 @@ func importFeedsFromURLs(ctx context.Context, repo *repository.Repository, feedU
 	return addedCount
 }
 
-func fetchFeeds(ctx context.Context, cfg *config.Config, logger logging.Logger) error {
+func fetchFeeds(ctx context.Context, cfg *config.Config, logger logging.Logger, output io.Writer) error {
 	// Set log level from config if logger supports it
 	if stdLogger, ok := logger.(*logging.StandardLogger); ok {
 		stdLogger.SetLevel(cfg.Planet.LogLevel)
@@ -91,7 +89,7 @@ func fetchFeeds(ctx context.Context, cfg *config.Config, logger logging.Logger) 
 	}
 
 	if len(feeds) == 0 {
-		fmt.Println("No feeds to fetch. Add feeds with 'rp add-feed <url>'")
+		fmt.Fprintln(output, "No feeds to fetch. Add feeds with 'rp add-feed <url>'")
 		return nil
 	}
 
@@ -115,25 +113,8 @@ func fetchFeeds(ctx context.Context, cfg *config.Config, logger logging.Logger) 
 	rateLimiter := ratelimit.New(cfg.Planet.RequestsPerMinute, cfg.Planet.RateLimitBurst)
 	logger.Debug("Rate limiter configured: %d requests/min, burst=%d", cfg.Planet.RequestsPerMinute, cfg.Planet.RateLimitBurst)
 
-	// Set up signal handling for graceful shutdown
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
-	// Handle signals in background
-	go func() {
-		sig, ok := <-sigChan
-		if !ok {
-			// Channel closed, normal shutdown
-			return
-		}
-		logger.Info("Received signal %v, cancelling fetches...", sig)
-		cancel()
-	}()
-
 	// Use semaphore pattern for concurrency control
+	// Note: Signal handling (Ctrl+C) is done by the caller via the context
 	concurrency := cfg.Planet.ConcurrentFetch
 	if concurrency < 1 {
 		concurrency = 1
@@ -172,7 +153,7 @@ func fetchFeeds(ctx context.Context, cfg *config.Config, logger logging.Logger) 
 			default:
 			}
 
-			fmt.Printf("  [%d/%d] Fetching %s\n", index+1, len(feeds), f.URL)
+			fmt.Fprintf(output, "  [%d/%d] Fetching %s\n", index+1, len(feeds), f.URL)
 
 			// Apply rate limiting before fetching (use parent context)
 			fetchCtx, fetchCancel := context.WithTimeout(ctx, 30*time.Second)
@@ -197,22 +178,18 @@ func fetchFeeds(ctx context.Context, cfg *config.Config, logger logging.Logger) 
 			}
 
 			if result.NotModified {
-				fmt.Printf("    Not modified (cached)\n")
+				fmt.Fprintln(output, "    Not modified (cached)")
 				return
 			}
 
-			fmt.Printf("    Stored %d entries\n", result.StoredEntries)
+			fmt.Fprintf(output, "    Stored %d entries\n", result.StoredEntries)
 		}(i, feed)
 	}
 
 	// Wait for all fetches to complete
 	wg.Wait()
 
-	// Stop listening for signals
-	signal.Stop(sigChan)
-	close(sigChan)
-
-	// Check if we were cancelled
+	// Check if we were cancelled (context is managed by caller with signal handling)
 	select {
 	case <-ctx.Done():
 		logger.Info("Fetch operation cancelled")
@@ -224,7 +201,7 @@ func fetchFeeds(ctx context.Context, cfg *config.Config, logger logging.Logger) 
 	return nil
 }
 
-func generateSite(ctx context.Context, cfg *config.Config) error {
+func generateSite(ctx context.Context, cfg *config.Config, output io.Writer) error {
 	repo, err := repository.New(cfg.Database.Path)
 	if err != nil {
 		return fmt.Errorf("open database: %w", err)
@@ -317,6 +294,6 @@ func generateSite(ctx context.Context, cfg *config.Config) error {
 		return fmt.Errorf("generate file: %w", err)
 	}
 
-	fmt.Printf("  Generated %s with %d entries\n", outputPath, len(entries))
+	fmt.Fprintf(output, "  Generated %s with %d entries\n", outputPath, len(entries))
 	return nil
 }

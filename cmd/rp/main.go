@@ -6,12 +6,16 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-)
 
-const version = "0.4.0"
+	"github.com/adewale/rogue_planet/pkg/version"
+)
 
 func main() {
 	if err := run(); err != nil {
+		// ErrUserCancelled is a silent exit (message already printed)
+		if _, ok := err.(*ErrUserCancelled); ok {
+			os.Exit(1)
+		}
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
@@ -32,37 +36,33 @@ func run() error {
 
 	switch command {
 	case "init":
-		return runInit()
+		return runInit(ctx)
 	case "add-feed":
-		return runAddFeed()
+		return runAddFeed(ctx)
 	case "add-all":
-		return runAddAll()
+		return runAddAll(ctx)
 	case "remove-feed":
-		return runRemoveFeed()
+		return runRemoveFeed(ctx)
 	case "list-feeds":
-		return runListFeeds()
+		return runListFeeds(ctx)
 	case "status":
-		return runStatus()
+		return runStatus(ctx)
 	case "update":
-		// Long-running command - pass context for cancellation support
-		return runUpdateWithContext(ctx)
+		return runUpdate(ctx)
 	case "fetch":
-		// Long-running command - pass context for cancellation support
-		return runFetchWithContext(ctx)
+		return runFetch(ctx)
 	case "generate":
-		// Long-running command - pass context for cancellation support
-		return runGenerateWithContext(ctx)
+		return runGenerate(ctx)
 	case "prune":
-		// Long-running command - pass context for cancellation support
-		return runPruneWithContext(ctx)
+		return runPrune(ctx)
 	case "verify":
-		return runVerify()
+		return runVerify(ctx)
 	case "import-opml":
-		return runImportOPML()
+		return runImportOPML(ctx)
 	case "export-opml":
-		return runExportOPML()
+		return runExportOPML(ctx)
 	case "version":
-		fmt.Printf("rp version %s\n", version)
+		fmt.Printf("rp version %s\n", version.Version)
 		return nil
 	case "help", "--help", "-h":
 		printUsage()
@@ -138,36 +138,36 @@ Examples:
 `)
 }
 
-func runInit() error {
+func runInit(ctx context.Context) error {
 	opts, err := parseInitFlags(os.Args[2:])
 	if err != nil {
 		return err
 	}
 	opts.Output = os.Stdout
-	return cmdInit(opts)
+	return cmdInit(ctx, opts)
 }
 
-func runAddFeed() error {
+func runAddFeed(ctx context.Context) error {
 	opts, err := parseAddFeedFlags(os.Args[2:])
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Usage: rp add-feed <url>")
 		return err
 	}
 	opts.Output = os.Stdout
-	return cmdAddFeed(opts)
+	return cmdAddFeed(ctx, opts)
 }
 
-func runAddAll() error {
+func runAddAll(ctx context.Context) error {
 	opts, err := parseAddAllFlags(os.Args[2:])
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Usage: rp add-all -f <feeds-file>")
 		return err
 	}
 	opts.Output = os.Stdout
-	return cmdAddAll(opts)
+	return cmdAddAll(ctx, opts)
 }
 
-func runRemoveFeed() error {
+func runRemoveFeed(ctx context.Context) error {
 	opts, err := parseRemoveFeedFlags(os.Args[2:])
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Usage: rp remove-feed <url> [--force]")
@@ -175,37 +175,28 @@ func runRemoveFeed() error {
 	}
 	opts.Output = os.Stdout
 	opts.Input = os.Stdin
-
-	err = cmdRemoveFeed(opts)
-	// Check if this is a user cancellation
-	if _, ok := err.(*ErrUserCancelled); ok {
-		// "Cancelled." already printed by cmdRemoveFeed
-		// Exit with code 1 without printing error message
-		os.Exit(1)
-	}
-	return err
+	return cmdRemoveFeed(ctx, opts)
 }
 
-func runListFeeds() error {
+func runListFeeds(ctx context.Context) error {
 	opts, err := parseListFeedsFlags(os.Args[2:])
 	if err != nil {
 		return err
 	}
 	opts.Output = os.Stdout
-	return cmdListFeeds(opts)
+	return cmdListFeeds(ctx, opts)
 }
 
-func runStatus() error {
+func runStatus(ctx context.Context) error {
 	opts, err := parseStatusFlags(os.Args[2:])
 	if err != nil {
 		return err
 	}
 	opts.Output = os.Stdout
-	return cmdStatus(opts)
+	return cmdStatus(ctx, opts)
 }
 
-// WithContext versions of long-running commands for cancellation support
-func runUpdateWithContext(ctx context.Context) error {
+func runUpdate(ctx context.Context) error {
 	opts, err := parseUpdateFlags(os.Args[2:])
 	if err != nil {
 		return err
@@ -214,7 +205,7 @@ func runUpdateWithContext(ctx context.Context) error {
 	return cmdUpdate(ctx, opts)
 }
 
-func runFetchWithContext(ctx context.Context) error {
+func runFetch(ctx context.Context) error {
 	opts, err := parseFetchFlags(os.Args[2:])
 	if err != nil {
 		return err
@@ -223,7 +214,7 @@ func runFetchWithContext(ctx context.Context) error {
 	return cmdFetch(ctx, opts)
 }
 
-func runGenerateWithContext(ctx context.Context) error {
+func runGenerate(ctx context.Context) error {
 	opts, err := parseGenerateFlags(os.Args[2:])
 	if err != nil {
 		return err
@@ -232,7 +223,7 @@ func runGenerateWithContext(ctx context.Context) error {
 	return cmdGenerate(ctx, opts)
 }
 
-func runPruneWithContext(ctx context.Context) error {
+func runPrune(ctx context.Context) error {
 	opts, err := parsePruneFlags(os.Args[2:])
 	if err != nil {
 		return err
@@ -241,30 +232,30 @@ func runPruneWithContext(ctx context.Context) error {
 	return cmdPrune(ctx, opts)
 }
 
-func runVerify() error {
+func runVerify(ctx context.Context) error {
 	opts, err := parseVerifyFlags(os.Args[2:])
 	if err != nil {
 		return err
 	}
 	opts.Output = os.Stdout
-	return cmdVerify(opts)
+	return cmdVerify(ctx, opts)
 }
 
-func runImportOPML() error {
+func runImportOPML(ctx context.Context) error {
 	opts, err := parseImportOPMLFlags(os.Args[2:])
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Usage: rp import-opml <opml-file> [--dry-run]")
 		return err
 	}
 	opts.Output = os.Stdout
-	return cmdImportOPML(opts)
+	return cmdImportOPML(ctx, opts)
 }
 
-func runExportOPML() error {
+func runExportOPML(ctx context.Context) error {
 	opts, err := parseExportOPMLFlags(os.Args[2:])
 	if err != nil {
 		return err
 	}
 	opts.Output = os.Stdout
-	return cmdExportOPML(opts)
+	return cmdExportOPML(ctx, opts)
 }

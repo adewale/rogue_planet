@@ -14,6 +14,12 @@ import (
 	"github.com/adewale/rogue_planet/pkg/repository"
 )
 
+// nopLocker is a no-op sync.Locker for single-threaded usage
+type nopLocker struct{}
+
+func (nopLocker) Lock()   {}
+func (nopLocker) Unlock() {}
+
 // Fetcher handles the business logic for fetching and processing a single feed.
 // It coordinates between the crawler (HTTP fetching), normalizer (parsing),
 // and repository (storage) components.
@@ -42,6 +48,9 @@ func New(
 	logger logging.Logger,
 	maxRetries int,
 ) *Fetcher {
+	if repoMutex == nil {
+		repoMutex = nopLocker{}
+	}
 	return &Fetcher{
 		crawler:    c,
 		normalizer: n,
@@ -166,14 +175,14 @@ func (f *Fetcher) FetchFeed(ctx context.Context, feed repository.Feed) FetchResu
 	return FetchResult{StoredEntries: storedCount}
 }
 
-// lock acquires the repository mutex if one was provided
+// lock acquires the repository mutex
 func (f *Fetcher) lock() {
 	if f.repoMutex != nil {
 		f.repoMutex.Lock()
 	}
 }
 
-// unlock releases the repository mutex if one was provided
+// unlock releases the repository mutex
 func (f *Fetcher) unlock() {
 	if f.repoMutex != nil {
 		f.repoMutex.Unlock()

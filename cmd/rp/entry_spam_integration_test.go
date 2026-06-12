@@ -21,7 +21,7 @@ func TestEntrySpamPrevention(t *testing.T) {
 		FeedsFile:  "",
 		Output:     io.Discard,
 	}
-	if err := cmdInit(initOpts); err != nil {
+	if err := cmdInit(t.Context(), initOpts); err != nil {
 		t.Fatalf("cmdInit() error = %v", err)
 	}
 
@@ -133,7 +133,7 @@ func TestBackwardsCompatibility(t *testing.T) {
 		ConfigPath: "./config.ini",
 		Output:     io.Discard,
 	}
-	if err := cmdInit(initOpts); err != nil {
+	if err := cmdInit(t.Context(), initOpts); err != nil {
 		t.Fatalf("cmdInit() error = %v", err)
 	}
 
