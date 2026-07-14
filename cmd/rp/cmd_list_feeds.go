@@ -22,29 +22,29 @@ func cmdListFeeds(opts ListFeedsOptions) error {
 	}
 
 	if len(feeds) == 0 {
-		fmt.Fprintln(opts.Output, "No feeds configured.")
+		_, _ = fmt.Fprintln(opts.Output, "No feeds configured.")
 		return nil
 	}
 
-	fmt.Fprintf(opts.Output, "Configured feeds (%d):\n\n", len(feeds))
+	_, _ = fmt.Fprintf(opts.Output, "Configured feeds (%d):\n\n", len(feeds))
 	for _, feed := range feeds {
 		status := "active"
 		if !feed.Active {
 			status = "inactive"
 		}
 
-		fmt.Fprintf(opts.Output, "  [%d] %s\n", feed.ID, feed.URL)
+		_, _ = fmt.Fprintf(opts.Output, "  [%d] %s\n", feed.ID, feed.URL)
 		if feed.Title != "" {
-			fmt.Fprintf(opts.Output, "      Title: %s\n", feed.Title)
+			_, _ = fmt.Fprintf(opts.Output, "      Title: %s\n", feed.Title)
 		}
-		fmt.Fprintf(opts.Output, "      Status: %s\n", status)
+		_, _ = fmt.Fprintf(opts.Output, "      Status: %s\n", status)
 		if !feed.LastFetched.IsZero() {
-			fmt.Fprintf(opts.Output, "      Last fetched: %s\n", feed.LastFetched.Format(time.RFC3339))
+			_, _ = fmt.Fprintf(opts.Output, "      Last fetched: %s\n", feed.LastFetched.Format(time.RFC3339))
 		}
 		if feed.FetchError != "" {
-			fmt.Fprintf(opts.Output, "      Error: %s\n", feed.FetchError)
+			_, _ = fmt.Fprintf(opts.Output, "      Error: %s\n", feed.FetchError)
 		}
-		fmt.Fprintln(opts.Output)
+		_, _ = fmt.Fprintln(opts.Output)
 	}
 
 	return nil

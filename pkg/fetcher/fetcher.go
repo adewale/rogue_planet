@@ -6,6 +6,7 @@ package fetcher
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"sync"
 
 	"github.com/adewale/rogue_planet/pkg/crawler"
@@ -13,6 +14,38 @@ import (
 	"github.com/adewale/rogue_planet/pkg/normalizer"
 	"github.com/adewale/rogue_planet/pkg/repository"
 )
+
+// maxErrorMessageLength is the maximum length of sanitized error messages stored in the database.
+const maxErrorMessageLength = 500
+
+// ipPattern matches IPv4 addresses (e.g., 192.168.1.100)
+var ipPattern = regexp.MustCompile(`\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b`)
+
+// pathPattern matches Unix-style absolute file paths (e.g., /home/user/.config/file.txt)
+var pathPattern = regexp.MustCompile(`/[a-zA-Z0-9_\-./]+`)
+
+// sanitizeErrorMessage strips sensitive details (IP addresses, file paths) from error
+// messages before storing them in the database, while preserving the general error category.
+func sanitizeErrorMessage(err error) string {
+	if err == nil {
+		return ""
+	}
+
+	msg := err.Error()
+
+	// Redact IP addresses
+	msg = ipPattern.ReplaceAllString(msg, "[REDACTED_IP]")
+
+	// Redact file paths
+	msg = pathPattern.ReplaceAllString(msg, "[REDACTED_PATH]")
+
+	// Truncate if too long
+	if len(msg) > maxErrorMessageLength {
+		msg = msg[:maxErrorMessageLength]
+	}
+
+	return msg
+}
 
 // Fetcher handles the business logic for fetching and processing a single feed.
 // It coordinates between the crawler (HTTP fetching), normalizer (parsing),
@@ -189,7 +222,7 @@ func (f *Fetcher) handleFetchError(ctx context.Context, feed repository.Feed, er
 	f.lock()
 	defer f.unlock()
 
-	if updateErr := f.repo.UpdateFeedError(ctx, feed.ID, err.Error()); updateErr != nil {
+	if updateErr := f.repo.UpdateFeedError(ctx, feed.ID, sanitizeErrorMessage(err)); updateErr != nil {
 		f.logger.Error("Failed to update feed error for %s: %v", feed.URL, updateErr)
 	}
 

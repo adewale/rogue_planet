@@ -8,6 +8,7 @@ package crawler
 import (
 	"compress/gzip"
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -18,6 +19,72 @@ import (
 	"strings"
 	"time"
 )
+
+// maxRetryAfterDuration is the upper bound for Retry-After durations (24 hours)
+const maxRetryAfterDuration = 24 * time.Hour
+
+// CIDR ranges for additional blocked IP ranges
+var blockedCIDRs []*net.IPNet
+
+func init() {
+	cidrs := []string{
+		"100.64.0.0/10", // CGNAT / Shared Address Space (RFC 6598)
+		"198.18.0.0/15", // Benchmarking (RFC 2544)
+		"0.0.0.0/8",     // "This network" (RFC 1122)
+	}
+	for _, cidr := range cidrs {
+		_, network, err := net.ParseCIDR(cidr)
+		if err != nil {
+			panic(fmt.Sprintf("invalid CIDR %s: %v", cidr, err))
+		}
+		blockedCIDRs = append(blockedCIDRs, network)
+	}
+}
+
+// isPrivateIP checks whether an IP address is private, loopback, link-local,
+// multicast, or otherwise unsafe for external feed fetching.
+// It handles IPv4-mapped IPv6 addresses by extracting the underlying IPv4 address.
+func isPrivateIP(ip net.IP) bool {
+	// Handle IPv4-mapped IPv6 addresses (e.g., ::ffff:127.0.0.1)
+	// by converting to the IPv4 representation first
+	if ipv4 := ip.To4(); ipv4 != nil {
+		ip = ipv4
+	}
+
+	// Block loopback addresses (127.0.0.0/8, ::1)
+	if ip.IsLoopback() {
+		return true
+	}
+
+	// Block private networks (RFC 1918: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
+	if ip.IsPrivate() {
+		return true
+	}
+
+	// Block link-local addresses (169.254.0.0/16, fe80::/10)
+	if ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+		return true
+	}
+
+	// Block unspecified addresses (0.0.0.0, ::)
+	if ip.IsUnspecified() {
+		return true
+	}
+
+	// Block multicast addresses (224.0.0.0/4, ff00::/8)
+	if ip.IsMulticast() {
+		return true
+	}
+
+	// Block additional CIDR ranges (CGNAT, benchmarking, "this network")
+	for _, network := range blockedCIDRs {
+		if network.Contains(ip) {
+			return true
+		}
+	}
+
+	return false
+}
 
 const (
 	// MaxFeedSize limits response body size to 10MB
@@ -67,6 +134,17 @@ type Crawler struct {
 
 // New creates a new Crawler with default settings
 func New() *Crawler {
+	c := &Crawler{
+		userAgent:     UserAgent,
+		maxSize:       MaxFeedSize,
+		skipSSRFCheck: false,
+	}
+
+	dialer := &net.Dialer{
+		Timeout:   10 * time.Second, // TCP connection timeout
+		KeepAlive: 30 * time.Second, // TCP keep-alive
+	}
+
 	// Configure HTTP transport with connection pooling
 	transport := &http.Transport{
 		// Connection pooling settings
@@ -75,11 +153,8 @@ func New() *Crawler {
 		MaxConnsPerHost:     20,               // Maximum active connections per host
 		IdleConnTimeout:     90 * time.Second, // Keep idle connections for reuse
 
-		// Timeouts for connection establishment
-		DialContext: (&net.Dialer{
-			Timeout:   10 * time.Second, // TCP connection timeout
-			KeepAlive: 30 * time.Second, // TCP keep-alive
-		}).DialContext,
+		// Custom DialContext for DNS rebinding protection
+		DialContext: c.safeDialContext(dialer),
 
 		// TLS handshake timeout
 		TLSHandshakeTimeout: 10 * time.Second,
@@ -89,23 +164,30 @@ func New() *Crawler {
 
 		// Expect Continue timeout
 		ExpectContinueTimeout: 1 * time.Second,
+
+		// Explicit minimum TLS version for defense-in-depth
+		TLSClientConfig: &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		},
 	}
 
-	return &Crawler{
-		client: &http.Client{
-			Transport: transport,
-			Timeout:   DefaultTimeout,
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				if len(via) >= MaxRedirects {
-					return fmt.Errorf("stopped after %d redirects", MaxRedirects)
-				}
-				return nil
-			},
-		},
-		userAgent:     UserAgent,
-		maxSize:       MaxFeedSize,
-		skipSSRFCheck: false,
+	c.client = &http.Client{
+		Transport: transport,
+		Timeout:   DefaultTimeout,
 	}
+	c.client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if len(via) >= MaxRedirects {
+			return fmt.Errorf("stopped after %d redirects", MaxRedirects)
+		}
+		// SSRF prevention: validate redirect target URL
+		if !c.skipSSRFCheck {
+			if err := ValidateURL(req.URL.String()); err != nil {
+				return fmt.Errorf("redirect blocked by SSRF check: %w", err)
+			}
+		}
+		return nil
+	}
+	return c
 }
 
 // NewWithUserAgent creates a Crawler with a custom user agent
@@ -160,6 +242,22 @@ func NewWithConfig(cfg CrawlerConfig) *Crawler {
 		responseHeaderTimeout = 10 // Default: 10 seconds
 	}
 
+	userAgent := cfg.UserAgent
+	if userAgent == "" {
+		userAgent = UserAgent
+	}
+
+	c := &Crawler{
+		userAgent:     userAgent,
+		maxSize:       MaxFeedSize,
+		skipSSRFCheck: false,
+	}
+
+	dialer := &net.Dialer{
+		Timeout:   time.Duration(dialTimeout) * time.Second,
+		KeepAlive: 30 * time.Second, // TCP keep-alive (not configurable)
+	}
+
 	// Configure HTTP transport with custom connection pooling
 	transport := &http.Transport{
 		// Connection pooling settings
@@ -168,11 +266,8 @@ func NewWithConfig(cfg CrawlerConfig) *Crawler {
 		MaxConnsPerHost:     cfg.MaxConnsPerHost,
 		IdleConnTimeout:     time.Duration(cfg.IdleConnTimeoutSeconds) * time.Second,
 
-		// Timeouts for connection establishment
-		DialContext: (&net.Dialer{
-			Timeout:   time.Duration(dialTimeout) * time.Second,
-			KeepAlive: 30 * time.Second, // TCP keep-alive (not configurable)
-		}).DialContext,
+		// Custom DialContext for DNS rebinding protection
+		DialContext: c.safeDialContext(dialer),
 
 		// TLS handshake timeout
 		TLSHandshakeTimeout: time.Duration(tlsHandshakeTimeout) * time.Second,
@@ -182,28 +277,30 @@ func NewWithConfig(cfg CrawlerConfig) *Crawler {
 
 		// Expect Continue timeout
 		ExpectContinueTimeout: 1 * time.Second,
-	}
 
-	userAgent := cfg.UserAgent
-	if userAgent == "" {
-		userAgent = UserAgent
-	}
-
-	return &Crawler{
-		client: &http.Client{
-			Transport: transport,
-			Timeout:   time.Duration(httpTimeout) * time.Second,
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				if len(via) >= MaxRedirects {
-					return fmt.Errorf("stopped after %d redirects", MaxRedirects)
-				}
-				return nil
-			},
+		// Explicit minimum TLS version for defense-in-depth
+		TLSClientConfig: &tls.Config{
+			MinVersion: tls.VersionTLS12,
 		},
-		userAgent:     userAgent,
-		maxSize:       MaxFeedSize,
-		skipSSRFCheck: false,
 	}
+
+	c.client = &http.Client{
+		Transport: transport,
+		Timeout:   time.Duration(httpTimeout) * time.Second,
+	}
+	c.client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if len(via) >= MaxRedirects {
+			return fmt.Errorf("stopped after %d redirects", MaxRedirects)
+		}
+		// SSRF prevention: validate redirect target URL
+		if !c.skipSSRFCheck {
+			if err := ValidateURL(req.URL.String()); err != nil {
+				return fmt.Errorf("redirect blocked by SSRF check: %w", err)
+			}
+		}
+		return nil
+	}
+	return c
 }
 
 // ValidateURL checks if a URL is safe to fetch (SSRF prevention)
@@ -234,31 +331,60 @@ func ValidateURL(rawURL string) error {
 	host := parsed.Hostname()
 
 	// Block known internal hostnames
-	internalHosts := []string{"localhost", "127.0.0.1", "::1", "0.0.0.0"}
-	for _, blocked := range internalHosts {
-		if strings.EqualFold(host, blocked) {
-			return ErrPrivateIP
-		}
+	if strings.EqualFold(host, "localhost") {
+		return ErrPrivateIP
 	}
 
 	// Try to parse as IP address
 	ip := net.ParseIP(host)
 	if ip != nil {
-		// Block loopback
-		if ip.IsLoopback() {
-			return ErrPrivateIP
-		}
-		// Block private networks (RFC 1918)
-		if ip.IsPrivate() {
-			return ErrPrivateIP
-		}
-		// Block link-local
-		if ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+		if isPrivateIP(ip) {
 			return ErrPrivateIP
 		}
 	}
 
 	return nil
+}
+
+// safeDialContext returns a DialContext function that performs DNS resolution
+// and validates the resolved IP addresses against the SSRF blocklist before
+// establishing a TCP connection. This prevents DNS rebinding attacks where
+// an attacker-controlled DNS record initially resolves to a public IP (passing
+// hostname validation) but then changes to a private IP before connection.
+// When skipSSRFCheck is true (testing mode), it falls back to the standard dialer.
+func (c *Crawler) safeDialContext(dialer *net.Dialer) func(ctx context.Context, network, addr string) (net.Conn, error) {
+	return func(ctx context.Context, network, addr string) (net.Conn, error) {
+		// In testing mode, skip IP validation on resolved addresses
+		if c.skipSSRFCheck {
+			return dialer.DialContext(ctx, network, addr)
+		}
+
+		// Split host and port
+		host, port, err := net.SplitHostPort(addr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid address %q: %w", addr, err)
+		}
+
+		// Resolve the hostname to IP addresses
+		resolver := &net.Resolver{}
+		ips, err := resolver.LookupIPAddr(ctx, host)
+		if err != nil {
+			return nil, fmt.Errorf("DNS resolution failed for %q: %w", host, err)
+		}
+
+		// Check each resolved IP against the SSRF blocklist
+		for _, ipAddr := range ips {
+			if isPrivateIP(ipAddr.IP) {
+				return nil, fmt.Errorf("%w: resolved IP %s for host %q is blocked", ErrPrivateIP, ipAddr.IP, host)
+			}
+		}
+
+		// All IPs are safe; connect to the first one
+		// Use the resolved IP directly to prevent a second DNS lookup
+		// (which could resolve differently due to DNS rebinding)
+		safeAddr := net.JoinHostPort(ips[0].IP.String(), port)
+		return dialer.DialContext(ctx, network, safeAddr)
+	}
 }
 
 // Fetch fetches a feed with conditional request support
@@ -300,6 +426,12 @@ func (c *Crawler) Fetch(ctx context.Context, feedURL string, cache FeedCache) (*
 			if len(via) >= MaxRedirects {
 				return fmt.Errorf("stopped after %d redirects", MaxRedirects)
 			}
+			// SSRF prevention: validate redirect target URL
+			if !c.skipSSRFCheck {
+				if err := ValidateURL(req.URL.String()); err != nil {
+					return fmt.Errorf("redirect blocked by SSRF check: %w", err)
+				}
+			}
 			// Check if this redirect is a 301 Moved Permanently or 308 Permanent Redirect
 			// req.Response contains the response that triggered this redirect
 			if req.Response != nil && (req.Response.StatusCode == http.StatusMovedPermanently ||
@@ -315,7 +447,7 @@ func (c *Crawler) Fetch(ctx context.Context, feedURL string, cache FeedCache) (*
 	if err != nil {
 		return nil, fmt.Errorf("fetch failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Prepare response
 	fetchTime := time.Now()
@@ -357,7 +489,7 @@ func (c *Crawler) Fetch(ctx context.Context, feedURL string, cache FeedCache) (*
 		if err != nil {
 			return nil, fmt.Errorf("create gzip reader: %w", err)
 		}
-		defer gzReader.Close()
+		defer func() { _ = gzReader.Close() }()
 		reader = gzReader
 	}
 
@@ -416,6 +548,10 @@ func parseRetryAfter(headerValue string) time.Duration {
 	if httpDate, err := time.Parse(time.RFC1123, headerValue); err == nil {
 		delay := time.Until(httpDate)
 		if delay > 0 {
+			// Cap at 24 hours to prevent arbitrarily large durations
+			if delay > maxRetryAfterDuration {
+				delay = maxRetryAfterDuration
+			}
 			return delay
 		}
 	}

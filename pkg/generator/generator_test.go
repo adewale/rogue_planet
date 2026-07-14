@@ -2,6 +2,7 @@ package generator
 
 import (
 	"bytes"
+	"context"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -574,6 +575,134 @@ func TestCSPHeader(t *testing.T) {
 	}
 }
 
+func TestCSPDoesNotAllowUnsafeInline(t *testing.T) {
+	t.Parallel()
+	gen, _ := New()
+
+	data := TemplateData{
+		Title:   "Test",
+		Entries: []EntryData{},
+	}
+
+	var buf bytes.Buffer
+	if err := gen.Generate(context.Background(), &buf, data); err != nil {
+		t.Fatalf("Generate() error = %v", err)
+	}
+
+	output := buf.String()
+
+	// CSP must NOT contain 'unsafe-inline' - this allows CSS injection attacks
+	if strings.Contains(output, "unsafe-inline") {
+		t.Error("CSP should NOT contain 'unsafe-inline' - it allows CSS injection")
+	}
+
+	// CSP should contain style-src 'self' to only allow styles from same origin
+	if !strings.Contains(output, "style-src 'self'") {
+		t.Error("CSP should contain \"style-src 'self'\" to restrict styles to same origin")
+	}
+}
+
+func TestGenerateUsesExternalStylesheet(t *testing.T) {
+	t.Parallel()
+	gen, _ := New()
+
+	data := TemplateData{
+		Title:   "Test",
+		Entries: []EntryData{},
+	}
+
+	var buf bytes.Buffer
+	if err := gen.Generate(context.Background(), &buf, data); err != nil {
+		t.Fatalf("Generate() error = %v", err)
+	}
+
+	output := buf.String()
+
+	// Should reference external stylesheet
+	if !strings.Contains(output, `<link rel="stylesheet" href="style.css">`) {
+		t.Error("Generated HTML should reference external style.css")
+	}
+
+	// Should NOT contain inline <style> block
+	if strings.Contains(output, "<style>") {
+		t.Error("Generated HTML should NOT contain inline <style> block")
+	}
+}
+
+func TestGenerateToFileCreatesStyleCSS(t *testing.T) {
+	t.Parallel()
+	gen, _ := New()
+
+	tmpDir := t.TempDir()
+	outputPath := filepath.Join(tmpDir, "output", "index.html")
+
+	data := TemplateData{
+		Title:   "Test Planet",
+		Entries: []EntryData{},
+	}
+
+	err := gen.GenerateToFile(context.Background(), outputPath, data)
+	if err != nil {
+		t.Fatalf("GenerateToFile() error = %v", err)
+	}
+
+	// Check that style.css was created alongside index.html
+	cssPath := filepath.Join(tmpDir, "output", "style.css")
+	if _, err := os.Stat(cssPath); os.IsNotExist(err) {
+		t.Fatal("style.css should be created alongside index.html")
+	}
+
+	// Read CSS file and verify it has content
+	cssContent, err := os.ReadFile(cssPath)
+	if err != nil {
+		t.Fatalf("Failed to read style.css: %v", err)
+	}
+
+	if len(cssContent) == 0 {
+		t.Error("style.css should not be empty")
+	}
+
+	// Verify CSS contains expected styles
+	cssStr := string(cssContent)
+	expectedStyles := []string{
+		"box-sizing",
+		"font-family",
+		".container",
+		".sidebar",
+		"@media",
+	}
+
+	for _, style := range expectedStyles {
+		if !strings.Contains(cssStr, style) {
+			t.Errorf("style.css should contain %q", style)
+		}
+	}
+}
+
+func TestGetDefaultCSS(t *testing.T) {
+	t.Parallel()
+	css := GetDefaultCSS()
+
+	if len(css) == 0 {
+		t.Fatal("GetDefaultCSS() should return non-empty CSS")
+	}
+
+	// Verify it contains key CSS rules
+	expectedRules := []string{
+		"box-sizing: border-box",
+		"font-family:",
+		".container",
+		".entry",
+		"@media",
+	}
+
+	for _, rule := range expectedRules {
+		if !strings.Contains(css, rule) {
+			t.Errorf("Default CSS should contain %q", rule)
+		}
+	}
+}
+
 func TestResponsiveDesign(t *testing.T) {
 	t.Parallel()
 	gen, _ := New()
@@ -595,9 +724,15 @@ func TestResponsiveDesign(t *testing.T) {
 		t.Error("Should include viewport meta tag for responsive design")
 	}
 
-	// Check for media query in CSS
-	if !strings.Contains(output, "@media") {
-		t.Error("Should include media queries for responsive design")
+	// Check that external stylesheet is referenced (CSS is in style.css, not inline)
+	if !strings.Contains(output, `<link rel="stylesheet" href="style.css">`) {
+		t.Error("Should reference external stylesheet for responsive design")
+	}
+
+	// Check for media query in the default CSS (which is served externally)
+	css := GetDefaultCSS()
+	if !strings.Contains(css, "@media") {
+		t.Error("Default CSS should include media queries for responsive design")
 	}
 }
 
@@ -1013,5 +1148,75 @@ func TestGenerateWithSubtitle(t *testing.T) {
 	// Check that title is a link
 	if !strings.Contains(output, `<a href="https://planet.example.com">My Planet</a>`) {
 		t.Error("Title should be a link when Link is provided")
+	}
+}
+
+func TestCopyDirSkipsSymlinks(t *testing.T) {
+	t.Parallel()
+	tmpDir := t.TempDir()
+	templateDir := filepath.Join(tmpDir, "templates")
+	staticSrc := filepath.Join(templateDir, "static")
+	outputDir := filepath.Join(tmpDir, "output")
+
+	// Create static directory with a real file
+	if err := os.MkdirAll(staticSrc, 0755); err != nil {
+		t.Fatalf("Failed to create static dir: %v", err)
+	}
+
+	realFile := filepath.Join(staticSrc, "real.css")
+	if err := os.WriteFile(realFile, []byte("body { }"), 0644); err != nil {
+		t.Fatalf("Failed to write real file: %v", err)
+	}
+
+	// Create a sensitive file outside the static directory
+	sensitiveFile := filepath.Join(tmpDir, "secret.txt")
+	if err := os.WriteFile(sensitiveFile, []byte("TOP SECRET DATA"), 0644); err != nil {
+		t.Fatalf("Failed to write sensitive file: %v", err)
+	}
+
+	// Create a symlink inside static pointing to the sensitive file
+	symlinkPath := filepath.Join(staticSrc, "evil_link")
+	if err := os.Symlink(sensitiveFile, symlinkPath); err != nil {
+		t.Fatalf("Failed to create symlink: %v", err)
+	}
+
+	// Create a symlink directory pointing outside
+	symlinkDir := filepath.Join(staticSrc, "evil_dir_link")
+	if err := os.Symlink(tmpDir, symlinkDir); err != nil {
+		t.Fatalf("Failed to create directory symlink: %v", err)
+	}
+
+	// Create template
+	templatePath := filepath.Join(templateDir, "template.html")
+	if err := os.WriteFile(templatePath, []byte("<html><body>{{.Title}}</body></html>"), 0644); err != nil {
+		t.Fatalf("Failed to write template: %v", err)
+	}
+
+	gen, err := NewWithTemplate(templatePath)
+	if err != nil {
+		t.Fatalf("NewWithTemplate() error = %v", err)
+	}
+
+	// Copy static assets
+	if err := gen.CopyStaticAssets(context.Background(), outputDir); err != nil {
+		t.Fatalf("CopyStaticAssets() error = %v", err)
+	}
+
+	// Real file should be copied
+	copiedReal := filepath.Join(outputDir, "static", "real.css")
+	if _, err := os.Stat(copiedReal); os.IsNotExist(err) {
+		t.Error("Real file should be copied")
+	}
+
+	// Symlinked file should NOT be copied
+	copiedSymlink := filepath.Join(outputDir, "static", "evil_link")
+	if _, err := os.Stat(copiedSymlink); !os.IsNotExist(err) {
+		t.Error("Symlinked file should NOT be copied (security risk)")
+	}
+
+	// Symlinked directory should NOT be copied
+	copiedSymlinkDir := filepath.Join(outputDir, "static", "evil_dir_link")
+	if _, err := os.Stat(copiedSymlinkDir); !os.IsNotExist(err) {
+		t.Error("Symlinked directory should NOT be copied (security risk)")
 	}
 }

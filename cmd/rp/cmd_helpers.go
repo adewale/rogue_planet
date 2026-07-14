@@ -51,7 +51,7 @@ func openConfigAndRepo(configPath string) (*config.Config, *repository.Repositor
 		return nil, nil, nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	cleanup := func() { repo.Close() }
+	cleanup := func() { _ = repo.Close() }
 	return cfg, repo, cleanup, nil
 }
 
@@ -60,13 +60,20 @@ func openConfigAndRepo(configPath string) (*config.Config, *repository.Repositor
 func importFeedsFromURLs(ctx context.Context, repo *repository.Repository, feedURLs []string, output io.Writer) int {
 	addedCount := 0
 	for i, url := range feedURLs {
-		fmt.Fprintf(output, "  [%d/%d] Adding %s\n", i+1, len(feedURLs), url)
+		_, _ = fmt.Fprintf(output, "  [%d/%d] Adding %s\n", i+1, len(feedURLs), url)
+
+		// Validate URL for SSRF prevention
+		if err := crawler.ValidateURL(url); err != nil {
+			log.Printf("         Warning: Invalid URL: %v", err)
+			continue
+		}
+
 		id, err := repo.AddFeed(ctx, url, "")
 		if err != nil {
 			log.Printf("         Warning: Failed to add feed: %v", err)
 			continue
 		}
-		fmt.Fprintf(output, "         ✓ Added (ID: %d)\n", id)
+		_, _ = fmt.Fprintf(output, "         ✓ Added (ID: %d)\n", id)
 		addedCount++
 	}
 	return addedCount
@@ -82,7 +89,7 @@ func fetchFeeds(ctx context.Context, cfg *config.Config, logger logging.Logger) 
 	if err != nil {
 		return fmt.Errorf("open database: %w", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Get feeds from database
 	feeds, err := repo.GetFeeds(ctx, true)
@@ -229,7 +236,7 @@ func generateSite(ctx context.Context, cfg *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("open database: %w", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Get recent entries
 	entries, err := repo.GetRecentEntriesWithOptions(ctx, cfg.Planet.Days, cfg.Planet.FilterByFirstSeen, cfg.Planet.SortBy)
@@ -263,7 +270,7 @@ func generateSite(ctx context.Context, cfg *config.Config) error {
 		// - Only http/https schemes allowed in links
 		// - Dangerous tags stripped (object, embed, iframe, base)
 		genEntries = append(genEntries, generator.EntryData{
-			Title:     template.HTML(entry.Title),
+			Title:     entry.Title,
 			Link:      entry.Link,
 			Author:    entry.Author,
 			FeedTitle: feed.Title,

@@ -25,17 +25,17 @@ func cmdAddAll(opts AddAllOptions) error {
 	}
 
 	if len(feedURLs) == 0 {
-		fmt.Fprintln(opts.Output, "No feeds found in file")
+		_, _ = fmt.Fprintln(opts.Output, "No feeds found in file")
 		return nil
 	}
 
 	ctx := context.Background()
 
-	fmt.Fprintf(opts.Output, "Adding %d feeds from %s...\n", len(feedURLs), opts.FeedsFile)
+	_, _ = fmt.Fprintf(opts.Output, "Adding %d feeds from %s...\n", len(feedURLs), opts.FeedsFile)
 
 	// Add each feed to database
 	addedCount := importFeedsFromURLs(ctx, repo, feedURLs, opts.Output)
 
-	fmt.Fprintf(opts.Output, "\n✓ Added %d/%d feeds\n", addedCount, len(feedURLs))
+	_, _ = fmt.Fprintf(opts.Output, "\n✓ Added %d/%d feeds\n", addedCount, len(feedURLs))
 	return nil
 }

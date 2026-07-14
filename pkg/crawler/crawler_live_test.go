@@ -196,7 +196,7 @@ func testLiveEndToEnd(t *testing.T, url, expectedTitle string, minEntries int) {
 	if err != nil {
 		t.Fatalf("Failed to create repository: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Add feed
 	feedID, err := repo.AddFeed(url, "")

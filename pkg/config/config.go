@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -51,7 +52,8 @@ const (
 	MaxRateLimitBurst    = 50
 
 	// Content limits
-	MinDays = 1 // At least 1 day of content
+	MinDays = 1   // At least 1 day of content
+	MaxDays = 365 // Maximum 1 year of content
 )
 
 // Config represents the application configuration
@@ -148,7 +150,7 @@ func LoadFromFile(path string) (config *Config, err error) {
 		return nil, fmt.Errorf("open config file: %w", openErr)
 	}
 	// Close file when done. Close errors during read are rarely actionable.
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	config = Default()
 	scanner := bufio.NewScanner(file)
@@ -242,8 +244,8 @@ func (c *Config) setPlanet(key, value string) error {
 		if err != nil {
 			return fmt.Errorf("invalid days value: %s", value)
 		}
-		if days < MinDays {
-			return fmt.Errorf("days must be >= %d", MinDays)
+		if days < MinDays || days > MaxDays {
+			return fmt.Errorf("days must be between %d and %d", MinDays, MaxDays)
 		}
 		c.Planet.Days = days
 	case "log_level":
@@ -318,8 +320,8 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("planet name is required")
 	}
 
-	if c.Planet.Days < 1 {
-		return fmt.Errorf("days must be >= 1")
+	if c.Planet.Days < MinDays || c.Planet.Days > MaxDays {
+		return fmt.Errorf("days must be between %d and %d", MinDays, MaxDays)
 	}
 
 	if c.Planet.ConcurrentFetch < 1 || c.Planet.ConcurrentFetch > 50 {
@@ -331,15 +333,15 @@ func (c *Config) Validate() error {
 	}
 
 	// Path validation - prevent path traversal attacks
-	// Reject parent directory references in paths (the main security concern)
-	if strings.Contains(c.Database.Path, "..") {
+	// Use filepath.Clean to normalize and detect traversal attempts
+	if pathContainsTraversal(c.Database.Path) {
 		return fmt.Errorf("database path must not contain parent directory references (..): %s", c.Database.Path)
 	}
-	if strings.Contains(c.Planet.OutputDir, "..") {
+	if pathContainsTraversal(c.Planet.OutputDir) {
 		return fmt.Errorf("output directory must not contain parent directory references (..): %s", c.Planet.OutputDir)
 	}
 	// Validate template path if specified (empty is allowed - uses default template)
-	if c.Planet.Template != "" && strings.Contains(c.Planet.Template, "..") {
+	if c.Planet.Template != "" && pathContainsTraversal(c.Planet.Template) {
 		return fmt.Errorf("template path must not contain parent directory references (..): %s", c.Planet.Template)
 	}
 
@@ -352,6 +354,20 @@ func (c *Config) Validate() error {
 	}
 
 	return nil
+}
+
+// pathContainsTraversal checks if a path contains directory traversal
+// using filepath.Clean to normalize the path before checking for ".."
+// as an actual path component (not just a substring like "foo..bar").
+func pathContainsTraversal(path string) bool {
+	cleaned := filepath.Clean(path)
+	// Check each path component for exactly ".."
+	for _, part := range strings.Split(cleaned, string(filepath.Separator)) {
+		if part == ".." {
+			return true
+		}
+	}
+	return false
 }
 
 // LoadFeedsFile loads feed URLs from a text file.

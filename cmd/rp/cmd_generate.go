@@ -15,11 +15,11 @@ func cmdGenerate(ctx context.Context, opts GenerateOptions) error {
 		cfg.Planet.Days = opts.Days
 	}
 
-	fmt.Fprintln(opts.Output, "Generating site...")
+	_, _ = fmt.Fprintln(opts.Output, "Generating site...")
 	if err := generateSite(ctx, cfg); err != nil {
 		return fmt.Errorf("failed to generate site: %w", err)
 	}
 
-	fmt.Fprintln(opts.Output, "✓ Generate complete")
+	_, _ = fmt.Fprintln(opts.Output, "✓ Generate complete")
 	return nil
 }

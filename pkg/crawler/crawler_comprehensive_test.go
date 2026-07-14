@@ -211,7 +211,7 @@ func TestFetch_GzipDecompression(t *testing.T) {
 			if _, err := gzWriter.Write(originalContent); err != nil {
 				t.Errorf("Write error: %v", err)
 			}
-			gzWriter.Close()
+			_ = gzWriter.Close()
 		}))
 		defer server.Close()
 

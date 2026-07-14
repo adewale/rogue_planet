@@ -10,7 +10,7 @@ import (
 )
 
 func cmdInit(opts InitOptions) error {
-	fmt.Fprintln(opts.Output, "Initializing Rogue Planet...")
+	_, _ = fmt.Fprintln(opts.Output, "Initializing Rogue Planet...")
 
 	// Create directories
 	dirs := []string{"data", "public"}
@@ -44,13 +44,13 @@ path = ./data/planet.db
 		return fmt.Errorf("failed to create config.ini: %w", err)
 	}
 
-	fmt.Fprintln(opts.Output, "✓ Created config.ini")
-	fmt.Fprintln(opts.Output, "✓ Created data/ directory")
-	fmt.Fprintln(opts.Output, "✓ Created public/ directory")
+	_, _ = fmt.Fprintln(opts.Output, "✓ Created config.ini")
+	_, _ = fmt.Fprintln(opts.Output, "✓ Created data/ directory")
+	_, _ = fmt.Fprintln(opts.Output, "✓ Created public/ directory")
 
 	// Import feeds if -f flag provided
 	if opts.FeedsFile != "" {
-		fmt.Fprintf(opts.Output, "\nImporting feeds from %s...\n", opts.FeedsFile)
+		_, _ = fmt.Fprintf(opts.Output, "\nImporting feeds from %s...\n", opts.FeedsFile)
 
 		_, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 		if err != nil {
@@ -69,16 +69,16 @@ path = ./data/planet.db
 		// Add each feed to database
 		addedCount := importFeedsFromURLs(ctx, repo, feedURLs, opts.Output)
 
-		fmt.Fprintf(opts.Output, "\n✓ Imported %d/%d feeds\n", addedCount, len(feedURLs))
+		_, _ = fmt.Fprintf(opts.Output, "\n✓ Imported %d/%d feeds\n", addedCount, len(feedURLs))
 
-		fmt.Fprintln(opts.Output, "\nNext steps:")
-		fmt.Fprintln(opts.Output, "  1. Edit config.ini with your planet details")
-		fmt.Fprintln(opts.Output, "  2. Run 'rp update' to fetch feeds and generate your planet")
+		_, _ = fmt.Fprintln(opts.Output, "\nNext steps:")
+		_, _ = fmt.Fprintln(opts.Output, "  1. Edit config.ini with your planet details")
+		_, _ = fmt.Fprintln(opts.Output, "  2. Run 'rp update' to fetch feeds and generate your planet")
 	} else {
-		fmt.Fprintln(opts.Output, "\nNext steps:")
-		fmt.Fprintln(opts.Output, "  1. Edit config.ini with your planet details")
-		fmt.Fprintln(opts.Output, "  2. Add feeds with 'rp add-feed <url>'")
-		fmt.Fprintln(opts.Output, "  3. Run 'rp update' to fetch feeds and generate your planet")
+		_, _ = fmt.Fprintln(opts.Output, "\nNext steps:")
+		_, _ = fmt.Fprintln(opts.Output, "  1. Edit config.ini with your planet details")
+		_, _ = fmt.Fprintln(opts.Output, "  2. Add feeds with 'rp add-feed <url>'")
+		_, _ = fmt.Fprintln(opts.Output, "  3. Run 'rp update' to fetch feeds and generate your planet")
 	}
 
 	return nil

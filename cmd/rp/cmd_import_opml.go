@@ -23,24 +23,24 @@ func cmdImportOPML(opts ImportOPMLOptions) error {
 	feeds := opmlDoc.ExtractFeeds()
 
 	if len(feeds) == 0 {
-		fmt.Fprintln(opts.Output, "No feeds found in OPML file")
+		_, _ = fmt.Fprintln(opts.Output, "No feeds found in OPML file")
 		return nil
 	}
 
 	ctx := context.Background()
 
 	if opts.DryRun {
-		fmt.Fprintf(opts.Output, "DRY RUN: Importing feeds from %s...\n\n", opts.OPMLFile)
-		fmt.Fprintf(opts.Output, "Found %d feeds in OPML file\n\n", len(feeds))
+		_, _ = fmt.Fprintf(opts.Output, "DRY RUN: Importing feeds from %s...\n\n", opts.OPMLFile)
+		_, _ = fmt.Fprintf(opts.Output, "Found %d feeds in OPML file\n\n", len(feeds))
 
 		// Load config and database to check for duplicates
 		_, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 		if err != nil {
 			// Database might not exist yet, just show what would be imported
 			for i, feed := range feeds {
-				fmt.Fprintf(opts.Output, "  [%d/%d] Would add: %s (%s)\n", i+1, len(feeds), feed.FeedURL, feed.Title)
+				_, _ = fmt.Fprintf(opts.Output, "  [%d/%d] Would add: %s (%s)\n", i+1, len(feeds), feed.FeedURL, feed.Title)
 			}
-			fmt.Fprintf(opts.Output, "\nDRY RUN: Would import %d feeds\n", len(feeds))
+			_, _ = fmt.Fprintf(opts.Output, "\nDRY RUN: Would import %d feeds\n", len(feeds))
 			return nil
 		}
 		defer cleanup()
@@ -50,20 +50,20 @@ func cmdImportOPML(opts ImportOPMLOptions) error {
 		for i, feed := range feeds {
 			_, err := repo.GetFeedByURL(ctx, feed.FeedURL)
 			if err == nil {
-				fmt.Fprintf(opts.Output, "  [%d/%d] Would skip: %s (already exists)\n", i+1, len(feeds), feed.FeedURL)
+				_, _ = fmt.Fprintf(opts.Output, "  [%d/%d] Would skip: %s (already exists)\n", i+1, len(feeds), feed.FeedURL)
 				skipCount++
 			} else {
-				fmt.Fprintf(opts.Output, "  [%d/%d] Would add: %s (%s)\n", i+1, len(feeds), feed.FeedURL, feed.Title)
+				_, _ = fmt.Fprintf(opts.Output, "  [%d/%d] Would add: %s (%s)\n", i+1, len(feeds), feed.FeedURL, feed.Title)
 			}
 		}
 
-		fmt.Fprintf(opts.Output, "\nDRY RUN: Would import %d/%d feeds (%d duplicates skipped)\n", len(feeds)-skipCount, len(feeds), skipCount)
+		_, _ = fmt.Fprintf(opts.Output, "\nDRY RUN: Would import %d/%d feeds (%d duplicates skipped)\n", len(feeds)-skipCount, len(feeds), skipCount)
 		return nil
 	}
 
 	// Real import
-	fmt.Fprintf(opts.Output, "Importing feeds from %s...\n\n", opts.OPMLFile)
-	fmt.Fprintf(opts.Output, "Found %d feeds in OPML file\n\n", len(feeds))
+	_, _ = fmt.Fprintf(opts.Output, "Importing feeds from %s...\n\n", opts.OPMLFile)
+	_, _ = fmt.Fprintf(opts.Output, "Found %d feeds in OPML file\n\n", len(feeds))
 
 	_, repo, cleanup, err := openConfigAndRepo(opts.ConfigPath)
 	if err != nil {
@@ -79,16 +79,16 @@ func cmdImportOPML(opts ImportOPMLOptions) error {
 		// Check if feed already exists
 		_, err := repo.GetFeedByURL(ctx, feed.FeedURL)
 		if err == nil {
-			fmt.Fprintf(opts.Output, "  [%d/%d] %s\n", i+1, len(feeds), feed.FeedURL)
-			fmt.Fprintln(opts.Output, "         ⚠ Skipped (already exists)")
+			_, _ = fmt.Fprintf(opts.Output, "  [%d/%d] %s\n", i+1, len(feeds), feed.FeedURL)
+			_, _ = fmt.Fprintln(opts.Output, "         ⚠ Skipped (already exists)")
 			skippedCount++
 			continue
 		}
 
 		// Validate URL
 		if err := crawler.ValidateURL(feed.FeedURL); err != nil {
-			fmt.Fprintf(opts.Output, "  [%d/%d] %s\n", i+1, len(feeds), feed.FeedURL)
-			fmt.Fprintf(opts.Output, "         ✗ Skipped (invalid URL: %v)\n", err)
+			_, _ = fmt.Fprintf(opts.Output, "  [%d/%d] %s\n", i+1, len(feeds), feed.FeedURL)
+			_, _ = fmt.Fprintf(opts.Output, "         ✗ Skipped (invalid URL: %v)\n", err)
 			skippedCount++
 			continue
 		}
@@ -101,20 +101,20 @@ func cmdImportOPML(opts ImportOPMLOptions) error {
 
 		id, err := repo.AddFeed(ctx, feed.FeedURL, title)
 		if err != nil {
-			fmt.Fprintf(opts.Output, "  [%d/%d] %s\n", i+1, len(feeds), feed.FeedURL)
-			fmt.Fprintf(opts.Output, "         ✗ Failed: %v\n", err)
+			_, _ = fmt.Fprintf(opts.Output, "  [%d/%d] %s\n", i+1, len(feeds), feed.FeedURL)
+			_, _ = fmt.Fprintf(opts.Output, "         ✗ Failed: %v\n", err)
 			skippedCount++
 			continue
 		}
 
-		fmt.Fprintf(opts.Output, "  [%d/%d] Adding %s (%s)\n", i+1, len(feeds), feed.FeedURL, title)
-		fmt.Fprintf(opts.Output, "         ✓ Added (ID: %d)\n", id)
+		_, _ = fmt.Fprintf(opts.Output, "  [%d/%d] Adding %s (%s)\n", i+1, len(feeds), feed.FeedURL, title)
+		_, _ = fmt.Fprintf(opts.Output, "         ✓ Added (ID: %d)\n", id)
 		addedCount++
 	}
 
-	fmt.Fprintf(opts.Output, "\n✓ Successfully imported %d/%d feeds\n", addedCount, len(feeds))
-	fmt.Fprintf(opts.Output, "  - %d added\n", addedCount)
-	fmt.Fprintf(opts.Output, "  - %d skipped (duplicates or invalid)\n", skippedCount)
+	_, _ = fmt.Fprintf(opts.Output, "\n✓ Successfully imported %d/%d feeds\n", addedCount, len(feeds))
+	_, _ = fmt.Fprintf(opts.Output, "  - %d added\n", addedCount)
+	_, _ = fmt.Fprintf(opts.Output, "  - %d skipped (duplicates or invalid)\n", skippedCount)
 
 	return nil
 }

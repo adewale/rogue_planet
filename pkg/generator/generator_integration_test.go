@@ -43,7 +43,7 @@ func TestEndToEndHTMLGeneration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create repository: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Add feed
 	ctx := t.Context()
@@ -102,7 +102,7 @@ func TestEndToEndHTMLGeneration(t *testing.T) {
 	genEntries := make([]EntryData, 0, len(dbEntries))
 	for _, entry := range dbEntries {
 		genEntries = append(genEntries, EntryData{
-			Title:     template.HTML(entry.Title),
+			Title:     entry.Title,
 			Link:      entry.Link,
 			Author:    entry.Author,
 			FeedTitle: metadata.Title,
@@ -229,7 +229,7 @@ func parseHTMLFile(path string) (*html.Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	return html.Parse(f)
 }
@@ -299,7 +299,7 @@ func TestGeneratedHTMLStructure(t *testing.T) {
 	now := time.Now()
 	entries := []EntryData{
 		{
-			Title:     template.HTML("Test Entry"),
+			Title:     "Test Entry",
 			Link:      "https://example.com/entry",
 			Author:    "Test Author",
 			FeedTitle: "Test Feed",

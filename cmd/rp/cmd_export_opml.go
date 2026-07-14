@@ -25,7 +25,7 @@ func cmdExportOPML(opts ExportOPMLOptions) error {
 	}
 
 	if len(repoFeeds) == 0 {
-		fmt.Fprintln(opts.Output, "No feeds to export")
+		_, _ = fmt.Fprintln(opts.Output, "No feeds to export")
 		return nil
 	}
 
@@ -67,9 +67,9 @@ func cmdExportOPML(opts ExportOPMLOptions) error {
 		if err := os.WriteFile(opts.OutputFile, xmlData, 0644); err != nil {
 			return fmt.Errorf("failed to write file: %w", err)
 		}
-		fmt.Fprintf(opts.Output, "✓ Exported %d feeds to %s\n", len(opmlFeeds), opts.OutputFile)
+		_, _ = fmt.Fprintf(opts.Output, "✓ Exported %d feeds to %s\n", len(opmlFeeds), opts.OutputFile)
 	} else {
-		fmt.Fprint(opts.Output, string(xmlData))
+		_, _ = fmt.Fprint(opts.Output, string(xmlData))
 	}
 
 	return nil

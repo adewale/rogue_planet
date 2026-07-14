@@ -46,7 +46,7 @@ path = ./data/planet.db
 	if err != nil {
 		t.Fatalf("repository.New() error = %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	ctx := t.Context()
 
@@ -138,7 +138,7 @@ func TestBackwardsCompatibility(t *testing.T) {
 	}
 
 	repo, _ := repository.New(filepath.Join(dir, "data/planet.db"))
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	ctx := t.Context()
 
