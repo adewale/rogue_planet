@@ -20,7 +20,7 @@ Be respectful, constructive, and professional. We're all here to make great soft
 
 ### Prerequisites
 
-- Go 1.21 or later
+- Go 1.25 or later
 - Git
 - SQLite3 (usually pre-installed)
 - Make (optional, but recommended)

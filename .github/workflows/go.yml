@@ -57,6 +57,10 @@ jobs:
       shell: bash
       run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
 
+    - name: Run bounded feed parser fuzzing
+      if: matrix.os == 'ubuntu-latest'
+      run: make test-fuzz FUZZTIME=10s
+
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:
@@ -105,7 +109,8 @@ jobs:
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v6
       with:
-        version: latest
+        version: v1.64.8
+        install-mode: goinstall
         args: --timeout=5m
 
   security:
