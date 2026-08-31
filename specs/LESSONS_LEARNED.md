@@ -921,6 +921,41 @@ Name clearly states WHAT is being tested, makes it obvious if test is missing.
 
 ---
 
+### 39. Hostile Feed Parsers Need Semantic Fuzz Oracles and Dependency Scanning 🧬🛡️
+
+**Lesson**: A no-panic parser campaign and a green test suite do not establish
+that normalized feed output is safe or that the parser implementation has no
+known reachable vulnerabilities.
+
+**What the August 2026 campaign demonstrated**:
+- RSS, Atom, JSON Feed, malformed input, truncation, and XSS seeds all enter the
+  same production normalizer, so the fuzzer can mutate across real format and
+  sanitizer boundaries.
+- The useful oracles are semantic: repeated normalization must be
+  deterministic for a fixed fetch time; every entry must have stable identity
+  and valid times; sanitized content must be a fixed point; and output growth
+  must remain proportional to the bounded input.
+- The first hosted security scan then found five reachable advisories in
+  `golang.org/x/net/html` through `pkg/normalizer`, even though the behavioral
+  campaign itself passed. Updating to the first fixed `x/net` release removed
+  all vulnerabilities reported for imported or called code.
+
+**Permanent guard**:
+```bash
+# Discover behavioral failures at the hostile feed boundary
+make test-fuzz FUZZTIME=10s
+
+# Check the reachable implementation beneath that boundary
+govulncheck ./...
+```
+
+> **The Rule:** For Rogue Planet's feed normalizer, pair bounded semantic
+> fuzzing with reachable dependency scanning. Fuzzing finds unknown behavioral
+> failures; `govulncheck` finds disclosed flaws in the parser stack. Neither is
+> a substitute for the other.
+
+---
+
 ## Summary: Key Principles
 
 ### Architecture
