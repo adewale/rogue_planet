@@ -928,9 +928,9 @@ that normalized feed output is safe or that the parser implementation has no
 known reachable vulnerabilities.
 
 **What the August 2026 campaign demonstrated**:
-- RSS, Atom, JSON Feed, malformed input, truncation, and XSS seeds all enter the
-  same production normalizer, so the fuzzer can mutate across real format and
-  sanitizer boundaries.
+- RSS, Atom, JSON Feed, malformed-input, and XSS seeds all enter the same
+  production normalizer. Coverage-guided mutation can then explore truncation
+  and corruption across real format and sanitizer boundaries.
 - The useful oracles are semantic: repeated normalization must be
   deterministic for a fixed fetch time; every entry must have stable identity
   and valid times; sanitized content must be a fixed point; and output growth
