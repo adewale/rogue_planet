@@ -440,7 +440,7 @@ func TestFetchWithRetry_Comprehensive(t *testing.T) {
 		}))
 		defer server.Close()
 
-		crawler := NewForTesting()
+		crawler, clock := newTestCrawlerWithFakeClock()
 		_, err := crawler.FetchWithRetry(t.Context(), server.URL, FeedCache{}, 3)
 
 		if err != nil {
@@ -448,6 +448,9 @@ func TestFetchWithRetry_Comprehensive(t *testing.T) {
 		}
 		if attempts != 3 {
 			t.Errorf("attempts = %d, want 3", attempts)
+		}
+		if sleeps := clock.Sleeps(); len(sleeps) != 2 {
+			t.Errorf("backoff waits = %v, want 2 (one per retry)", sleeps)
 		}
 	})
 
@@ -457,14 +460,17 @@ func TestFetchWithRetry_Comprehensive(t *testing.T) {
 		}))
 		defer server.Close()
 
-		crawler := NewForTesting()
+		crawler, clock := newTestCrawlerWithFakeClock()
 		_, err := crawler.FetchWithRetry(t.Context(), server.URL, FeedCache{}, 2)
 
 		if err == nil {
-			t.Error("Expected max retries error, got nil")
+			t.Fatal("Expected max retries error, got nil")
 		}
 		if !strings.Contains(err.Error(), "max retries") {
 			t.Errorf("Expected 'max retries' error, got: %v", err)
+		}
+		if sleeps := clock.Sleeps(); len(sleeps) != 2 {
+			t.Errorf("backoff waits = %v, want 2 (maxRetries)", sleeps)
 		}
 	})
 
@@ -525,7 +531,7 @@ func TestFetchWithRetry_Comprehensive(t *testing.T) {
 		}))
 		defer server.Close()
 
-		crawler := NewForTesting()
+		crawler, _ := newTestCrawlerWithFakeClock()
 		_, err := crawler.FetchWithRetry(t.Context(), server.URL, FeedCache{}, 3)
 
 		if err != nil {

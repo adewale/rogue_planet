@@ -1,6 +1,8 @@
 package timeprovider
 
 import (
+	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -271,3 +273,74 @@ func TestFakeClock_UsageExample(t *testing.T) {
 // Verify both implementations satisfy the interface
 var _ TimeProvider = WallClock{}
 var _ TimeProvider = (*FakeClock)(nil)
+
+var _ Clock = WallClock{}
+var _ Clock = (*FakeClock)(nil)
+
+func TestFakeClock_SleepAdvancesAndRecords(t *testing.T) {
+	t.Parallel()
+	start := time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
+	clock := NewFakeClock(start)
+
+	for _, d := range []time.Duration{time.Second, 0, 2 * time.Second} {
+		if err := clock.Sleep(t.Context(), d); err != nil {
+			t.Fatalf("Sleep(%v) error = %v", d, err)
+		}
+	}
+
+	if got, want := clock.Now(), start.Add(3*time.Second); !got.Equal(want) {
+		t.Errorf("Now() after sleeps = %v, want %v", got, want)
+	}
+	want := []time.Duration{time.Second, 0, 2 * time.Second}
+	got := clock.Sleeps()
+	if len(got) != len(want) {
+		t.Fatalf("Sleeps() = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("Sleeps()[%d] = %v, want %v", i, got[i], want[i])
+		}
+	}
+}
+
+func TestFakeClock_SleepWithDoneContext(t *testing.T) {
+	t.Parallel()
+	start := time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
+	clock := NewFakeClock(start)
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	if err := clock.Sleep(ctx, time.Second); !errors.Is(err, context.Canceled) {
+		t.Errorf("Sleep() error = %v, want context.Canceled", err)
+	}
+	if !clock.Now().Equal(start) {
+		t.Errorf("Now() = %v, want unchanged %v", clock.Now(), start)
+	}
+	if n := len(clock.Sleeps()); n != 0 {
+		t.Errorf("len(Sleeps()) = %d, want 0", n)
+	}
+}
+
+func TestWallClock_SleepReturnsEarlyOnCancel(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	// An hour-long sleep must return immediately with the context's error.
+	if err := (WallClock{}).Sleep(ctx, time.Hour); !errors.Is(err, context.Canceled) {
+		t.Errorf("Sleep() error = %v, want context.Canceled", err)
+	}
+}
+
+func TestWallClock_SleepWaits(t *testing.T) {
+	t.Parallel()
+	const d = 20 * time.Millisecond
+	start := time.Now()
+	if err := (WallClock{}).Sleep(t.Context(), d); err != nil {
+		t.Fatalf("Sleep() error = %v", err)
+	}
+	// Only a lower bound: timers never fire early, but may fire late under load.
+	if elapsed := time.Since(start); elapsed < d {
+		t.Errorf("Sleep(%v) returned after %v", d, elapsed)
+	}
+}
