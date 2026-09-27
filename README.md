@@ -209,9 +209,6 @@ Run tests:
 # Run all tests (excludes network tests)
 make test
 
-# Run integration tests only
-make test-integration
-
 # Run tests with coverage report
 make test-coverage
 
@@ -220,6 +217,9 @@ make test-race
 
 # Run live network tests (requires internet connection)
 go test -tags=network ./pkg/crawler -v
+
+# Compile-check the network-tagged tests without running them (CI does this)
+go vet -tags=network ./...
 
 # Or use go directly
 go test ./...

@@ -53,6 +53,12 @@ jobs:
     - name: Run go vet
       run: go vet ./...
 
+    # The -tags=network live-feed tests need the internet, so CI does not run
+    # them, but it must at least compile them: without this step they silently
+    # stopped compiling (65d22f3) and stayed broken for ~11 months.
+    - name: Compile network-tagged tests
+      run: go vet -tags=network ./...
+
     - name: Run tests
       shell: bash
       run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
