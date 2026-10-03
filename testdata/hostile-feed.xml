@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hand-written hostile feed. Every entry carries one attack in one field and
+     one benign marker that must survive. Used by cmd/rp/xss_pipeline_test.go. -->
+<rss version="2.0">
+  <channel>
+    <title>Hostile Feed</title>
+    <link>https://hostile.example.com/</link>
+    <description>Feed whose fields carry XSS payloads</description>
+    <item>
+      <title>&lt;img src=x onerror=alert(1)&gt;Title Marker One</title>
+      <link>https://hostile.example.com/1</link>
+      <guid>hostile-1</guid>
+      <pubDate>Mon, 01 Jan 2024 00:00:00 GMT</pubDate>
+      <description>&lt;p&gt;Body Marker One&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>&lt;script&gt;alert(2)&lt;/script&gt;Title Marker Two</title>
+      <link>https://hostile.example.com/2</link>
+      <guid>hostile-2</guid>
+      <pubDate>Tue, 02 Jan 2024 00:00:00 GMT</pubDate>
+      <description>&lt;p&gt;Body Marker Two&lt;/p&gt;&lt;script&gt;alert(3)&lt;/script&gt;&lt;a href="javascript:alert(4)"&gt;link&lt;/a&gt;&lt;img src="https://img.example.com/a.png" onerror="alert(5)"&gt;&lt;base href="https://evil.example.com/"&gt;&lt;iframe src="https://evil.example.com/"&gt;&lt;/iframe&gt;</description>
+    </item>
+    <item>
+      <title>Title Marker Three</title>
+      <link>javascript:alert(6)</link>
+      <guid>hostile-3</guid>
+      <pubDate>Wed, 03 Jan 2024 00:00:00 GMT</pubDate>
+      <description>&lt;p&gt;Body Marker Three&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

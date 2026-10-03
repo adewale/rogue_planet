@@ -263,7 +263,7 @@ func generateSite(ctx context.Context, cfg *config.Config) error {
 		// - Only http/https schemes allowed in links
 		// - Dangerous tags stripped (object, embed, iframe, base)
 		genEntries = append(genEntries, generator.EntryData{
-			Title:     template.HTML(entry.Title),
+			Title:     entry.Title,
 			Link:      entry.Link,
 			Author:    entry.Author,
 			FeedTitle: feed.Title,

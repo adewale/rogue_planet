@@ -44,7 +44,7 @@ type FeedData struct {
 
 // EntryData represents an entry for template rendering
 type EntryData struct {
-	Title             template.HTML
+	Title             string
 	Link              string
 	Author            string
 	FeedTitle         string

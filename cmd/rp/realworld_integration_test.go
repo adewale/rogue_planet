@@ -128,7 +128,7 @@ func TestRealWorldFeedsFullPipeline(t *testing.T) {
 			genEntries := make([]generator.EntryData, 0, len(dbEntries))
 			for _, entry := range dbEntries {
 				genEntries = append(genEntries, generator.EntryData{
-					Title:     template.HTML(entry.Title),
+					Title:     entry.Title,
 					Link:      entry.Link,
 					Author:    entry.Author,
 					FeedTitle: metadata.Title,
