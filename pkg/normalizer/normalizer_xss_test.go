@@ -3,7 +3,24 @@ package normalizer
 import (
 	"strings"
 	"testing"
+
+	"github.com/adewale/rogue_planet/internal/htmlsafety"
 )
+
+// assertNoUnsafeMarkup parses sanitizer output the way a browser would and
+// fails on any element, handler, style or URL that could run script. A
+// substring search for "<iframe>" cannot see "<iframe src=...>"; the parsed
+// tree can.
+func assertNoUnsafeMarkup(t *testing.T, input, output string) {
+	t.Helper()
+	body, err := htmlsafety.Fragment(output)
+	if err != nil {
+		t.Fatalf("parse sanitizer output: %v", err)
+	}
+	for _, v := range htmlsafety.Violations(body) {
+		t.Errorf("unsafe markup survived sanitization: %s\nInput: %s\nOutput: %s", v, input, output)
+	}
+}
 
 // Comprehensive XSS prevention tests
 func TestSanitizeHTML_XSS_Prevention(t *testing.T) {
@@ -63,27 +80,27 @@ func TestSanitizeHTML_XSS_Prevention(t *testing.T) {
 		{
 			name:    "iframe tag",
 			input:   `<p>Safe</p><iframe src="http://evil.com"></iframe><p>Content</p>`,
-			wantNot: []string{"<iframe>", "</iframe>", "evil.com"},
+			wantNot: []string{"evil.com"},
 		},
 		{
 			name:    "object tag",
 			input:   `<object data="evil.swf"></object>`,
-			wantNot: []string{"<object>", "</object>", "evil.swf"},
+			wantNot: []string{"evil.swf"},
 		},
 		{
 			name:    "embed tag",
 			input:   `<embed src="evil.swf">`,
-			wantNot: []string{"<embed>", "evil.swf"},
+			wantNot: []string{"evil.swf"},
 		},
 		{
 			name:    "base tag",
 			input:   `<base href="http://evil.com"><p>Content</p>`,
-			wantNot: []string{"<base>", "</base>"},
+			wantNot: []string{"evil.com"},
 		},
 		{
 			name:    "meta refresh",
 			input:   `<meta http-equiv="refresh" content="0;url=http://evil.com">`,
-			wantNot: []string{"<meta>", "refresh", "evil.com"},
+			wantNot: []string{"refresh", "evil.com"},
 		},
 		{
 			name:    "nested scripts",
@@ -112,6 +129,7 @@ func TestSanitizeHTML_XSS_Prevention(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			output := n.SanitizeHTML(tt.input)
+			assertNoUnsafeMarkup(t, tt.input, output)
 
 			for _, forbidden := range tt.wantNot {
 				if strings.Contains(strings.ToLower(output), strings.ToLower(forbidden)) {
@@ -264,6 +282,7 @@ func TestSanitizeHTML_URLSchemes(t *testing.T) {
 			if !tt.shouldAllow && contains {
 				t.Errorf("Should block %q but it was preserved\nOutput: %s", tt.checkString, output)
 			}
+			assertNoUnsafeMarkup(t, tt.input, output)
 		})
 	}
 }
@@ -300,6 +319,7 @@ func TestSanitizeHTML_RealWorld_XSS_Vectors(t *testing.T) {
 	for _, v := range vectors {
 		t.Run(v.name, func(t *testing.T) {
 			output := n.SanitizeHTML(v.vector)
+			assertNoUnsafeMarkup(t, v.vector, output)
 
 			// Check that common dangerous patterns are removed
 			dangerous := []string{"alert", "javascript:", "onerror", "onload", "expression("}
@@ -420,13 +440,20 @@ func TestSanitizeHTML_EdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Should not panic
 			output := n.SanitizeHTML(tt.input)
 
-			// Basic sanity check
-			if tt.input != "" && output == "" && strings.TrimSpace(tt.input) != "" {
-				t.Errorf("Sanitizer removed all content (should preserve safe HTML)\nInput: %s\nOutput: %s",
-					tt.input, output)
+			// Every input here is safe markup, so the text a reader sees must
+			// survive sanitization unchanged.
+			in, err := htmlsafety.Fragment(tt.input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			out, err := htmlsafety.Fragment(output)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got, want := htmlsafety.Text(out), htmlsafety.Text(in); got != want {
+				t.Errorf("Sanitizer changed text content\nInput:  %.200s\nOutput: %.200s", want, got)
 			}
 		})
 	}
