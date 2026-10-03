@@ -92,7 +92,7 @@ func TestHostileFeedProducesSafePage(t *testing.T) {
 	// The sanitizer must not throw away the benign parts of the same fields.
 	text := htmlsafety.Text(body)
 	for _, marker := range []string{
-		"Title Marker One", "Title Marker Two", "Title Marker Three",
+		"Title Marker One", "Title Marker Two", "Title Marker Three: AT&T & Friends",
 		"Body Marker One", "Body Marker Two", "Body Marker Three",
 	} {
 		if !strings.Contains(text, marker) {

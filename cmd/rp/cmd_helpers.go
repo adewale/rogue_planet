@@ -258,7 +258,8 @@ func generateSite(ctx context.Context, cfg *config.Config) error {
 
 		// SAFETY: Content was sanitized by normalizer.Parse() before storage.
 		// See pkg/normalizer/normalizer.go:56-69 for HTML sanitization using bluemonday.
-		// Title, Content, and Summary are safe for template.HTML after sanitization:
+		// Content and Summary are safe for template.HTML after sanitization
+		// (Title is plain feed text and is escaped by html/template):
 		// - XSS vectors removed (script tags, event handlers, javascript: URLs)
 		// - Only http/https schemes allowed in links
 		// - Dangerous tags stripped (object, embed, iframe, base)

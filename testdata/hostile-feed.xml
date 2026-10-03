@@ -21,7 +21,7 @@
       <description>&lt;p&gt;Body Marker Two&lt;/p&gt;&lt;script&gt;alert(3)&lt;/script&gt;&lt;a href="javascript:alert(4)"&gt;link&lt;/a&gt;&lt;img src="https://img.example.com/a.png" onerror="alert(5)"&gt;&lt;base href="https://evil.example.com/"&gt;&lt;iframe src="https://evil.example.com/"&gt;&lt;/iframe&gt;</description>
     </item>
     <item>
-      <title>Title Marker Three</title>
+      <title>Title Marker Three: AT&amp;T &amp; Friends</title>
       <link>javascript:alert(6)</link>
       <guid>hostile-3</guid>
       <pubDate>Wed, 03 Jan 2024 00:00:00 GMT</pubDate>
