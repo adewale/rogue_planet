@@ -22,8 +22,9 @@ import (
 
 // TestHostileFeedProducesSafePage drives a hostile feed through the real
 // fetch -> normalize -> SQLite -> generate path and inspects the parsed page.
-// Every feed field that reaches the page (title, link, content) is attacked,
-// because a field that skips sanitization is rendered as template.HTML.
+// The fields the default template renders (title, link, content) are
+// attacked. Summary is not rendered by the default template; its sanitization
+// is checked in pkg/normalizer (TestParse_SummarySanitized).
 func TestHostileFeedProducesSafePage(t *testing.T) {
 	feedXML, err := os.ReadFile("../../testdata/hostile-feed.xml")
 	if err != nil {

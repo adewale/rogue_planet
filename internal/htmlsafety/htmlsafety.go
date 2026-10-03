@@ -17,6 +17,9 @@ var forbiddenElements = map[string]bool{
 	"script": true, "iframe": true, "frame": true, "frameset": true,
 	"object": true, "embed": true, "applet": true, "base": true,
 	"meta": true, "link": true, "style": true, "form": true,
+	// SVG and MathML carry their own script and animation vectors
+	// (<set to="javascript:...">, xlink:href); sanitized output has neither.
+	"svg": true, "math": true,
 }
 
 // urlAttributes hold URLs that a browser will load or navigate to.

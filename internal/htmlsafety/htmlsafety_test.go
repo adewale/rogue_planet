@@ -37,7 +37,10 @@ func TestViolations(t *testing.T) {
 		{"leading space javascript href", `<a href=" javascript:alert(1)">x</a>`, 1},
 		{"data src", `<img src="data:image/png;base64,AAAA">`, 1},
 		{"vbscript href", `<a href="vbscript:msgbox(1)">x</a>`, 1},
-		{"svg onload", `<svg onload="alert(1)"></svg>`, 1},
+		{"svg onload", `<svg onload="alert(1)"></svg>`, 2},
+		{"svg animation to javascript", `<svg><a><set attributeName="href" to="javascript:alert(1)"/></a></svg>`, 1},
+		{"svg xlink href", `<svg><a xlink:href="javascript:alert(1)">x</a></svg>`, 2},
+		{"mathml element", `<math><mi>x</mi></math>`, 1},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

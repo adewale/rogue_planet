@@ -401,15 +401,18 @@ func TestFetchFeed_ConcurrentErrorHandling(t *testing.T) {
 	}
 }
 
-// errorRecordingRepository records UpdateFeedError calls per feed. The
-// fetcher holds its repository mutex around the call, so the map needs no
-// lock of its own; the race detector checks that claim.
+// errorRecordingRepository records UpdateFeedError calls per feed. It has its
+// own lock so that a fetcher which stops serializing repository writes fails
+// TestFetchFeed_MutexProtectsDatabase rather than crashing this package.
 type errorRecordingRepository struct {
 	mockRepository
+	mu       sync.Mutex
 	recorded map[int64]string
 }
 
 func (m *errorRecordingRepository) UpdateFeedError(ctx context.Context, id int64, errorMsg string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.recorded[id] = errorMsg
 	return nil
 }
@@ -475,13 +478,13 @@ func TestFetchFeed_ContextCancellationDuringConcurrentFetches(t *testing.T) {
 		t.Fatal("FetchFeed did not return after cancellation")
 	}
 
+	// Whether a cancelled fetch is recorded as a feed error is not asserted:
+	// the real repository writes with the same (cancelled) ctx, so it records
+	// nothing, and a mock that records would pin behavior production lacks.
 	for i, r := range results {
 		if !errors.Is(r.Error, context.Canceled) {
 			t.Errorf("feed %d: error = %v, want context.Canceled", i, r.Error)
 		}
-	}
-	if len(mr.recorded) != numFeeds {
-		t.Errorf("UpdateFeedError recorded %d feeds, want %d", len(mr.recorded), numFeeds)
 	}
 }
 

@@ -3,6 +3,7 @@ package normalizer
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/adewale/rogue_planet/internal/htmlsafety"
 )
@@ -457,4 +458,33 @@ func TestSanitizeHTML_EdgeCases(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Summary is only set when an item has both content and a description, and it
+// is passed to templates as template.HTML, so it must be sanitized too.
+func TestParse_SummarySanitized(t *testing.T) {
+	t.Parallel()
+	feed := `<?xml version="1.0"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<channel><title>T</title><link>https://example.com/</link>
+<item>
+  <title>Item</title><link>https://example.com/1</link><guid>1</guid>
+  <description>&lt;p&gt;Summary Marker&lt;/p&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;img src="https://example.com/a.png" onerror="alert(2)"&gt;&lt;a href="javascript:alert(3)"&gt;x&lt;/a&gt;</description>
+  <content:encoded>&lt;p&gt;Content Marker&lt;/p&gt;</content:encoded>
+</item></channel></rss>`
+	_, entries, err := New().Parse(t.Context(), []byte(feed), "https://example.com/feed", time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("got %d entries, want 1", len(entries))
+	}
+	e := entries[0]
+	if !strings.Contains(e.Content, "Content Marker") {
+		t.Fatalf("Content = %q, want the content:encoded body", e.Content)
+	}
+	if !strings.Contains(e.Summary, "Summary Marker") {
+		t.Fatalf("Summary = %q, want the description", e.Summary)
+	}
+	assertNoUnsafeMarkup(t, "summary", e.Summary)
 }
