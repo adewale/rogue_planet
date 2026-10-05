@@ -3,6 +3,9 @@ package fetcher
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -66,8 +69,7 @@ func TestFetchFeed_Concurrency(t *testing.T) {
 		numFeeds      = 6
 		concurrency   = 3
 		fetchDelay    = 100 * time.Millisecond
-		maxExpected   = 250 * time.Millisecond // 2 batches: 200ms + overhead
-		minConcurrent = 2                      // Should see at least 2 concurrent
+		minConcurrent = 2 // Should see at least 2 concurrent
 	)
 
 	var concurrentOps atomic.Int32
@@ -107,8 +109,6 @@ func TestFetchFeed_Concurrency(t *testing.T) {
 	}
 
 	// Process feeds concurrently
-	start := time.Now()
-
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, concurrency)
 
@@ -128,20 +128,14 @@ func TestFetchFeed_Concurrency(t *testing.T) {
 	}
 
 	wg.Wait()
-	elapsed := time.Since(start)
 
-	// Verify timing: Should complete in ~2 batches (200ms), not serially (600ms)
-	if elapsed > maxExpected {
-		t.Errorf("Took too long: %v (expected <%v). Feeds may be processing serially instead of concurrently.", elapsed, maxExpected)
-	}
-
-	// Verify we actually achieved concurrency
+	// Overlapping crawler calls are the observable sign that FetchFeed does
+	// not hold the repository mutex during HTTP. (A wall-clock bound measured
+	// the same thing and failed under -race load.)
 	maxSeen := maxConcurrent.Load()
 	if maxSeen < minConcurrent {
 		t.Errorf("Max concurrent operations was %d, expected at least %d. Feeds appear to be serialized!", maxSeen, minConcurrent)
 	}
-
-	t.Logf("✓ Processed %d feeds in %v with max concurrency of %d", numFeeds, elapsed, maxSeen)
 }
 
 // TestFetchFeed_MutexProtectsDatabase verifies that the mutex correctly protects
@@ -362,7 +356,7 @@ func TestFetchFeed_ConcurrentErrorHandling(t *testing.T) {
 	}
 
 	mn := &mockNormalizer{}
-	mr := &mockRepository{}
+	mr := &errorRecordingRepository{recorded: map[int64]string{}}
 	ml := &mockLogger{}
 
 	var mu sync.Mutex
@@ -390,82 +384,107 @@ func TestFetchFeed_ConcurrentErrorHandling(t *testing.T) {
 		}
 	}
 
-	// Verify UpdateFeedError was called for each feed
-	if mr.updateFeedErrorCalled {
-		// At least some errors were recorded (mock doesn't track count)
-		t.Logf("✓ Error recording handled concurrently without deadlock")
+	// Every feed's failure must be recorded against that feed, with the
+	// crawler's message, and no message may be lost or duplicated.
+	if len(mr.recorded) != numFeeds {
+		t.Fatalf("UpdateFeedError recorded %d feeds, want %d: %v", len(mr.recorded), numFeeds, mr.recorded)
 	}
+	seen := map[string]bool{}
+	for id, msg := range mr.recorded {
+		if !strings.HasPrefix(msg, "Network error ") {
+			t.Errorf("feed %d: recorded error %q, want the crawler's error", id, msg)
+		}
+		seen[msg] = true
+	}
+	if len(seen) != numFeeds {
+		t.Errorf("recorded %d distinct errors, want %d: %v", len(seen), numFeeds, mr.recorded)
+	}
+}
+
+// errorRecordingRepository records UpdateFeedError calls per feed. It has its
+// own lock so that a fetcher which stops serializing repository writes fails
+// TestFetchFeed_MutexProtectsDatabase rather than crashing this package.
+type errorRecordingRepository struct {
+	mockRepository
+	mu       sync.Mutex
+	recorded map[int64]string
+}
+
+func (m *errorRecordingRepository) UpdateFeedError(ctx context.Context, id int64, errorMsg string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.recorded[id] = errorMsg
+	return nil
 }
 
 func TestFetchFeed_ContextCancellationDuringConcurrentFetches(t *testing.T) {
 	t.Parallel()
 
-	// Scenario: Cancel context while multiple fetches are in progress
-	// Should gracefully stop all ongoing fetches
+	// Scenario: cancel the context while every fetch is blocked inside a real
+	// HTTP request. Each fetch must return a cancellation error promptly and
+	// record it, instead of waiting for the server.
+	//
+	// This uses the real crawler: a mock crawler that sleeps without reading
+	// ctx cannot observe cancellation at all.
 
-	const numFeeds = 20
-	const fetchDelay = 500 * time.Millisecond
+	const numFeeds = 8
 
-	var activeRequests atomic.Int32
+	arrived := make(chan struct{}, numFeeds)
+	release := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		arrived <- struct{}{}
+		select {
+		case <-r.Context().Done():
+		case <-release:
+		}
+	}))
+	defer srv.Close()
+	defer close(release)
 
-	mc := &mockSlowCrawler{
-		delay:         fetchDelay,
-		concurrentOps: &activeRequests,
-	}
-
-	mn := &mockNormalizer{
-		metadata: &normalizer.FeedMetadata{Title: "Test"},
-		entries:  []normalizer.Entry{{ID: "1"}},
-	}
-
-	mr := &mockRepository{}
-	ml := &mockLogger{}
-
+	mn := &mockNormalizer{}
+	mr := &errorRecordingRepository{recorded: map[int64]string{}}
 	var mu sync.Mutex
-	fetcher := New(mc, mn, mr, &mu, ml, 3)
+	fetcher := New(crawler.NewForTesting(), mn, mr, &mu, &mockLogger{}, 3)
 
 	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
 
-	// Launch concurrent fetches
+	results := make([]FetchResult, numFeeds)
 	var wg sync.WaitGroup
-	var completedCount atomic.Int32
-	var errorCount atomic.Int32
-
 	for i := range numFeeds {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
-			feed := repository.Feed{ID: int64(idx + 1), URL: "http://example.com/feed"}
-			result := fetcher.FetchFeed(ctx, feed)
-
-			if result.Error != nil {
-				errorCount.Add(1)
-			} else {
-				completedCount.Add(1)
-			}
+			feed := repository.Feed{ID: int64(idx + 1), URL: srv.URL + "/feed"}
+			results[idx] = fetcher.FetchFeed(ctx, feed)
 		}(i)
 	}
 
-	// Let some fetches start
-	time.Sleep(100 * time.Millisecond)
-
-	// Cancel context
+	// Cancel only once every request is in flight.
+	for range numFeeds {
+		select {
+		case <-arrived:
+		case <-time.After(10 * time.Second):
+			t.Fatal("requests never reached the server")
+		}
+	}
 	cancel()
 
-	// Wait for all goroutines to finish
-	wg.Wait()
+	done := make(chan struct{})
+	go func() { wg.Wait(); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatal("FetchFeed did not return after cancellation")
+	}
 
-	// Verify all goroutines completed without deadlock
-	errors := errorCount.Load()
-	completed := completedCount.Load()
-
-	t.Logf("✓ Concurrent fetch with cancellation: %d completed, %d errored", completed, errors)
-
-	// The important thing is that cancellation didn't cause deadlock or panic
-	// Some may complete before cancellation propagates, which is fine
-	if completed+errors != numFeeds {
-		t.Errorf("Expected %d total results, got %d completed + %d errors = %d",
-			numFeeds, completed, errors, completed+errors)
+	// Whether a cancelled fetch is recorded as a feed error is not asserted:
+	// the real repository writes with the same (cancelled) ctx, so it records
+	// nothing, and a mock that records would pin behavior production lacks.
+	for i, r := range results {
+		if !errors.Is(r.Error, context.Canceled) {
+			t.Errorf("feed %d: error = %v, want context.Canceled", i, r.Error)
+		}
 	}
 }
 

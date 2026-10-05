@@ -1874,9 +1874,16 @@ func TestFetchFeeds(t *testing.T) {
 }
 ```
 
-**Good Pattern 1 (timing-based verification):**
+**Weaker Pattern 1 (timing-based verification):**
+
+A wall-clock bound detects serialization, but it also fails when the machine
+is slow (for example under `-race` in CI). This repository dropped the bound
+from `TestFetchFeed_Concurrency` because the atomic counter in Pattern 2
+catches the same bug (the fetcher holding its mutex across HTTP) without
+depending on load. Prefer Pattern 2.
+
 ```go
-// STRONG - Verifies timing matches concurrent expectations
+// WEAKER - Timing depends on machine load; prefer Pattern 2
 func TestFetchFeed_Concurrency(t *testing.T) {
     const (
         numFeeds     = 6
