@@ -50,8 +50,10 @@ jobs:
       shell: bash
       if: matrix.os == 'ubuntu-latest'
 
-    - name: Run go vet
-      run: go vet ./...
+    # This replaces the untagged vet pass: it checks ordinary code and
+    # compiles live-feed tests without running them or contacting feeds.
+    - name: Run go vet including network-tagged tests
+      run: go vet -tags=network ./...
 
     - name: Run tests
       shell: bash

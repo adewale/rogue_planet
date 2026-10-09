@@ -92,9 +92,6 @@ go test ./pkg/normalizer -v
 go test ./pkg/repository -v
 go test ./pkg/generator -v
 
-# Run integration tests
-make test-integration          # Full pipeline integration tests
-
 # Run with race detector
 make test-race                 # Detect race conditions
 go test -race ./...
@@ -104,6 +101,10 @@ make coverage                  # Generate HTML coverage report in coverage/cover
 
 # Run live network tests (requires internet)
 go test -tags=network ./pkg/crawler -v
+
+# Compile the network-tagged tests without running them (CI runs this).
+# Always do this after editing a build-tagged file: `go test ./...` skips it.
+go vet -tags=network ./...
 
 # Code quality
 make fmt                       # Format all Go code
@@ -344,8 +345,8 @@ Real-world feeds are messy. Handle these scenarios:
 # 1. Make your changes to pkg/crawler/crawler.go
 # 2. Run tests with race detector
 go test -race ./pkg/crawler -v
-# 3. Run integration tests
-make test-integration
+# 3. Compile the network-tagged live tests (not built by go test ./...)
+go vet -tags=network ./pkg/crawler
 # 4. Quick build and test
 make quick
 ```

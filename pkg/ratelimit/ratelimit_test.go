@@ -2,9 +2,18 @@ package ratelimit
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
+
+	"github.com/adewale/rogue_planet/pkg/timeprovider"
 )
+
+// newFakeClock returns a fake clock at a fixed instant. Waits on it advance
+// the fake time and are recorded, so tests assert exact delays instantly.
+func newFakeClock() *timeprovider.FakeClock {
+	return timeprovider.NewFakeClock(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
+}
 
 func TestNew(t *testing.T) {
 	t.Parallel()
@@ -145,37 +154,128 @@ func TestAllow(t *testing.T) {
 
 func TestWait(t *testing.T) {
 	t.Parallel()
-	// Create limiter with high rate for faster test
-	m := New(600, 5) // 10 req/sec, burst of 5
+	clock := newFakeClock()
+	m := NewWithClock(600, 5, clock) // 10 req/sec, burst of 5
 
 	url := "https://example.com/feed.xml"
 	ctx := t.Context()
 
-	// First 5 should not block
+	// First 5 are covered by the burst and must not wait at all
 	for i := range 5 {
-		start := time.Now()
 		if err := m.Wait(ctx, url); err != nil {
 			t.Fatalf("Wait() error on request %d: %v", i+1, err)
 		}
-		elapsed := time.Since(start)
-		// Should be nearly instant
-		if elapsed > 10*time.Millisecond {
-			t.Errorf("Request %d took %v, expected < 10ms", i+1, elapsed)
-		}
+	}
+	if sleeps := clock.Sleeps(); len(sleeps) != 0 {
+		t.Fatalf("burst requests waited %v, want no waits", sleeps)
 	}
 
-	// 6th request should block briefly (rate is 10 req/sec = 100ms between requests)
-	start := time.Now()
+	// 6th request must wait exactly one token interval (10 req/sec = 100ms)
 	if err := m.Wait(ctx, url); err != nil {
 		t.Fatalf("Wait() error on delayed request: %v", err)
 	}
-	elapsed := time.Since(start)
-
-	// Should have waited approximately 100ms (10 req/sec = 1 every 100ms)
-	// Allow some variance: 50ms - 200ms
-	if elapsed < 50*time.Millisecond || elapsed > 200*time.Millisecond {
-		t.Errorf("Delayed request took %v, expected ~100ms", elapsed)
+	sleeps := clock.Sleeps()
+	if len(sleeps) != 1 || sleeps[0] != 100*time.Millisecond {
+		t.Errorf("6th request waited %v, want exactly [100ms]", sleeps)
 	}
+}
+
+func TestWait_WallClockDefault(t *testing.T) {
+	t.Parallel()
+	// New() must use the real clock: once the burst is spent, Wait blocks.
+	m := New(600, 1) // 10 req/sec, burst of 1
+	url := "https://example.com/feed.xml"
+
+	if err := m.Wait(t.Context(), url); err != nil {
+		t.Fatalf("first Wait() error: %v", err)
+	}
+	start := time.Now()
+	if err := m.Wait(t.Context(), url); err != nil {
+		t.Fatalf("second Wait() error: %v", err)
+	}
+	// Lower bound only: a real timer never fires early, but may fire late under load.
+	if elapsed := time.Since(start); elapsed < 50*time.Millisecond {
+		t.Errorf("second Wait() returned after %v, want it to block for ~100ms", elapsed)
+	}
+}
+
+func TestWait_WouldExceedDeadline(t *testing.T) {
+	t.Parallel()
+	// Context deadlines are wall-clock times, so start the fake clock at the
+	// real time so that both clocks agree on when the deadline falls.
+	clock := timeprovider.NewFakeClock(time.Now())
+	m := NewWithClock(6, 1, clock) // 6 req/min = one token every 10s, burst of 1
+	url := "https://example.com/feed.xml"
+
+	if err := m.Wait(t.Context(), url); err != nil {
+		t.Fatalf("first Wait() error: %v", err)
+	}
+
+	// The next token is 10s away; a context that ends sooner can never succeed.
+	ctx, cancel := context.WithDeadline(t.Context(), clock.Now().Add(5*time.Second))
+	defer cancel()
+	if err := m.Wait(ctx, url); !errors.Is(err, ErrWouldExceedDeadline) {
+		t.Fatalf("Wait() error = %v, want ErrWouldExceedDeadline", err)
+	}
+	if sleeps := clock.Sleeps(); len(sleeps) != 0 {
+		t.Errorf("Wait() slept %v before failing, want no wait", sleeps)
+	}
+
+	// The rejected request must not have consumed the next token.
+	if err := m.Wait(t.Context(), url); err != nil {
+		t.Fatalf("Wait() after rejection error: %v", err)
+	}
+	if sleeps := clock.Sleeps(); len(sleeps) != 1 || sleeps[0] != 10*time.Second {
+		t.Errorf("Wait() after rejection waited %v, want exactly [10s]", sleeps)
+	}
+}
+
+func TestWait_NeverAllowed(t *testing.T) {
+	t.Parallel()
+	m := NewWithClock(60, 0, newFakeClock()) // burst 0: no request can ever pass
+	if err := m.Wait(t.Context(), "https://example.com/feed.xml"); !errors.Is(err, ErrNeverAllowed) {
+		t.Errorf("Wait() error = %v, want ErrNeverAllowed", err)
+	}
+}
+
+func TestWait_CancelledWhileWaitingReturnsToken(t *testing.T) {
+	t.Parallel()
+	fake := newFakeClock()
+	ctx, cancel := context.WithCancel(t.Context())
+	clock := &cancellingClock{FakeClock: fake, cancel: cancel}
+	m := NewWithClock(60, 1, clock) // 1 req/sec, burst of 1
+	url := "https://example.com/feed.xml"
+
+	if err := m.Wait(t.Context(), url); err != nil {
+		t.Fatalf("first Wait() error: %v", err)
+	}
+	// The second request has to wait; the caller gives up during that wait.
+	if err := m.Wait(ctx, url); !errors.Is(err, context.Canceled) {
+		t.Fatalf("Wait() error = %v, want context.Canceled", err)
+	}
+	// No fake time has passed, so no token has been refilled yet.
+	if m.Allow(url) {
+		t.Fatal("Allow() = true with no elapsed time, want false (limiter must read the injected clock)")
+	}
+	// Its reserved token was handed back, so after 1s the next caller proceeds
+	// without waiting a further second.
+	fake.Advance(time.Second)
+	if !m.Allow(url) {
+		t.Error("Allow() = false after cancelled wait, want the reservation to have been returned")
+	}
+}
+
+// cancellingClock cancels the caller's context instead of sleeping, modelling
+// a caller that gives up while Wait is blocked.
+type cancellingClock struct {
+	*timeprovider.FakeClock
+	cancel context.CancelFunc
+}
+
+func (c *cancellingClock) Sleep(ctx context.Context, _ time.Duration) error {
+	c.cancel()
+	<-ctx.Done()
+	return ctx.Err()
 }
 
 func TestWaitWithCancelledContext(t *testing.T) {
@@ -302,7 +402,7 @@ func TestInvalidURL(t *testing.T) {
 
 func TestConcurrentAccess(t *testing.T) {
 	t.Parallel()
-	m := New(600, 10) // High rate for testing
+	m := NewWithClock(600, 10, newFakeClock()) // Waits advance fake time, not the wall clock
 
 	url := "https://example.com/feed.xml"
 	concurrency := 20

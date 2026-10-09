@@ -57,7 +57,8 @@ func New() *Normalizer {
 	// Create strict sanitization policy
 	policy := bluemonday.UGCPolicy()
 
-	// Only allow http and https schemes
+	// UGCPolicy already allows http, https and mailto. AllowURLSchemes adds
+	// schemes; it does not replace the inherited allowlist.
 	policy.AllowURLSchemes("http", "https")
 
 	// Additional safe attributes

@@ -5,6 +5,7 @@
 package timeprovider
 
 import (
+	"context"
 	"sync"
 	"time"
 )
@@ -22,6 +23,23 @@ type TimeProvider interface {
 	Since(t time.Time) time.Duration
 }
 
+// Sleeper abstracts waiting so that retry, backoff and rate-limit code can be
+// tested without real delays or wall-clock tolerances.
+type Sleeper interface {
+	// Sleep waits for d, or until ctx is done, whichever comes first.
+	// It returns ctx.Err() if the context ended first, and nil otherwise.
+	Sleep(ctx context.Context, d time.Duration) error
+}
+
+// Clock is a TimeProvider that can also wait.
+//
+// Components that both read the time and wait (backoff, rate limiting) take a
+// Clock so that tests can substitute FakeClock for both.
+type Clock interface {
+	TimeProvider
+	Sleeper
+}
+
 // WallClock provides actual system time using the standard time package.
 //
 // This is the production implementation that should be used in real applications.
@@ -37,6 +55,25 @@ func (w WallClock) Since(t time.Time) time.Duration {
 	return time.Since(t)
 }
 
+// Sleep blocks for d using a real timer, returning early with ctx.Err() if ctx
+// is done first. A non-positive d returns immediately.
+func (w WallClock) Sleep(ctx context.Context, d time.Duration) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if d <= 0 {
+		return ctx.Err()
+	}
+	timer := time.NewTimer(d)
+	defer timer.Stop()
+	select {
+	case <-timer.C:
+		return ctx.Err()
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
 // FakeClock provides controllable time for testing.
 //
 // FakeClock allows tests to:
@@ -49,6 +86,7 @@ func (w WallClock) Since(t time.Time) time.Duration {
 type FakeClock struct {
 	mu      sync.RWMutex
 	current time.Time
+	sleeps  []time.Duration
 }
 
 // NewFakeClock creates a FakeClock initialized to the given time.
@@ -88,4 +126,27 @@ func (f *FakeClock) Advance(d time.Duration) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.current = f.current.Add(d)
+}
+
+// Sleep records d and advances the fake clock by d instead of blocking, so
+// code under test observes exactly the time it asked to wait. If ctx is
+// already done, Sleep returns ctx.Err() without advancing or recording.
+func (f *FakeClock) Sleep(ctx context.Context, d time.Duration) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.sleeps = append(f.sleeps, d)
+	if d > 0 {
+		f.current = f.current.Add(d)
+	}
+	return nil
+}
+
+// Sleeps returns the durations passed to Sleep, in call order.
+func (f *FakeClock) Sleeps() []time.Duration {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return append([]time.Duration(nil), f.sleeps...)
 }

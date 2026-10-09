@@ -67,7 +67,7 @@ func TestLiveFetchRealWorldFeeds(t *testing.T) {
 
 			// Parse the feed
 			n := normalizer.New()
-			metadata, entries, err := n.Parse(resp.Body, tt.url, resp.FetchTime)
+			metadata, entries, err := n.Parse(ctx, resp.Body, tt.url, resp.FetchTime)
 			if err != nil {
 				t.Fatalf("Failed to parse feed: %v", err)
 			}
@@ -199,7 +199,7 @@ func testLiveEndToEnd(t *testing.T, url, expectedTitle string, minEntries int) {
 	defer repo.Close()
 
 	// Add feed
-	feedID, err := repo.AddFeed(url, "")
+	feedID, err := repo.AddFeed(t.Context(), url, "")
 	if err != nil {
 		t.Fatalf("Failed to add feed: %v", err)
 	}
@@ -216,7 +216,7 @@ func testLiveEndToEnd(t *testing.T, url, expectedTitle string, minEntries int) {
 
 	// Parse feed
 	n := normalizer.New()
-	metadata, entries, err := n.Parse(resp.Body, url, resp.FetchTime)
+	metadata, entries, err := n.Parse(ctx, resp.Body, url, resp.FetchTime)
 	if err != nil {
 		t.Fatalf("Failed to parse feed: %v", err)
 	}
@@ -242,13 +242,13 @@ func testLiveEndToEnd(t *testing.T, url, expectedTitle string, minEntries int) {
 			FirstSeen:   entry.FirstSeen,
 		}
 
-		if err := repo.UpsertEntry(repoEntry); err != nil {
+		if err := repo.UpsertEntry(t.Context(), repoEntry); err != nil {
 			t.Fatalf("Failed to store entry: %v", err)
 		}
 	}
 
 	// Retrieve entries
-	dbEntries, err := repo.GetRecentEntries(7)
+	dbEntries, err := repo.GetRecentEntries(t.Context(), 7)
 	if err != nil {
 		t.Fatalf("Failed to retrieve entries: %v", err)
 	}
@@ -258,17 +258,17 @@ func testLiveEndToEnd(t *testing.T, url, expectedTitle string, minEntries int) {
 	}
 
 	// Update feed metadata
-	if err := repo.UpdateFeed(feedID, metadata.Title, metadata.Link, metadata.Updated); err != nil {
+	if err := repo.UpdateFeed(t.Context(), feedID, metadata.Title, metadata.Link, metadata.Updated); err != nil {
 		t.Fatalf("Failed to update feed: %v", err)
 	}
 
 	// Update cache
-	if err := repo.UpdateFeedCache(feedID, resp.NewCache.ETag, resp.NewCache.LastModified, resp.FetchTime); err != nil {
+	if err := repo.UpdateFeedCache(t.Context(), feedID, resp.NewCache.ETag, resp.NewCache.LastModified, resp.FetchTime); err != nil {
 		t.Fatalf("Failed to update cache: %v", err)
 	}
 
 	// Verify feed was updated
-	feed, err := repo.GetFeedByURL(url)
+	feed, err := repo.GetFeedByURL(t.Context(), url)
 	if err != nil {
 		t.Fatalf("Failed to get feed: %v", err)
 	}

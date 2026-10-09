@@ -30,9 +30,6 @@ make coverage
 # With race detector
 go test -race ./...
 
-# Integration tests only
-make test-integration
-
 # Network tests (requires internet)
 go test -tags=network ./pkg/crawler -v
 ```

@@ -3,7 +3,25 @@ package normalizer
 import (
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/adewale/rogue_planet/internal/htmlsafety"
 )
+
+// assertNoUnsafeMarkup tokenizes all sanitizer output and
+// fails on specified active elements, handlers, styles and URL schemes. A
+// substring search for "<iframe>" cannot see "<iframe src=...>"; the parsed
+// token check can, without rejecting harmless deeply nested content.
+func assertNoUnsafeMarkup(t *testing.T, input, output string) {
+	t.Helper()
+	violations, err := htmlsafety.MarkupViolations(output)
+	if err != nil {
+		t.Fatalf("parse sanitizer output: %v", err)
+	}
+	for _, v := range violations {
+		t.Errorf("unsafe markup survived sanitization: %s\nInput: %s\nOutput: %s", v, input, output)
+	}
+}
 
 // Comprehensive XSS prevention tests
 func TestSanitizeHTML_XSS_Prevention(t *testing.T) {
@@ -63,27 +81,27 @@ func TestSanitizeHTML_XSS_Prevention(t *testing.T) {
 		{
 			name:    "iframe tag",
 			input:   `<p>Safe</p><iframe src="http://evil.com"></iframe><p>Content</p>`,
-			wantNot: []string{"<iframe>", "</iframe>", "evil.com"},
+			wantNot: []string{"evil.com"},
 		},
 		{
 			name:    "object tag",
 			input:   `<object data="evil.swf"></object>`,
-			wantNot: []string{"<object>", "</object>", "evil.swf"},
+			wantNot: []string{"evil.swf"},
 		},
 		{
 			name:    "embed tag",
 			input:   `<embed src="evil.swf">`,
-			wantNot: []string{"<embed>", "evil.swf"},
+			wantNot: []string{"evil.swf"},
 		},
 		{
 			name:    "base tag",
 			input:   `<base href="http://evil.com"><p>Content</p>`,
-			wantNot: []string{"<base>", "</base>"},
+			wantNot: []string{"evil.com"},
 		},
 		{
 			name:    "meta refresh",
 			input:   `<meta http-equiv="refresh" content="0;url=http://evil.com">`,
-			wantNot: []string{"<meta>", "refresh", "evil.com"},
+			wantNot: []string{"refresh", "evil.com"},
 		},
 		{
 			name:    "nested scripts",
@@ -112,6 +130,7 @@ func TestSanitizeHTML_XSS_Prevention(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			output := n.SanitizeHTML(tt.input)
+			assertNoUnsafeMarkup(t, tt.input, output)
 
 			for _, forbidden := range tt.wantNot {
 				if strings.Contains(strings.ToLower(output), strings.ToLower(forbidden)) {
@@ -264,6 +283,7 @@ func TestSanitizeHTML_URLSchemes(t *testing.T) {
 			if !tt.shouldAllow && contains {
 				t.Errorf("Should block %q but it was preserved\nOutput: %s", tt.checkString, output)
 			}
+			assertNoUnsafeMarkup(t, tt.input, output)
 		})
 	}
 }
@@ -300,6 +320,7 @@ func TestSanitizeHTML_RealWorld_XSS_Vectors(t *testing.T) {
 	for _, v := range vectors {
 		t.Run(v.name, func(t *testing.T) {
 			output := n.SanitizeHTML(v.vector)
+			assertNoUnsafeMarkup(t, v.vector, output)
 
 			// Check that common dangerous patterns are removed
 			dangerous := []string{"alert", "javascript:", "onerror", "onload", "expression("}
@@ -420,14 +441,50 @@ func TestSanitizeHTML_EdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Should not panic
 			output := n.SanitizeHTML(tt.input)
 
-			// Basic sanity check
-			if tt.input != "" && output == "" && strings.TrimSpace(tt.input) != "" {
-				t.Errorf("Sanitizer removed all content (should preserve safe HTML)\nInput: %s\nOutput: %s",
-					tt.input, output)
+			// Every input here is safe markup, so the text a reader sees must
+			// survive sanitization unchanged.
+			in, err := htmlsafety.Fragment(tt.input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			out, err := htmlsafety.Fragment(output)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got, want := htmlsafety.Text(out), htmlsafety.Text(in); got != want {
+				t.Errorf("Sanitizer changed text content\nInput:  %.200s\nOutput: %.200s", want, got)
 			}
 		})
 	}
+}
+
+// Summary is only set when an item has both content and a description, and it
+// is passed to templates as template.HTML, so it must be sanitized too.
+func TestParse_SummarySanitized(t *testing.T) {
+	t.Parallel()
+	feed := `<?xml version="1.0"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<channel><title>T</title><link>https://example.com/</link>
+<item>
+  <title>Item</title><link>https://example.com/1</link><guid>1</guid>
+  <description>&lt;p&gt;Summary Marker&lt;/p&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;img src="https://example.com/a.png" onerror="alert(2)"&gt;&lt;a href="javascript:alert(3)"&gt;x&lt;/a&gt;</description>
+  <content:encoded>&lt;p&gt;Content Marker&lt;/p&gt;</content:encoded>
+</item></channel></rss>`
+	_, entries, err := New().Parse(t.Context(), []byte(feed), "https://example.com/feed", time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("got %d entries, want 1", len(entries))
+	}
+	e := entries[0]
+	if !strings.Contains(e.Content, "Content Marker") {
+		t.Fatalf("Content = %q, want the content:encoded body", e.Content)
+	}
+	if !strings.Contains(e.Summary, "Summary Marker") {
+		t.Fatalf("Summary = %q, want the description", e.Summary)
+	}
+	assertNoUnsafeMarkup(t, "summary", e.Summary)
 }

@@ -1,12 +1,16 @@
 package main
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/adewale/rogue_planet/pkg/crawler"
+	"github.com/adewale/rogue_planet/pkg/logging"
 )
 
 // TestFullWorkflow tests the complete workflow from init to HTML generation
@@ -130,15 +134,11 @@ https://example.com/feed3.xml
 	}
 }
 
-// TestHTMLGeneration tests the complete pipeline from HTTP fetch to HTML generation
+// TestHTMLGeneration tests the complete pipeline from HTTP fetch to HTML generation:
+// add-feed -> fetch over HTTP -> normalise -> store -> generate -> HTML contains the entries.
 func TestHTMLGeneration(t *testing.T) {
 	t.Parallel()
-	t.Skip("TODO: Complete implementation - needs test crawler support")
 
-	// This test validates the full end-to-end workflow but uses direct function
-	// calls instead of CLI commands to allow test-only crawlers that skip SSRF checks
-
-	// Setup temporary directory
 	tmpDir := t.TempDir()
 
 	// Create a test RSS feed
@@ -168,7 +168,9 @@ func TestHTMLGeneration(t *testing.T) {
 </rss>`
 
 	// Create mock HTTP server
+	requests := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
 		w.Header().Set("Content-Type", "application/rss+xml")
 		if _, err := w.Write([]byte(testFeed)); err != nil {
 			t.Errorf("Write error: %v", err)
@@ -176,79 +178,82 @@ func TestHTMLGeneration(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// Step 1: Initialize planet in temp directory
+	// Step 1: Write a config whose paths are absolute, so nothing is created
+	// relative to the test's working directory
 	configPath := filepath.Join(tmpDir, "config.ini")
+	outputDir := filepath.Join(tmpDir, "public")
+	dbPath := filepath.Join(tmpDir, "planet.db")
+	configContent := `[planet]
+name = Test Planet
+link = https://example.com
+owner_name = Test
+owner_email = test@example.com
+output_dir = ` + outputDir + `
+days = 7
 
-	initOpts := InitOptions{
-		ConfigPath: configPath,
-		Output:     os.Stdout,
-	}
-	if err := cmdInit(initOpts); err != nil {
-		t.Fatalf("Failed to initialize planet: %v", err)
+[database]
+path = ` + dbPath + `
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
 	}
 
-	// Step 2: Add the test feed
-	addOpts := AddFeedOptions{
+	// Step 2: Add the test feed with the add-feed command
+	if err := cmdAddFeed(AddFeedOptions{
 		ConfigPath: configPath,
 		URL:        server.URL,
-		Output:     os.Stdout,
-	}
-	if err := cmdAddFeed(addOpts); err != nil {
+		Output:     io.Discard,
+	}); err != nil {
 		t.Fatalf("Failed to add feed: %v", err)
 	}
 
-	// Step 3: Generate HTML (even with no entries, tests the pipeline)
-	// Note: We can't fetch from localhost due to SSRF protection
-	// Future enhancement: Add support for test crawlers in fetch commands
-	generateOpts := GenerateOptions{
-		ConfigPath: configPath,
-		Output:     os.Stdout,
+	// Step 3: Fetch through the same pipeline as 'rp fetch' (rate limiter,
+	// fetcher, normaliser, repository). The production crawler refuses
+	// loopback URLs (SSRF protection), so inject the test crawler.
+	cfg, err := loadConfig(configPath)
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
 	}
-	if err := cmdGenerate(t.Context(), generateOpts); err != nil {
+	if err := fetchFeedsWithCrawler(t.Context(), cfg, logging.New("error"), crawler.NewForTesting()); err != nil {
+		t.Fatalf("Failed to fetch feeds: %v", err)
+	}
+	if requests != 1 {
+		t.Fatalf("feed server received %d requests, want 1", requests)
+	}
+
+	// Step 4: Generate HTML with the generate command
+	if err := cmdGenerate(t.Context(), GenerateOptions{
+		ConfigPath: configPath,
+		Output:     io.Discard,
+	}); err != nil {
 		t.Fatalf("Failed to generate HTML: %v", err)
 	}
 
-	// Step 4: Verify HTML was generated
-	// The config uses relative paths, so files are created relative to config location
-	htmlPath := filepath.Join(tmpDir, "public", "index.html")
-	if _, err := os.Stat(htmlPath); os.IsNotExist(err) {
-		// Debug: list what files were actually created
-		if entries, listErr := os.ReadDir(tmpDir); listErr == nil {
-			t.Logf("Files in tmpDir: %v", entries)
-		}
-		if entries, listErr := os.ReadDir(filepath.Join(tmpDir, "public")); listErr == nil {
-			t.Logf("Files in public: %v", entries)
-		}
-		t.Fatalf("HTML file was not generated at %s", htmlPath)
-	}
-
-	// Step 5: Read and verify HTML structure (even if no entries due to SSRF)
-	htmlContent, err := os.ReadFile(htmlPath)
+	// Step 5: Verify the fetched entries reached the generated page
+	htmlContent, err := os.ReadFile(filepath.Join(outputDir, "index.html"))
 	if err != nil {
 		t.Fatalf("Failed to read generated HTML: %v", err)
 	}
-
 	htmlStr := string(htmlContent)
 
-	// Verify basic HTML structure was generated
-	basicChecks := []struct {
+	checks := []struct {
 		name    string
 		content string
 	}{
 		{"html structure", "<html"},
-		{"head section", "<head>"},
-		{"body section", "<body>"},
 		{"CSP header", "Content-Security-Policy"},
+		{"feed title", "Test Blog"},
+		{"first entry title", "Test Entry 1"},
+		{"second entry title", "Test Entry 2"},
+		{"first entry link", `href="https://example.com/post1"`},
+		{"second entry link", `href="https://example.com/post2"`},
+		{"entry content", "This is the first test entry"},
 	}
-
-	for _, check := range basicChecks {
+	for _, check := range checks {
 		if !strings.Contains(htmlStr, check.content) {
 			t.Errorf("Generated HTML missing %s: %q", check.name, check.content)
 		}
 	}
-
-	t.Logf("✓ Successfully tested HTML generation pipeline")
-	t.Logf("Note: Full content validation requires refactoring to support test crawlers")
 }
 
 // Test #8: Redirect Then Remove Integration Test (CRITICAL)

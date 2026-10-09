@@ -87,12 +87,6 @@ test-short:
 test-fuzz:
 	@$(GOTEST) ./pkg/normalizer -run '^$$' -fuzz FuzzParseFeed -fuzztime $(FUZZTIME)
 
-## test: test-integration: Run integration tests
-test-integration:
-	@echo "Running integration tests..."
-	@$(GOTEST) -v -tags=integration ./cmd/rp/... ./pkg/generator/...
-	@echo "✓ Integration tests passed"
-
 ## test: coverage: Generate test coverage report
 coverage:
 	@echo "Running tests with coverage..."
@@ -119,10 +113,10 @@ fmt:
 	@$(GOFMT) ./...
 	@echo "✓ Code formatted"
 
-## dev: vet: Run go vet
+## dev: vet: Run go vet (also compiles the -tags=network live tests)
 vet:
 	@echo "Running go vet..."
-	@$(GOCMD) vet ./...
+	@$(GOCMD) vet -tags=network ./...
 	@echo "✓ No issues found"
 
 ## dev: lint: Run golangci-lint (if installed)

@@ -17,6 +17,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/adewale/rogue_planet/pkg/timeprovider"
 )
 
 const (
@@ -62,7 +64,8 @@ type Crawler struct {
 	client        *http.Client
 	userAgent     string
 	maxSize       int64
-	skipSSRFCheck bool // For testing only - allows local URLs
+	skipSSRFCheck bool               // For testing only - allows local URLs
+	clock         timeprovider.Clock // Waits between retries; tests substitute a FakeClock
 }
 
 // New creates a new Crawler with default settings
@@ -105,6 +108,7 @@ func New() *Crawler {
 		userAgent:     UserAgent,
 		maxSize:       MaxFeedSize,
 		skipSSRFCheck: false,
+		clock:         timeprovider.WallClock{},
 	}
 }
 
@@ -203,6 +207,7 @@ func NewWithConfig(cfg CrawlerConfig) *Crawler {
 		userAgent:     userAgent,
 		maxSize:       MaxFeedSize,
 		skipSSRFCheck: false,
+		clock:         timeprovider.WallClock{},
 	}
 }
 
@@ -463,10 +468,8 @@ func (c *Crawler) FetchWithRetry(ctx context.Context, feedURL string, cache Feed
 				backoff += jitter
 			}
 
-			select {
-			case <-time.After(backoff):
-			case <-ctx.Done():
-				return nil, ctx.Err()
+			if err := c.clock.Sleep(ctx, backoff); err != nil {
+				return nil, err
 			}
 		}
 

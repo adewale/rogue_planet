@@ -6,24 +6,42 @@ package ratelimit
 
 import (
 	"context"
+	"errors"
 	"net/url"
 	"sync"
 
+	"github.com/adewale/rogue_planet/pkg/timeprovider"
 	"golang.org/x/time/rate"
 )
+
+// ErrWouldExceedDeadline is returned by Wait when the required delay would
+// outlast the context's deadline, so waiting could never succeed.
+var ErrWouldExceedDeadline = errors.New("ratelimit: wait would exceed context deadline")
+
+// ErrNeverAllowed is returned by Wait when the limiter can never grant the
+// request, for example because the burst or the rate is zero.
+var ErrNeverAllowed = errors.New("ratelimit: limiter can never allow this request")
 
 // Manager manages per-domain rate limiters
 type Manager struct {
 	limiters map[string]*rate.Limiter
 	mu       sync.RWMutex
-	limit    rate.Limit // Requests per second
-	burst    int        // Burst size
+	limit    rate.Limit         // Requests per second
+	burst    int                // Burst size
+	clock    timeprovider.Clock // Source of time and waiting; tests substitute a FakeClock
 }
 
 // New creates a new rate limiter manager.
 // requestsPerMinute: maximum requests per domain per minute
 // burst: maximum burst size (allows temporary spikes)
 func New(requestsPerMinute int, burst int) *Manager {
+	return NewWithClock(requestsPerMinute, burst, timeprovider.WallClock{})
+}
+
+// NewWithClock creates a rate limiter manager that reads the time from, and
+// waits on, the given clock. Production code uses New (the wall clock); tests
+// pass a timeprovider.FakeClock so that waits are exact and instantaneous.
+func NewWithClock(requestsPerMinute int, burst int, clock timeprovider.Clock) *Manager {
 	// Convert requests/minute to requests/second
 	reqPerSec := float64(requestsPerMinute) / 60.0
 
@@ -31,6 +49,7 @@ func New(requestsPerMinute int, burst int) *Manager {
 		limiters: make(map[string]*rate.Limiter),
 		limit:    rate.Limit(reqPerSec),
 		burst:    burst,
+		clock:    clock,
 	}
 }
 
@@ -44,7 +63,32 @@ func (m *Manager) Wait(ctx context.Context, feedURL string) error {
 	}
 
 	limiter := m.getLimiter(domain)
-	return limiter.Wait(ctx)
+
+	// This mirrors rate.Limiter.Wait, but takes the time from m.clock and
+	// waits via m.clock so that the behaviour can be tested deterministically.
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	now := m.clock.Now()
+	r := limiter.ReserveN(now, 1)
+	if !r.OK() {
+		return ErrNeverAllowed
+	}
+	delay := r.DelayFrom(now)
+	if delay == 0 {
+		return nil
+	}
+	if deadline, ok := ctx.Deadline(); ok && now.Add(delay).After(deadline) {
+		r.CancelAt(now)
+		return ErrWouldExceedDeadline
+	}
+	if err := m.clock.Sleep(ctx, delay); err != nil {
+		// Give the token back so other callers are not delayed by a request
+		// that will never be made.
+		r.CancelAt(m.clock.Now())
+		return err
+	}
+	return nil
 }
 
 // Allow checks if a request to the given URL would be allowed without blocking.
@@ -57,7 +101,7 @@ func (m *Manager) Allow(feedURL string) bool {
 	}
 
 	limiter := m.getLimiter(domain)
-	return limiter.Allow()
+	return limiter.AllowN(m.clock.Now(), 1)
 }
 
 // getLimiter returns the rate limiter for a domain, creating it if necessary
@@ -120,7 +164,7 @@ func (m *Manager) Stats() Stats {
 	}
 
 	for domain, limiter := range m.limiters {
-		tokens := limiter.Tokens()
+		tokens := limiter.TokensAt(m.clock.Now())
 		stats.Limiters[domain] = LimiterStats{
 			Domain:            domain,
 			TokensAvailable:   int(tokens),

@@ -2,6 +2,7 @@ package normalizer
 
 import (
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -379,7 +380,7 @@ func TestParseJSONFeedEdgeCases(t *testing.T) {
 	}
 
 	// Parse feed
-	fetchTime := time.Now()
+	fetchTime := time.Date(2025, 10, 20, 12, 0, 0, 0, time.UTC)
 	metadata, entries, err := n.Parse(t.Context(), data, "https://edge.example.org/feed.json", fetchTime)
 	if err != nil {
 		t.Fatalf("Failed to parse JSON Feed edge cases: %v", err)
@@ -424,67 +425,63 @@ func TestParseJSONFeedEdgeCases(t *testing.T) {
 		}
 	}
 
-	// Test 1: Missing date (should use fetch time)
-	if missingDateEntry != nil {
-		if missingDateEntry.Published.IsZero() {
-			t.Error("Entry with missing date should have a published time (using fetch time)")
+	// Every case below must be present: a lookup that finds nothing would
+	// otherwise skip its assertions and pass.
+	for name, e := range map[string]*Entry{
+		"missing-date": missingDateEntry, "no-id": missingIDEntry,
+		"unicode-content": unicodeEntry, "malicious-urls": maliciousURLsEntry,
+		"html-in-title": htmlInTitleEntry, "future-date": futureDateEntry,
+	} {
+		if e == nil {
+			t.Fatalf("edge-case entry %q not found among %d parsed entries", name, len(entries))
 		}
-		// Should be close to fetch time (within 1 second)
-		if missingDateEntry.Published.Sub(fetchTime).Abs() > time.Second {
-			t.Errorf("Entry missing date: published = %v, expected close to %v",
-				missingDateEntry.Published, fetchTime)
-		}
-		t.Logf("✓ Missing date handled correctly (used fetch time)")
 	}
 
-	// Test 2: Missing ID (should generate one)
-	if missingIDEntry != nil {
-		if missingIDEntry.ID == "" {
-			t.Error("Entry without ID should have generated ID")
-		}
-		t.Logf("✓ Missing ID handled correctly (generated: %s)", missingIDEntry.ID)
+	// Test 1: Missing date. The feed has no date either, so the fallback
+	// chain ends at the fetch time (CLAUDE.md: "use feed date, then fetch
+	// time as fallback").
+	if !missingDateEntry.Published.Equal(fetchTime) {
+		t.Errorf("Entry missing date: published = %v, want fetch time %v",
+			missingDateEntry.Published, fetchTime)
+	}
+
+	// Test 2: Missing ID is generated from the permalink (CLAUDE.md:
+	// "generate from permalink or content hash").
+	if missingIDEntry.ID != "https://edge.example.org/no-id" {
+		t.Errorf("Entry without ID: ID = %q, want its permalink", missingIDEntry.ID)
 	}
 
 	// Test 3: Unicode content (UTF-8 handling)
-	if unicodeEntry != nil {
-		if !containsIgnoreCase(unicodeEntry.Title, "你好世界") {
-			t.Error("Unicode entry title should contain Chinese characters")
-		}
-		if !containsIgnoreCase(unicodeEntry.Content, "中文") {
-			t.Error("Unicode entry content should contain Chinese text")
-		}
-		if !containsIgnoreCase(unicodeEntry.Content, "日本語") {
-			t.Error("Unicode entry content should contain Japanese text")
-		}
-		t.Logf("✓ Unicode content handled correctly")
+	if !containsIgnoreCase(unicodeEntry.Title, "你好世界") {
+		t.Error("Unicode entry title should contain Chinese characters")
+	}
+	if !containsIgnoreCase(unicodeEntry.Content, "中文") {
+		t.Error("Unicode entry content should contain Chinese text")
+	}
+	if !containsIgnoreCase(unicodeEntry.Content, "日本語") {
+		t.Error("Unicode entry content should contain Japanese text")
 	}
 
 	// Test 4: Malicious URL schemes (should be sanitized)
-	if maliciousURLsEntry != nil {
-		if containsIgnoreCase(maliciousURLsEntry.Content, "javascript:") {
-			t.Error("Malicious javascript: URLs should be removed or sanitized")
-		}
-		t.Logf("✓ Malicious URL schemes sanitized")
+	if containsIgnoreCase(maliciousURLsEntry.Content, "javascript:") {
+		t.Error("Malicious javascript: URLs should be removed or sanitized")
+	}
+	assertNoUnsafeMarkup(t, "malicious-urls content", maliciousURLsEntry.Content)
+	if !strings.Contains(maliciousURLsEntry.Content, "JavaScript link") {
+		t.Errorf("link text should survive sanitization: %s", maliciousURLsEntry.Content)
 	}
 
-	// Test 5: HTML in title (currently stripped, should be escaped per Venus #24)
-	if htmlInTitleEntry != nil {
-		// Note: This is a known limitation (Venus #24 - HTML Escaping in Titles)
-		// Currently HTML is stripped from titles. Ideally it should be escaped.
-		// For now, we just verify the entry parses successfully
-		if htmlInTitleEntry.Title == "" {
-			t.Error("Entry with HTML in title should still have a title")
-		}
-		t.Logf("✓ Entry with HTML in title parsed (title: %q)", htmlInTitleEntry.Title)
+	// Test 5: HTML in title (Venus #24). The normalizer keeps the title as
+	// feed text; the generator escapes it, which
+	// cmd/rp TestHostileFeedProducesSafePage checks on the rendered page.
+	if !strings.Contains(htmlInTitleEntry.Title, "HTML tags") {
+		t.Errorf("Entry with HTML in title lost its text: %q", htmlInTitleEntry.Title)
 	}
 
-	// Test 6: Future date (accepted or clamped depending on config)
-	if futureDateEntry != nil {
-		if futureDateEntry.Published.Year() == 2099 {
-			t.Logf("✓ Future date accepted (published: %v)", futureDateEntry.Published)
-		} else {
-			t.Logf("✓ Future date clamped (published: %v)", futureDateEntry.Published)
-		}
+	// Test 6: Future date. The normalizer has no clamping option, so it keeps
+	// the date the feed states.
+	if want := time.Date(2099, 12, 31, 23, 59, 59, 0, time.UTC); !futureDateEntry.Published.Equal(want) {
+		t.Errorf("Future date: published = %v, want %v as stated in the feed", futureDateEntry.Published, want)
 	}
 
 	t.Logf("✓ Successfully parsed JSON Feed edge cases with %d entries", len(entries))

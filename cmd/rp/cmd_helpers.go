@@ -73,6 +73,29 @@ func importFeedsFromURLs(ctx context.Context, repo *repository.Repository, feedU
 }
 
 func fetchFeeds(ctx context.Context, cfg *config.Config, logger logging.Logger) error {
+	return fetchFeedsWithCrawler(ctx, cfg, logger, newCrawlerFromConfig(cfg))
+}
+
+// newCrawlerFromConfig creates the production crawler (SSRF checks enabled)
+// with the connection pooling and timeouts from config.
+func newCrawlerFromConfig(cfg *config.Config) *crawler.Crawler {
+	return crawler.NewWithConfig(crawler.CrawlerConfig{
+		UserAgent:                    cfg.Planet.UserAgent,
+		MaxIdleConns:                 cfg.Planet.MaxIdleConns,
+		MaxIdleConnsPerHost:          cfg.Planet.MaxIdleConnsPerHost,
+		MaxConnsPerHost:              cfg.Planet.MaxConnsPerHost,
+		IdleConnTimeoutSeconds:       cfg.Planet.IdleConnTimeoutSeconds,
+		HTTPTimeoutSeconds:           cfg.Planet.HTTPTimeoutSeconds,
+		DialTimeoutSeconds:           cfg.Planet.DialTimeoutSeconds,
+		TLSHandshakeTimeoutSeconds:   cfg.Planet.TLSHandshakeTimeoutSeconds,
+		ResponseHeaderTimeoutSeconds: cfg.Planet.ResponseHeaderTimeoutSeconds,
+	})
+}
+
+// fetchFeedsWithCrawler fetches every active feed using the given crawler.
+// fetchFeeds passes the production crawler; integration tests pass
+// crawler.NewForTesting() so the pipeline can fetch from httptest servers.
+func fetchFeedsWithCrawler(ctx context.Context, cfg *config.Config, logger logging.Logger, c *crawler.Crawler) error {
 	// Set log level from config if logger supports it
 	if stdLogger, ok := logger.(*logging.StandardLogger); ok {
 		stdLogger.SetLevel(cfg.Planet.LogLevel)
@@ -97,18 +120,6 @@ func fetchFeeds(ctx context.Context, cfg *config.Config, logger logging.Logger) 
 
 	logger.Info("Fetching %d feeds with concurrency=%d", len(feeds), cfg.Planet.ConcurrentFetch)
 
-	// Create crawler with custom configuration
-	c := crawler.NewWithConfig(crawler.CrawlerConfig{
-		UserAgent:                    cfg.Planet.UserAgent,
-		MaxIdleConns:                 cfg.Planet.MaxIdleConns,
-		MaxIdleConnsPerHost:          cfg.Planet.MaxIdleConnsPerHost,
-		MaxConnsPerHost:              cfg.Planet.MaxConnsPerHost,
-		IdleConnTimeoutSeconds:       cfg.Planet.IdleConnTimeoutSeconds,
-		HTTPTimeoutSeconds:           cfg.Planet.HTTPTimeoutSeconds,
-		DialTimeoutSeconds:           cfg.Planet.DialTimeoutSeconds,
-		TLSHandshakeTimeoutSeconds:   cfg.Planet.TLSHandshakeTimeoutSeconds,
-		ResponseHeaderTimeoutSeconds: cfg.Planet.ResponseHeaderTimeoutSeconds,
-	})
 	n := normalizer.New()
 
 	// Create rate limiter for per-domain rate limiting
@@ -258,12 +269,13 @@ func generateSite(ctx context.Context, cfg *config.Config) error {
 
 		// SAFETY: Content was sanitized by normalizer.Parse() before storage.
 		// See pkg/normalizer/normalizer.go:56-69 for HTML sanitization using bluemonday.
-		// Title, Content, and Summary are safe for template.HTML after sanitization:
+		// Content and Summary are safe for template.HTML after sanitization
+		// (Title is plain feed text and is escaped by html/template):
 		// - XSS vectors removed (script tags, event handlers, javascript: URLs)
 		// - Only http/https schemes allowed in links
 		// - Dangerous tags stripped (object, embed, iframe, base)
 		genEntries = append(genEntries, generator.EntryData{
-			Title:     template.HTML(entry.Title),
+			Title:     entry.Title,
 			Link:      entry.Link,
 			Author:    entry.Author,
 			FeedTitle: feed.Title,

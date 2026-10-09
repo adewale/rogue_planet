@@ -6,9 +6,41 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/adewale/rogue_planet/pkg/timeprovider"
 )
+
+// newTestCrawlerWithFakeClock returns a crawler that allows local URLs and
+// whose retry backoff advances a fake clock instead of sleeping. The fake
+// clock records every requested backoff, so tests can assert on the exact
+// durations rather than on wall-clock gaps.
+func newTestCrawlerWithFakeClock() (*Crawler, *timeprovider.FakeClock) {
+	c := NewForTesting()
+	clock := timeprovider.NewFakeClock(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
+	c.clock = clock
+	return c, clock
+}
+
+// blockingClock is a fake clock whose Sleep never elapses: it only returns
+// when the context is done. It models a retry backoff that is still waiting
+// when the caller cancels.
+type blockingClock struct {
+	*timeprovider.FakeClock
+	sleeping chan struct{} // closed when the first Sleep starts
+	once     sync.Once
+	calls    atomic.Int32
+}
+
+func (b *blockingClock) Sleep(ctx context.Context, _ time.Duration) error {
+	b.calls.Add(1)
+	b.once.Do(func() { close(b.sleeping) })
+	<-ctx.Done()
+	return ctx.Err()
+}
 
 func TestValidateURL(t *testing.T) {
 	t.Parallel()
@@ -181,10 +213,9 @@ func TestFetch(t *testing.T) {
 
 	t.Run("timeout handling", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			time.Sleep(2 * time.Second)
-			if _, err := w.Write([]byte("too slow")); err != nil {
-				t.Errorf("Write error: %v", err)
-			}
+			// Never respond: hold the request until the client gives up, so the
+			// only way Fetch can return is via its context deadline.
+			<-r.Context().Done()
 		}))
 		defer server.Close()
 
@@ -240,7 +271,7 @@ func TestFetchWithRetry(t *testing.T) {
 		}))
 		defer server.Close()
 
-		crawler := NewForTesting()
+		crawler, clock := newTestCrawlerWithFakeClock()
 		resp, err := crawler.FetchWithRetry(t.Context(), server.URL, FeedCache{}, 3)
 
 		if err != nil {
@@ -253,6 +284,10 @@ func TestFetchWithRetry(t *testing.T) {
 
 		if attempts != 2 {
 			t.Errorf("attempts = %d, want 2", attempts)
+		}
+
+		if sleeps := clock.Sleeps(); len(sleeps) != 1 {
+			t.Errorf("backoff waits = %v, want exactly 1 (one retry)", sleeps)
 		}
 	})
 
@@ -548,12 +583,10 @@ func TestFetchWithRetry_RespectsRetryAfter(t *testing.T) {
 	}))
 	defer server.Close()
 
-	crawler := NewForTesting()
+	crawler, clock := newTestCrawlerWithFakeClock()
 	ctx := t.Context()
 
-	startTime := time.Now()
 	resp, err := crawler.FetchWithRetry(ctx, server.URL, FeedCache{}, 3)
-	duration := time.Since(startTime)
 
 	if err != nil {
 		t.Fatalf("FetchWithRetry error: %v", err)
@@ -567,10 +600,15 @@ func TestFetchWithRetry_RespectsRetryAfter(t *testing.T) {
 		t.Errorf("attemptCount = %d, want 3", attemptCount)
 	}
 
-	// Should have waited at least 2 seconds (2 retries × 1 second Retry-After)
-	// Allow some tolerance for timing
-	if duration < 1800*time.Millisecond {
-		t.Errorf("Duration = %v, expected at least 2 seconds (respecting Retry-After)", duration)
+	// Each retry must wait exactly the server's Retry-After (1s), with no jitter.
+	sleeps := clock.Sleeps()
+	if len(sleeps) != 2 {
+		t.Fatalf("backoff waits = %v, want 2 (one per retry)", sleeps)
+	}
+	for i, d := range sleeps {
+		if d != time.Second {
+			t.Errorf("backoff wait %d = %v, want exactly 1s (Retry-After)", i, d)
+		}
 	}
 }
 
@@ -1030,8 +1068,14 @@ func TestFetchWithRetry_ContextCancelledBetweenRetries(t *testing.T) {
 	defer server.Close()
 
 	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
 
 	c := NewForTesting()
+	clock := &blockingClock{
+		FakeClock: timeprovider.NewFakeClock(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)),
+		sleeping:  make(chan struct{}),
+	}
+	c.clock = clock
 
 	// Run fetch in goroutine
 	errChan := make(chan error, 1)
@@ -1040,10 +1084,16 @@ func TestFetchWithRetry_ContextCancelledBetweenRetries(t *testing.T) {
 		errChan <- err
 	}()
 
-	// Give first request time to complete
-	time.Sleep(100 * time.Millisecond)
+	// Wait until the first attempt has failed and the crawler is in its backoff
+	select {
+	case <-clock.sleeping:
+	case err := <-errChan:
+		t.Fatalf("fetch ended before entering retry backoff: %v", err)
+	case <-t.Context().Done():
+		t.Fatal("test cancelled before entering retry backoff")
+	}
 
-	// Cancel context before retry
+	// Cancel context during the backoff, before the retry
 	cancel()
 
 	// Wait for result
@@ -1056,6 +1106,11 @@ func TestFetchWithRetry_ContextCancelledBetweenRetries(t *testing.T) {
 	// Should only have attempted once (no retries after cancellation)
 	if attemptCount > 1 {
 		t.Errorf("Expected only 1 attempt (no retry after cancel), got %d", attemptCount)
+	}
+
+	// The cancelled backoff must end the retry loop, not start another backoff
+	if calls := clock.calls.Load(); calls != 1 {
+		t.Errorf("backoff waits = %d, want 1 (stop as soon as the backoff is cancelled)", calls)
 	}
 
 	if !errors.Is(err, context.Canceled) {
@@ -1155,7 +1210,7 @@ func TestFetchWithRetry_JitterApplied(t *testing.T) {
 	}))
 	defer server.Close()
 
-	crawler := NewForTesting()
+	crawler, clock := newTestCrawlerWithFakeClock()
 	_, err := crawler.FetchWithRetry(t.Context(), server.URL, FeedCache{}, 3)
 
 	if err != nil {
@@ -1166,12 +1221,12 @@ func TestFetchWithRetry_JitterApplied(t *testing.T) {
 		t.Fatalf("Expected 3 attempts, got %d", len(attemptTimes))
 	}
 
-	// Check delays between attempts
+	// Check the backoff the crawler requested before each retry
 	// First retry: base 1s ± 10% jitter = 0.9s - 1.1s
 	// Second retry: base 2s ± 10% jitter = 1.8s - 2.2s
-	delays := []time.Duration{
-		attemptTimes[1].Sub(attemptTimes[0]),
-		attemptTimes[2].Sub(attemptTimes[1]),
+	delays := clock.Sleeps()
+	if len(delays) != 2 {
+		t.Fatalf("backoff waits = %v, want 2 (one per retry)", delays)
 	}
 
 	// First retry should be ~1s ± 10%
@@ -1197,10 +1252,10 @@ func TestFetchWithRetry_JitterVariability(t *testing.T) {
 	// This verifies randomization is working
 
 	collectDelay := func() time.Duration {
-		attemptTimes := []time.Time{}
+		attempts := 0
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			attemptTimes = append(attemptTimes, time.Now())
-			if len(attemptTimes) < 2 {
+			attempts++
+			if attempts < 2 {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -1209,13 +1264,14 @@ func TestFetchWithRetry_JitterVariability(t *testing.T) {
 		}))
 		defer server.Close()
 
-		crawler := NewForTesting()
+		crawler, clock := newTestCrawlerWithFakeClock()
 		_, _ = crawler.FetchWithRetry(t.Context(), server.URL, FeedCache{}, 3)
 
-		if len(attemptTimes) >= 2 {
-			return attemptTimes[1].Sub(attemptTimes[0])
+		sleeps := clock.Sleeps()
+		if len(sleeps) != 1 {
+			t.Fatalf("backoff waits = %v, want exactly 1 (one retry)", sleeps)
 		}
-		return 0
+		return sleeps[0]
 	}
 
 	// Collect delays from 5 runs
@@ -1224,11 +1280,12 @@ func TestFetchWithRetry_JitterVariability(t *testing.T) {
 		delays[i] = collectDelay()
 	}
 
-	// Verify that not all delays are identical (would indicate no jitter)
+	// Verify that not all delays are identical (would indicate no jitter).
+	// The delays are the exact durations the crawler requested, so no
+	// timing tolerance is needed.
 	allSame := true
 	for i := 1; i < len(delays); i++ {
-		// Allow 5ms tolerance for timing variance
-		if delays[i]-delays[0] > 5*time.Millisecond || delays[0]-delays[i] > 5*time.Millisecond {
+		if delays[i] != delays[0] {
 			allSame = false
 			break
 		}
@@ -1238,10 +1295,9 @@ func TestFetchWithRetry_JitterVariability(t *testing.T) {
 		t.Error("All retry delays are identical - jitter is not working")
 	}
 
-	// Verify all delays are within acceptable range (1s ± 20%)
-	// Wider tolerance accounts for race detector overhead in CI
-	minDelay := 800 * time.Millisecond
-	maxDelay := 1200 * time.Millisecond
+	// Verify all delays are within the specified jitter range (1s ± 10%)
+	minDelay := 900 * time.Millisecond
+	maxDelay := 1100 * time.Millisecond
 	for i, delay := range delays {
 		if delay < minDelay || delay > maxDelay {
 			t.Errorf("Delay %d = %v, want between %v and %v", i, delay, minDelay, maxDelay)

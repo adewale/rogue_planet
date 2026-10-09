@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - Verification gaps
+- **Network-tagged tests compile again, and CI keeps them compiling**
+  - `pkg/crawler/crawler_live_test.go` had not compiled since the context
+    propagation change (65d22f3): it called `Normalizer.Parse` and seven
+    repository methods without a `context.Context`
+  - CI now runs `go vet -tags=network ./...` (compile only, no network);
+    `make vet` does the same locally
+- **Retry backoff and rate limiting use an injectable clock**
+  - New `timeprovider.Sleeper`/`timeprovider.Clock`; `WallClock` sleeps on a
+    real timer, `FakeClock.Sleep` advances fake time and records the wait
+  - `Crawler.FetchWithRetry` waits via the clock; `ratelimit.NewWithClock`
+    takes one (`ratelimit.New` keeps using the wall clock)
+  - Backoff, jitter, Retry-After and rate-limit tests now assert the exact
+    requested durations; the jitter bound is back to the specified ±10%
+    (it had been widened to ±20% for CI timing noise). `pkg/ratelimit` tests
+    drop from ~19.5s to ~0.1s and `pkg/crawler` from ~9.5s to ~2s
+- **`TestHTMLGeneration` is implemented instead of skipped**: add-feed → fetch
+  over HTTP → store → generate, asserting the fetched entries reach the page
+- Removed the `make test-integration` target: no file has an `integration`
+  build tag, so it only re-ran a subset of the normal tests
+- Feed titles remain plain strings and are escaped by `html/template`, rather
+  than bypassing escaping with `template.HTML`. Sanitised body HTML retains
+  its existing formatting and URL policy (including mailto links).
+- Security assertions inspect all sanitizer output, including deeply nested
+  markup, rather than relying on substrings or a body-only parsed fragment.
+
 ### Changed - Context Propagation
 - **Comprehensive context.Context support throughout codebase**
   - Enables graceful cancellation with Ctrl+C (SIGINT/SIGTERM)
