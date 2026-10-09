@@ -381,6 +381,10 @@ func TestFetchFeed_ConcurrentErrorHandling(t *testing.T) {
 	for i, result := range results {
 		if result.Error == nil {
 			t.Errorf("Feed %d: Expected error, got nil", i)
+			continue
+		}
+		if got := mr.recorded[int64(i+1)]; got != result.Error.Error() {
+			t.Errorf("Feed %d: recorded %q, want its own error %q", i+1, got, result.Error.Error())
 		}
 	}
 

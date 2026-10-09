@@ -1068,6 +1068,7 @@ func TestFetchWithRetry_ContextCancelledBetweenRetries(t *testing.T) {
 	defer server.Close()
 
 	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
 
 	c := NewForTesting()
 	clock := &blockingClock{
@@ -1084,7 +1085,13 @@ func TestFetchWithRetry_ContextCancelledBetweenRetries(t *testing.T) {
 	}()
 
 	// Wait until the first attempt has failed and the crawler is in its backoff
-	<-clock.sleeping
+	select {
+	case <-clock.sleeping:
+	case err := <-errChan:
+		t.Fatalf("fetch ended before entering retry backoff: %v", err)
+	case <-t.Context().Done():
+		t.Fatal("test cancelled before entering retry backoff")
+	}
 
 	// Cancel context during the backoff, before the retry
 	cancel()
