@@ -23,11 +23,12 @@ GOCLEAN := $(GOCMD) clean
 GOMOD := $(GOCMD) mod
 GOFMT := $(GOCMD) fmt
 GOINSTALL := $(GOCMD) install
+FUZZTIME ?= 10s
 
 # Build flags
 LDFLAGS := -ldflags="-s -w -X main.version=$(VERSION)"
 
-.PHONY: all build test clean install fmt vet coverage help run examples
+.PHONY: all build test test-fuzz clean install fmt vet coverage help run examples
 
 # Default target
 all: clean fmt vet test build
@@ -82,6 +83,10 @@ test:
 test-short:
 	@$(GOTEST) ./...
 
+## test: test-fuzz: Run bounded coverage-guided feed parser fuzzing
+test-fuzz:
+	@$(GOTEST) ./pkg/normalizer -run '^$$' -fuzz FuzzParseFeed -fuzztime $(FUZZTIME)
+
 ## test: coverage: Generate test coverage report
 coverage:
 	@echo "Running tests with coverage..."
@@ -111,7 +116,6 @@ fmt:
 ## dev: vet: Run go vet (also compiles the -tags=network live tests)
 vet:
 	@echo "Running go vet..."
-	@$(GOCMD) vet ./...
 	@$(GOCMD) vet -tags=network ./...
 	@echo "✓ No issues found"
 
