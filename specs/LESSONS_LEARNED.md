@@ -1076,3 +1076,22 @@ The Rogue Planet project has been a masterclass in:
 *For*: Rogue Planet v0.2.0 Planning
 *Based On*: Development of v0.1.0 and planning for v0.2.0
 *Sources*: specs/rogue-planet-spec.md, Go Standards Audit, OPML Research, Test Failure Analysis, Consistency Reviews
+
+## Verification readiness audit (2026-10-09)
+
+- A plain feed title is not trusted HTML. Keep `EntryData.Title` as a string;
+  `html/template` must escape it after normalization and storage. The existing
+  hostile-feed pipeline fixture checks both denied active markup and retained
+  benign title/body text, not merely a sanitizer fixed point.
+- Test oracles must accept the production domain. The sanitizer accepts deeply
+  nested fragments and its inherited UGC policy permits mailto. Tokenize every
+  output token for scoped markup checks instead of rejecting valid >512-deep
+  HTML or dropping head markup by inspecting only a body wrapper. Check parsed
+  page structure separately; neither check claims complete browser XSS coverage.
+- Replace wall-clock sleeps with clock-controlled waits and cancellation
+  handshakes. Keep the small real-clock controls, but do not add timing-tolerance
+  or mutation campaigns. Tagged vet replaces the existing untagged pass; there
+  is no additional CI job, matrix, live-feed campaign or fuzz-budget increase.
+- Integrate already-landed dependency and toolchain repairs before relying on
+  an old security result. This branch retains main's Go 1.26.9, x/net 0.60.0,
+  x/text 0.42.0 and the existing 10-second bounded fuzz lane.

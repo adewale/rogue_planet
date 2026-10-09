@@ -50,13 +50,9 @@ jobs:
       shell: bash
       if: matrix.os == 'ubuntu-latest'
 
-    - name: Run go vet
-      run: go vet ./...
-
-    # The -tags=network live-feed tests need the internet, so CI does not run
-    # them, but it must at least compile them: without this step they silently
-    # stopped compiling (65d22f3) and stayed broken for ~11 months.
-    - name: Compile network-tagged tests
+    # This replaces the untagged vet pass: it checks ordinary code and
+    # compiles live-feed tests without running them or contacting feeds.
+    - name: Run go vet including network-tagged tests
       run: go vet -tags=network ./...
 
     - name: Run tests

@@ -58,6 +58,9 @@ func (w WallClock) Since(t time.Time) time.Duration {
 // Sleep blocks for d using a real timer, returning early with ctx.Err() if ctx
 // is done first. A non-positive d returns immediately.
 func (w WallClock) Sleep(ctx context.Context, d time.Duration) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if d <= 0 {
 		return ctx.Err()
 	}
@@ -65,7 +68,7 @@ func (w WallClock) Sleep(ctx context.Context, d time.Duration) error {
 	defer timer.Stop()
 	select {
 	case <-timer.C:
-		return nil
+		return ctx.Err()
 	case <-ctx.Done():
 		return ctx.Err()
 	}

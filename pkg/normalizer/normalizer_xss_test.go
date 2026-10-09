@@ -8,17 +8,17 @@ import (
 	"github.com/adewale/rogue_planet/internal/htmlsafety"
 )
 
-// assertNoUnsafeMarkup parses sanitizer output the way a browser would and
-// fails on any element, handler, style or URL that could run script. A
+// assertNoUnsafeMarkup tokenizes all sanitizer output and
+// fails on specified active elements, handlers, styles and URL schemes. A
 // substring search for "<iframe>" cannot see "<iframe src=...>"; the parsed
-// tree can.
+// token check can, without rejecting harmless deeply nested content.
 func assertNoUnsafeMarkup(t *testing.T, input, output string) {
 	t.Helper()
-	body, err := htmlsafety.Fragment(output)
+	violations, err := htmlsafety.MarkupViolations(output)
 	if err != nil {
 		t.Fatalf("parse sanitizer output: %v", err)
 	}
-	for _, v := range htmlsafety.Violations(body) {
+	for _, v := range violations {
 		t.Errorf("unsafe markup survived sanitization: %s\nInput: %s\nOutput: %s", v, input, output)
 	}
 }

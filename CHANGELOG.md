@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   over HTTP → store → generate, asserting the fetched entries reach the page
 - Removed the `make test-integration` target: no file has an `integration`
   build tag, so it only re-ran a subset of the normal tests
+- Feed titles remain plain strings and are escaped by `html/template`, rather
+  than bypassing escaping with `template.HTML`. Sanitised body HTML retains
+  its existing formatting and URL policy (including mailto links).
+- Security assertions inspect all sanitizer output, including deeply nested
+  markup, rather than relying on substrings or a body-only parsed fragment.
 
 ### Changed - Context Propagation
 - **Comprehensive context.Context support throughout codebase**
