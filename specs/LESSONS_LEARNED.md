@@ -921,6 +921,60 @@ Name clearly states WHAT is being tested, makes it obvious if test is missing.
 
 ---
 
+### 39. Hostile Feed Parsers Need Semantic Fuzz Oracles and Dependency Scanning 🧬🛡️
+
+**Lesson**: A no-panic parser campaign and a green test suite do not establish
+that normalized feed output is safe or that the parser implementation has no
+known reachable vulnerabilities.
+
+**What the August 2026 campaign demonstrated**:
+- RSS, Atom, JSON Feed, malformed-input, and XSS seeds all enter the same
+  production normalizer. Coverage-guided mutation can then explore truncation
+  and corruption across real format and sanitizer boundaries.
+- The useful oracles are semantic: repeated normalization must be
+  deterministic for a fixed fetch time; every entry must have stable identity
+  and valid times; sanitized content must be a fixed point; and output growth
+  must remain proportional to the bounded input.
+- The first hosted security scan then found five reachable advisories in
+  `golang.org/x/net/html` through `pkg/normalizer`, even though the behavioral
+  campaign itself passed. Updating to the first fixed `x/net` release removed
+  all vulnerabilities reported for imported or called code.
+
+**What the October adversarial review added**:
+- A fixed point alone is not a safety guarantee. Deliberately allowing script
+  elements in the production sanitizer still passed the original fuzz seeds,
+  because the same unsafe policy was used to check its own output. The fuzz
+  target now tokenizes all HTML output independently for active
+  elements, event attributes and unsafe URL schemes. `TestFeedHTMLOracle` checks
+  negative controls and benign escaped text, relative links and mailto links;
+  deeply nested benign markup also remains accepted. Building an AST here
+  falsely rejected >512-deep nesting that production accepts, so tokenization
+  avoids a test-only depth limit without skipping unsafe nested markup. This
+  is a scoped active-markup guard, not proof against every browser XSS.
+- Known-valid RSS, Atom, JSON and hostile-markup seeds must retain one entry
+  and their benign text. A parser that rejects all inputs, drops all entries
+  or erases all content must not make the fuzz campaign vacuously green.
+- August's security result expired: the October scan found 11 reachable
+  standard-library advisories under Go 1.26.6. CI now uses Go 1.26.9, and
+  `x/net`/`x/text` are updated to 0.60.0/0.42.0. Recheck the current vulnerability
+  database on the actual merge candidate rather than reusing old green CI.
+
+**Permanent guard**:
+```bash
+# Discover behavioral failures at the hostile feed boundary
+make test-fuzz FUZZTIME=10s
+
+# Check the reachable implementation beneath that boundary
+govulncheck ./...
+```
+
+> **The Rule:** For Rogue Planet's feed normalizer, pair bounded semantic
+> fuzzing with reachable dependency scanning. Fuzzing finds unknown behavioral
+> failures; `govulncheck` finds disclosed flaws in the parser stack. Neither is
+> a substitute for the other.
+
+---
+
 ## Summary: Key Principles
 
 ### Architecture

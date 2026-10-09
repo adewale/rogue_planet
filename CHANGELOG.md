@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All tests passing across Linux, macOS, and Windows
 
 ### Added - Architecture & Testing
+- **Coverage-guided feed parser fuzzing**: Exercises RSS, Atom, JSON Feed,
+  malformed input, and sanitization boundaries with deterministic and bounded
+  normalization oracles in CI.
 - **pkg/fetcher package**: Extracted feed processing business logic
   - Separates orchestration (concurrency, rate limiting) from core logic
   - Dependency injection with interfaces (FeedCrawler, FeedNormalizer, FeedRepository)
