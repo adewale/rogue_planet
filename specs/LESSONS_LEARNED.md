@@ -940,6 +940,25 @@ known reachable vulnerabilities.
   campaign itself passed. Updating to the first fixed `x/net` release removed
   all vulnerabilities reported for imported or called code.
 
+**What the October adversarial review added**:
+- A fixed point alone is not a safety guarantee. Deliberately allowing script
+  elements in the production sanitizer still passed the original fuzz seeds,
+  because the same unsafe policy was used to check its own output. The fuzz
+  target now tokenizes all HTML output independently for active
+  elements, event attributes and unsafe URL schemes. `TestFeedHTMLOracle` checks
+  negative controls and benign escaped text, relative links and mailto links;
+  deeply nested benign markup also remains accepted. Building an AST here
+  falsely rejected >512-deep nesting that production accepts, so tokenization
+  avoids a test-only depth limit without skipping unsafe nested markup. This
+  is a scoped active-markup guard, not proof against every browser XSS.
+- Known-valid RSS, Atom, JSON and hostile-markup seeds must retain one entry
+  and their benign text. A parser that rejects all inputs, drops all entries
+  or erases all content must not make the fuzz campaign vacuously green.
+- August's security result expired: the October scan found 11 reachable
+  standard-library advisories under Go 1.26.6. CI now uses Go 1.26.9, and
+  `x/net`/`x/text` are updated to 0.60.0/0.42.0. Recheck the current vulnerability
+  database on the actual merge candidate rather than reusing old green CI.
+
 **Permanent guard**:
 ```bash
 # Discover behavioral failures at the hostile feed boundary
