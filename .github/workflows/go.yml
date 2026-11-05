@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        go-version: ['1.26.9']
+        go-version: ['1.26.10']
 
     steps:
     - name: Check out code
@@ -84,7 +84,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
       with:
-        go-version: '1.26.9'
+        go-version: '1.26.10'
 
     - name: Build
       run: go build -v -o rp ./cmd/rp
@@ -106,7 +106,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
       with:
-        go-version: '1.26.9'
+        go-version: '1.26.10'
 
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84 # v6
@@ -126,7 +126,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
       with:
-        go-version: '1.26.9'
+        go-version: '1.26.10'
 
     - name: Run govulncheck
       run: |
