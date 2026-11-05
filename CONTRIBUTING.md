@@ -20,7 +20,7 @@ Be respectful, constructive, and professional. We're all here to make great soft
 
 ### Prerequisites
 
-- Go 1.26 or later (CI uses security-patched Go 1.26.9)
+- Go 1.26.10 or later (CI uses security-patched Go 1.26.10)
 - Git
 - SQLite3 (usually pre-installed)
 - Make (optional, but recommended)
